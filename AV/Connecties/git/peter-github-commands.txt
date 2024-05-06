@@ -1,0 +1,190 @@
+#Committer: Schepens <peter.schepens@kadaster.nl>
+#Your name and email address were configured automatically based
+#on your username and hostname. Please check that they are accurate.
+#You can suppress this message by setting them explicitly:
+#    git config --global user.name "Your Name"
+#    git config --global user.email you@example.com
+#After doing this, you may fix the identity used for this commit with:
+#    git commit --amend --reset-author
+
+#maak locale github-work-directory aan (let op: dit hoeft niet als je met clone een project download)
+md c:\GITHUB-WORK\database-kir
+md c:\GITHUB-WORK\features-kir
+
+#verwijder een subdirectory (RD is een alias voor Remove-Item !!) :
+rd database-brk -Force
+
+#ga in juiste work-directory staan om te werken. let op: niet nodig indien we hierna een clone maken.
+#cd c:\GITHUB-WORK\database-kir
+
+#maak clone van repository (er wordt automatisch een subdirectory aangemaakt met naam van repository, bijv. database-brk )
+cd c:\GITHUB-WORK\
+git clone http://github.so.kadaster.nl/kpv/database-brk.git
+git clone http://github.so.kadaster.nl/KIR/database-kir.git
+git clone http://github.so.kadaster.nl/KIR/database-kiw.git
+git clone http://github.so.kadaster.nl/KIR/database-kio.git
+git clone http://github.so.kadaster.nl/kpv/database-sci.git
+git clone http://github.so.kadaster.nl/KIR/kir-features.git 
+git clone http://github.so.kadaster.nl/dbexp/OraToolkit.git
+--
+git clone http://github.so.kadaster.nl/ifk/workbench
+git clone http://github.so.kadaster.nl/ifk/postgres
+
+#maak clone van branch vanuit remote
+git clone <branch> --single-branch  http://github.so.kadaster.nl/kpv/database-brk.git
+
+#maak evt een nieuwe branch aan
+git clone -b pg-dba-2019114
+#ga naar branch
+git checkout pg-dba-20190114
+
+#To clone a branch without fetching other branches
+mkdir $BRANCH
+cd $BRANCH
+git init
+git remote add -t $BRANCH -f origin $REMOTE_REPO
+git checkout $BRANCH
+
+#zetten van username/password (is ineens nodig, want pakt niet automatisch het windows-password meer op)
+#(na dit commando kun je "git push" geven en wordt er om username/password gevraagd)
+git config --global credential.helper wincred
+
+
+
+#switch working-directory to branch
+#Standaard kom je na maken van een clone in de MASTER uit. Als je ontwikkeld vanuit development dan moet je nog even switchen...
+git checkout development 
+
+
+#toon branches
+git branch -a
+
+
+#show logging commits
+git log --oneline
+git log --oneline --decorate --graph --all
+
+#voordat je gaat wijzigen eerst zeker weten dat je laatste versie hebt
+git pull
+
+
+#voer wijziging door in stage-area
+git add .
+git add . .gitattributes
+
+#UNSTAGING
+#Kan met optie --soft (alleen HEAD), --mixed (HEAD+stage = DEFAULT), --hard (HEAD+stage+LocalWorkingDirectory)
+#een RESET wijzigt de HEAD niet.
+#terugdraaien van een commit uit HEAD en STAGE:
+git reset HEAD <filename>
+#of
+git reset --mixed HEAD <filename>
+#een gewijzigd bestand in LocalWorkingDirectory weer ongewijzigd maken
+git checkout -- <filename>
+
+#leg wijziging in HEAD-area door
+git commit -m "waarom is iets gewijzigd"
+
+#verwijder bestanden uit repository 
+git rm db/packages/*.pck
+
+#verwijder bestanden lokaal
+rm db/packages/*.pck
+
+
+#haal bestanden terug uit stage-area (kan al na een ADD-commando, maar ook na de commit !)
+#Op dit moment worden de REVISIE-KEYWORDS bijgewerkt !!!
+git checkout db/packages/*.pck
+
+#haal bestand terug uit lokaal repos
+git checkout -- db/packages/*.pck
+
+#ga een commit terug (bijv. na verkeerde wijziging of rm-actie)
+git reset HEAD~1
+
+#Is er een file ten onrechte met ADD toegevoegd aan de STAGE? Dan met reset-commando unstagen
+git reset HEAD data/brk_tekst_template_regels.txt
+git reset HEAD data/export/exp_full_brko_own.dmp
+
+#leg wijziging met REVISIE-KEYWORDS NOGMAALS in stage-area vast en breng ze naar HEAD
+git add . .gitattributes
+git commit -m "PCK-revisie gewijzigd"
+
+#hierna met PUSH de wijzigingen uit HEAD-area naar REMOTE-REPOSITORY opslaan
+git push
+
+
+
+#voorbeeld vanuit PRIMA
+git clone git@github.so.kadaster.nl:KIR/Sap-WebApps.git
+cd repo
+echo "# Sap-WebApps" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git remote add origin git@github.so.kadaster.nl:KIR/Sap-WebApps.git
+git push -u origin master
+
+
+#
+#Ontwikkelen op POSTGRES mbv feature-branch
+#
+#voer een git-pull door op postgres-repository lokaal
+cd c:\github-work\postgres
+git checkout development
+git pull
+#bekijk bestaande branches
+git branch -a
+#maak evt een nieuwe branch aan
+git clone -b pg-dba-20191011
+#ga naar branch
+git checkout pg-dba-20190100
+#push naar remote
+git remote add origin git@github.so.kadaster.nl/IFK/postgres.git
+git push -u origin master
+#maak evt een pull-request aan om wijziging vanuit feature ook naar development te mergen...
+
+
+
+
+#Als een commit-actie stukloopt dan kom je in situatie dat je vanuit een nieuwe powershell-connectie
+#niets meer kunt committen doordat er lock op zit. 
+#Gooi dan de file database-brk/.git/git_LOCK weg !!
+
+
+
+
+#een wijziging die "per ongeluk" direct op de master is gecommit weer naar development brengen
+#Doe hiervoor eerst lokaal een checkout van de master, en voer een PULL hiervoor uit, om meest actuele master lokaal te krijgen
+#Vervolgens kun je dan vanuit DEVELOPMENT-branch een commando: [git merge master] uitvoeren om de master-wijziging in development te krijgen.
+git merge master 
+
+#Er is ook mogelijkheid om een rebase-commando te geven. Daarmee verplaats je het checkout-punt van developement naar het actuele punt van de master.
+#Als het goed is blijven reeds doorgevoerde mutaties in development behouden. 
+
+#alternatief scenario om master-wijziging in development te krijgen, is om via GITHUB een pull-request (wat na merge standaard wordt verwijderd)
+#te restoren, en dit pull-request vervolgens nogmaals op de development-branch te mergen. De wijziging zelf blijft gewoon in master,
+#maar het pull-request bevat wijziging ook, en die zorgt er voor dat wijziging in development wordt doorgevoerd.
+#Als je dan vanuit development-branch lokaal weer een PULL geeft, komt de wijziging door naar lokale omgeving.
+
+
+
+#Oplossen MERGE-conflict op file die op master verplaatst en gerenamed is.
+#Via pull wordt nieuwe versie binnengehaald
+#Bij de push krijg ik merge-conflict
+#To see the beginning of the merge conflict in your file, search the file for the conflict marker <<<<<<<. 
+#When you open the file in your text editor, you'll see the changes from the HEAD or base branch after the line <<<<<<< HEAD. 
+#Next, you'll see =======, which divides your changes from the changes in the other branch, followed by >>>>>>> BRANCH-NAME.
+#Oplossing:
+#1)Decide if you want to keep only your branch's changes, keep only the other branch's changes, or make a brand new change, 
+#  which may incorporate changes from both branches. 
+#  Delete the conflict markers <<<<<<<, =======, >>>>>>> and make the changes you want in the final merge. 
+#2)Add or stage your changes:  git add .
+#3)Commit your changes with a comment, bijv.:  git commit -m "Resolved merge conflict by incorporating both suggestions."
+#
+
+
+
+
+#einde script
+
