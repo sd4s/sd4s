@@ -1,0 +1,192 @@
+<HTML><HEAD><TITLE>HtmlPage</TITLE>
+<META id=RLT_STANDARDS_MODE_META http-equiv=X-UA-Compatible content=IE=9>
+<META name=mycharsetmeta http-equiv=Content-Type content="text/html; charset=ISO-8859-1">
+<META name=Generation content="Created in release 8103, Generation 3">
+<SCRIPT type=text/javascript>//confidential_id=IBI_OptionsScript
+var szHtmlAlias="/ibi_apps/ibi_html";var szRunTimeHtmlAlias="runTimeHtmlAlias";var cgipath="cgipath";var ibirls="ibirls3";var rltdyncalendar="rltdyncalendar";var map="ibimap";var olap="olap";var olappanebase="olappanebase";var olapdrill="olapdrill";var ibiOptions = new Array(cgipath,ibirls);var nlsScript="/javaassist/nls.js";var glbScript="/javaassist/ibi/html/js/ibigbl.js";var replacePart="<replace>";
+var scriptTemplate='<SCRIPT src="'+replacePart+'" type="text/javascript"><\/SCRIPT>';if(typeof(szRunTimeHtmlAlias) === 'string' && szRunTimeHtmlAlias.indexOf('/') == 0)szHtmlAlias=szRunTimeHtmlAlias;document.write(scriptTemplate.replace(replacePart, szHtmlAlias + nlsScript));document.write(scriptTemplate.replace(replacePart, szHtmlAlias + glbScript));</SCRIPT>
+ 
+<SCRIPT type=text/javascript>//confidential_id=IBI_ibigblloadCss
+if(typeof ibigblloadCss === 'function'){ibigblloadCss(null);addIntlTranslatedJS("composertrans.js");}else {alert("JavaScript alias '/ibi_apps/ibi_html'  is not valid");window.location("about:blank");}</SCRIPT>
+<LINK id=ITEM2 rel=stylesheet type=text/css UserSuppliedFullPath="1" rtFileName="cgipathsub/ibi_html/javaassist/ibi/html/composer/themes/nonBindows/IBI-Themes/default_theme.css"><LINK id=IBI_THEME_CSS rel=stylesheet type=text/css UserSuppliedFullPath="1" rtFileName="cgipathsub/ibi_html/javaassist/ibi/html/composer/themes/nonBindows/IBI-Themes/ibi.css" desc="Information Builders"><LINK href="/approot/general/vredestein.css" rel=stylesheet type=text/css UserSuppliedFullPath="1">
+<SCRIPT src="/approot/general/vredestein.js" type=text/javascript></SCRIPT>
+ 
+<SCRIPT for=window type=text/javascript eventname="onload">window.onload = function() { window_onload(); }
+ 
+ 
+</SCRIPT>
+ 
+<SCRIPT>//confidential_id=clientEventHandlersJS
+ 
+function window_onload() {
+	UpdateData();
+}
+ 
+function button1_onclick(ctrl) {
+	OnExecute(ctrl)
+}
+ 
+function PART_NO_onchange(ctrl) {
+	var importId = document.getElementById('PART_NO').value;
+ 
+	document.getElementById('IMPORTID').value = importId;
+}
+ 
+</SCRIPT>
+ 
+<META name=GENERATOR content="MSHTML 11.00.9600.17842"></HEAD>
+<BODY class=IBI_PageBg style="OVERFLOW: auto" edaconnectionrequired="true" elementtype="21" thumbnailscale="4" maptype="0" nextelementuniquenumber="4"><IFRAME name=iframe1 id=iframe1 style="POSITION: absolute; LEFT: 10px; Z-INDEX: 1; TOP: 70px">
+</IFRAME><INPUT name=button1 tabIndex=1 id=button1 language=javascript style="OVERFLOW: visible; HEIGHT: 22px; WIDTH: 91px; POSITION: absolute; FONT-WEIGHT: bold; LEFT: 480px; Z-INDEX: 6; TOP: 40px" onclick=button1_onclick(this) type=button size=57 value="Run Report" persistentuniqueid="compUid_4" requests_list="0" autoExecute="false"> <SPAN id=panel1 style="HEIGHT: 53px; WIDTH: 460px; POSITION: absolute; LEFT: 10px; Z-INDEX: 11; TOP: 10px" elementtype="34"><LABEL class="IBIfield IBI_ReportControlLabel" id=label1 style="CURSOR: default; HEIGHT: 13px; WIDTH: 53px; POSITION: absolute; LEFT: 10px; Z-INDEX: 5; TOP: 10px" for=PART_NO name="edit1">Part no. </LABEL><SELECT name=PART_NO tabIndex=3 id=PART_NO language=javascript style="WIDTH: 142px; POSITION: absolute; FONT-WEIGHT: bold; LEFT: 10px; Z-INDEX: 6; TOP: 30px" onchange=PART_NO_onchange(this) size=1 persistentuniqueid="compUid_1" CHECKED="false" indeterminate="false" width="0" start="fileopen" loop="1" vspace="0" maxlength="2147483647" hspace="0" readonly="false" requiredfield="1" boundtovariable="1" defaultlocation="0,0,15,118" defaultselection="1"></SELECT> <LABEL class="IBIfield IBI_ReportControlLabel" id=label2 style="CURSOR: default; HEIGHT: 13px; WIDTH: 57px; POSITION: absolute; LEFT: 160px; Z-INDEX: 7; TOP: 10px" for=IMPORTID name="edit2">Import ID </LABEL><SELECT tabIndex=4 class="IBIfield IBI_ReportControlTarget  IBI_rounded_s IBI_TextBox" id=IMPORTID language=javascript style="WIDTH: 142px; POSITION: absolute; FONT-WEIGHT: bold; LEFT: 160px; Z-INDEX: 6; TOP: 30px" size=1 persistentuniqueid="compUid_2" CHECKED="false" indeterminate="false" width="0" start="fileopen" loop="1" vspace="0" maxlength="2147483647" hspace="0" readonly="false" requiredfield="1" boundtovariable="1" defaultlocation="0,0,15,118" defaultselection="1"></SELECT> <LABEL class="IBIfield IBI_ReportControlLabel" id=label3 style="CURSOR: default; HEIGHT: 13px; WIDTH: 120px; POSITION: absolute; LEFT: 310px; Z-INDEX: 9; TOP: 10px" for=combobox1 name="">Output type </LABEL><SELECT tabIndex=5 id=combobox1 style="OVERFLOW: visible; WIDTH: 127px; OVERFLOW-Y: visible; POSITION: absolute; FONT-WEIGHT: bold; LEFT: 310px; Z-INDEX: 6; TOP: 30px" size=1 persistentuniqueid="compUid_3" requiredfield="1" boundtovariable="1" defaultlocation="0,0,17,107" defaultselection="1" tempatt_lastelement_ofline="1"> <OPTION value=DISPERSION selected displaytext="Dispersion" noinput="0">Dispersion</OPTION> <OPTION value=STANDARD displaytext="BoM Tree" noinput="0">BoM Tree</OPTION> <OPTION value=RAW displaytext="Raw Materials" noinput="0">Raw Materials</OPTION></SELECT> </SPAN><INPUT name=inputhidden1 id=layoutinfo style="POSITION: absolute; LEFT: -100px; TOP: -100px" type=hidden resourcectrlids="ITEM2;IBI_THEME_CSS"> <INPUT name=ibiapp_app id=ibiapp_app style="POSITION: absolute; LEFT: -100px; TOP: -100px" type=hidden value=unilab> <xml id=focus_xmlelement>
+<script type="text/xml" nextelementuniquenumber="4">
+<rootxmlnode focoption="_FOC_NULL" top="100" left="10" width="150" height="130">
+<variables>
+<variable controltype="7" parametercreatedinreslay="0" type="default" desc="_PART_NO" name="_PART_NO" default="NONE" textvarname="" accept="0" select="0" create="1" top="70" left="30" width="60" height="20" inbinding="1">
+<link linktype="default" from="compUid_1">
+<condition default="1" name="Default" whattodowithcontrol="4" valuescompareoperator="0" parameterscompareoperator="0" conditionmultiselectoperator="0">
+<data_info datatype="0" modifiedrequest="0" displayfield="_PART_NO" datafield="_PART_NO" datasource="sqlout.mas" ibif_ex="sqlout" selectedvalue="NONE" operation="" slider_range_from="" slider_range_to="" previewvalue="NONE" sourcetype="typeMaster">
+<static_values>
+<static value="NONE" display="NONE" selected="1" noinput="0">
+								
+</static>
+</static_values>
+</data_info>
+</condition>
+</link>
+<requestid id="0">
+</requestid>
+</variable>
+<variable controltype="7" parametercreatedinreslay="0" type="default" desc="_PRODUCTION_DATE" name="_PRODUCTION_DATE" default="&amp;TODAY.EVAL" textvarname="" accept="0" select="0" create="0" top="21" left="1" width="60" height="20" inbinding="0">
+<link linktype="default">
+<condition default="1" name="Default" whattodowithcontrol="4" valuescompareoperator="0" parameterscompareoperator="0" conditionmultiselectoperator="0">
+<data_info datatype="0" modifiedrequest="0" displayfield="_PRODUCTION_DATE" datafield="_PRODUCTION_DATE" datasource="sqlout.mas" ibif_ex="sqlout" selectedvalue="&amp;TODAY.EVAL" operation="" slider_range_from="" slider_range_to="" previewvalue="&amp;TODAY.EVAL">
+<static_values>
+<static value="&amp;TODAY.EVAL" display="&amp;TODAY.EVAL" selected="1" noinput="0">
+								
+</static>
+</static_values>
+</data_info>
+</condition>
+</link>
+<requestid id="0">
+</requestid>
+</variable>
+<variable controltype="8" parametercreatedinreslay="0" type="default" desc="BOM_TYPE" name="BOM_TYPE" default="DISPERSION" textvarname="" accept="0" select="0" create="1" top="70" left="250" width="60" height="20" inbinding="1">
+<link linktype="default" from="compUid_3">
+<condition default="1" name="Default" whattodowithcontrol="4" valuescompareoperator="0" parameterscompareoperator="0" conditionmultiselectoperator="0">
+<data_info datatype="0" modifiedrequest="0" displayfield="BOM_TYPE" datafield="BOM_TYPE" datasource="sqlout.mas" ibif_ex="sqlout" selectedvalue="DISPERSION" operation="" slider_range_from="" slider_range_to="" previewvalue="DISPERSION" sourcetype="typeMaster">
+<static_values>
+<static value="DISPERSION" display="DISPERSION" selected="1" noinput="0">
+</static>
+</static_values>
+</data_info>
+</condition>
+</link>
+<requestid id="0">
+</requestid>
+</variable>
+<variable controltype="7" parametercreatedinreslay="0" type="default" desc="IMPORT_ID" name="IMPORT_ID" default=" " textvarname="" accept="0" select="0" create="1" top="70" left="140" width="60" height="20" inbinding="1">
+<link linktype="default" from="compUid_2">
+<condition default="1" name="Default" whattodowithcontrol="4" valuescompareoperator="0" parameterscompareoperator="0" conditionmultiselectoperator="0">
+<data_info datatype="0" modifiedrequest="0" displayfield="IMPORT_ID" datafield="IMPORT_ID" datasource="sqlout.mas" ibif_ex="sqlout" selectedvalue=" " operation="" slider_range_from="" slider_range_to="" previewvalue=" " sourcetype="typeMaster">
+<static_values>
+<static value=" " display=" " selected="1" noinput="0">
+								
+</static>
+</static_values>
+</data_info>
+</condition>
+</link>
+<requestid id="0">
+</requestid>
+</variable>
+<variable controltype="12" parametercreatedinreslay="0" type="default" desc="WFFMT" name="WFFMT" default="HTML" textvarname="" accept="0" select="0" create="0" top="43" left="1" width="60" height="20" inbinding="0">
+<link linktype="default">
+<condition default="1" name="Default" whattodowithcontrol="4" valuescompareoperator="0" parameterscompareoperator="0" conditionmultiselectoperator="0">
+<data_info datatype="0" modifiedrequest="0" displayfield="WFFMT" datafield="WFFMT" datasource="sqlout.mas" ibif_ex="sqlout" selectedvalue="HTML" operation="" slider_range_from="" slider_range_to="" previewvalue="HTML">
+<static_values>
+<static value="HTML" display="HTML" selected="1" noinput="0">
+								
+</static>
+</static_values>
+</data_info>
+</condition>
+</link>
+<requestid id="0">
+</requestid>
+</variable>
+<variable controltype="7" parametercreatedinreslay="0" type="default" desc="TPFMT" name="TPFMT" default="D12.3SC" textvarname="" accept="0" select="0" create="0" top="65" left="1" width="60" height="20" inbinding="0">
+<link linktype="default">
+<condition default="1" name="Default" whattodowithcontrol="4" valuescompareoperator="0" parameterscompareoperator="0" conditionmultiselectoperator="0">
+<data_info datatype="0" modifiedrequest="0" displayfield="TPFMT" datafield="TPFMT" datasource="sqlout.mas" ibif_ex="sqlout" selectedvalue="D12.3SC" operation="" slider_range_from="" slider_range_to="" previewvalue="D12.3SC">
+<static_values>
+<static value="D12.3SC" display="D12.3SC" selected="1" noinput="0">
+</static>
+</static_values>
+</data_info>
+</condition>
+</link>
+<requestid id="0">
+</requestid>
+</variable>
+</variables>
+<input_controls>
+<input_control bindcontrolid="compUid_1" elementtype="8" name="edit1" id="PART_NO" multiple="0" onetimepopulated="0" inbinding="1" top="20" left="30" width="60" height="20">
+<link linktype="default" persistentuniqueid="compUid_2">
+<condition default="1" name="Default" whattodowithcontrol="0" valuescompareoperator="0" parameterscompareoperator="0" conditionmultiselectoperator="0">
+<data_info datatype="1" modifiedrequest="0" datasource="UNI00036P_importIds.fex" ibif_ex="UNI00036P_importIds" addalloption="0" sourcetype="typeFex" cacheruntimedata="0" accept="0" operation="NONE" selectedvalue="" checkForDuplicateValues="0" displayfield="PART_NO" datafield="PART_NO" ibiapp_app="unilab" requestid="1">
+<![CDATA[]]>
+						
+</data_info>
+</condition>
+</link>
+</input_control>
+<input_control bindcontrolid="compUid_2" elementtype="8" name="IMPORTID" id="IMPORTID" multiple="0" onetimepopulated="0" inbinding="1" top="20" left="140" width="60" height="20">
+<link linktype="default" persistentuniqueid="compUid_3" from="compUid_1">
+<condition default="1" name="Default" whattodowithcontrol="0" valuescompareoperator="0" parameterscompareoperator="0" conditionmultiselectoperator="0" resolveparameterfq="PART_NO" resolveparameter="PART_NO">
+<data_info datatype="1" modifiedrequest="0" datasource="UNI00036P_importIds.fex" ibif_ex="UNI00036P_importIds" addalloption="0" sourcetype="typeFex" cacheruntimedata="0" accept="0" operation="NONE" selectedvalue="" checkForDuplicateValues="0" displayfield="IMPORTID" datafield="IMPORTID" ibiapp_app="unilab" requestid="2" fieldtoresolveparameter="PART_NO" dynalldisplayvalue="ALL">
+<![CDATA[]]>
+</data_info>
+</condition>
+</link>
+</input_control>
+<input_control bindcontrolid="compUid_3" elementtype="8" name="combobox1" id="combobox1" multiple="0" onetimepopulated="1" inbinding="1" top="20" left="250" width="60" height="20">
+<link linktype="default" persistentuniqueid="compUid_1">
+<condition default="1" name="Default" whattodowithcontrol="0" valuescompareoperator="0" parameterscompareoperator="0" conditionmultiselectoperator="0">
+<data_info datatype="0" modifiedrequest="0" datasource="sqlout.mas" ibif_ex="sqlout" addalloption="0" sourcetype="typeMaster" cacheruntimedata="0" accept="0" operation="NONE">
+<static_values>
+<static value="DISPERSION" display="Dispersion" selected="1" noinput="0">
+</static>
+<static value="STANDARD" display="BoM Tree" selected="0" noinput="0">
+</static>
+<static value="RAW" display="Raw Materials" selected="0" noinput="0">
+</static>
+</static_values>
+</data_info>
+</condition>
+</link>
+</input_control>
+</input_controls>
+<requests nextrequestsid="2">
+<request requestid="0" sourcetype="typeFex" targettype="iframe" targetname="iframe1" ibif_ex="UNI00036R_dispersion.fex" activereport="0" reportcolumns="" reportrealcolumns="" ibiapp_app="unilab">
+			
+</request>
+</requests>
+<other_bound_objects>
+</other_bound_objects>
+</rootxmlnode>
+</script>
+</xml>
+<SCRIPT type=text/javascript>//confidential_id=IBI_loader
+if(typeof doBeforeLoad === 'function'){doBeforeLoad();}function AdjustChildrenPosition(){
+}
+</SCRIPT>
+<!-- cc 00000 -->
+<SCRIPT id=focus_xmlelement_s type=text/xml><skript type="text/xml" nextelementuniquenumber="4"><rootxmlnode focoption="_FOC_NULL" top="100" left="10" width="150" height="130"><variables><variable controltype="7" parametercreatedinreslay="0" type="default" desc="_PART_NO" name="_PART_NO" default="NONE" textvarname="" accept="0" select="0" create="1" top="70" left="30" width="60" height="20" inbinding="1"><link linktype="default" from="compUid_1"><condition default="1" name="Default" whattodowithcontrol="4" valuescompareoperator="0" parameterscompareoperator="0" conditionmultiselectoperator="0"><data_info datatype="0" modifiedrequest="0" displayfield="_PART_NO" datafield="_PART_NO" datasource="sqlout.mas" ibif_ex="sqlout" selectedvalue="NONE" operation="" slider_range_from="" slider_range_to="" previewvalue="NONE" sourcetype="typeMaster"><static_values><static value="NONE" display="NONE" selected="1" noinput="0">
+								</static></static_values></data_info></condition></link><requestid id="0"></requestid></variable><variable controltype="7" parametercreatedinreslay="0" type="default" desc="_PRODUCTION_DATE" name="_PRODUCTION_DATE" default="&amp;TODAY.EVAL" textvarname="" accept="0" select="0" create="0" top="21" left="1" width="60" height="20" inbinding="0"><link linktype="default"><condition default="1" name="Default" whattodowithcontrol="4" valuescompareoperator="0" parameterscompareoperator="0" conditionmultiselectoperator="0"><data_info datatype="0" modifiedrequest="0" displayfield="_PRODUCTION_DATE" datafield="_PRODUCTION_DATE" datasource="sqlout.mas" ibif_ex="sqlout" selectedvalue="&amp;TODAY.EVAL" operation="" slider_range_from="" slider_range_to="" previewvalue="&amp;TODAY.EVAL"><static_values><static value="&amp;TODAY.EVAL" display="&amp;TODAY.EVAL" selected="1" noinput="0">
+								</static></static_values></data_info></condition></link><requestid id="0"></requestid></variable><variable controltype="8" parametercreatedinreslay="0" type="default" desc="BOM_TYPE" name="BOM_TYPE" default="DISPERSION" textvarname="" accept="0" select="0" create="1" top="70" left="250" width="60" height="20" inbinding="1"><link linktype="default" from="compUid_3"><condition default="1" name="Default" whattodowithcontrol="4" valuescompareoperator="0" parameterscompareoperator="0" conditionmultiselectoperator="0"><data_info datatype="0" modifiedrequest="0" displayfield="BOM_TYPE" datafield="BOM_TYPE" datasource="sqlout.mas" ibif_ex="sqlout" selectedvalue="DISPERSION" operation="" slider_range_from="" slider_range_to="" previewvalue="DISPERSION" sourcetype="typeMaster"><static_values><static value="DISPERSION" display="DISPERSION" selected="1" noinput="0"></static></static_values></data_info></condition></link><requestid id="0"></requestid></variable><variable controltype="7" parametercreatedinreslay="0" type="default" desc="IMPORT_ID" name="IMPORT_ID" default=" " textvarname="" accept="0" select="0" create="1" top="70" left="140" width="60" height="20" inbinding="1"><link linktype="default" from="compUid_2"><condition default="1" name="Default" whattodowithcontrol="4" valuescompareoperator="0" parameterscompareoperator="0" conditionmultiselectoperator="0"><data_info datatype="0" modifiedrequest="0" displayfield="IMPORT_ID" datafield="IMPORT_ID" datasource="sqlout.mas" ibif_ex="sqlout" selectedvalue=" " operation="" slider_range_from="" slider_range_to="" previewvalue=" " sourcetype="typeMaster"><static_values><static value=" " display=" " selected="1" noinput="0">
+								</static></static_values></data_info></condition></link><requestid id="0"></requestid></variable><variable controltype="12" parametercreatedinreslay="0" type="default" desc="WFFMT" name="WFFMT" default="HTML" textvarname="" accept="0" select="0" create="0" top="43" left="1" width="60" height="20" inbinding="0"><link linktype="default"><condition default="1" name="Default" whattodowithcontrol="4" valuescompareoperator="0" parameterscompareoperator="0" conditionmultiselectoperator="0"><data_info datatype="0" modifiedrequest="0" displayfield="WFFMT" datafield="WFFMT" datasource="sqlout.mas" ibif_ex="sqlout" selectedvalue="HTML" operation="" slider_range_from="" slider_range_to="" previewvalue="HTML"><static_values><static value="HTML" display="HTML" selected="1" noinput="0">
+								</static></static_values></data_info></condition></link><requestid id="0"></requestid></variable><variable controltype="7" parametercreatedinreslay="0" type="default" desc="TPFMT" name="TPFMT" default="D12.3SC" textvarname="" accept="0" select="0" create="0" top="65" left="1" width="60" height="20" inbinding="0"><link linktype="default"><condition default="1" name="Default" whattodowithcontrol="4" valuescompareoperator="0" parameterscompareoperator="0" conditionmultiselectoperator="0"><data_info datatype="0" modifiedrequest="0" displayfield="TPFMT" datafield="TPFMT" datasource="sqlout.mas" ibif_ex="sqlout" selectedvalue="D12.3SC" operation="" slider_range_from="" slider_range_to="" previewvalue="D12.3SC"><static_values><static value="D12.3SC" display="D12.3SC" selected="1" noinput="0"></static></static_values></data_info></condition></link><requestid id="0"></requestid></variable></variables><input_controls><input_control bindcontrolid="compUid_1" elementtype="8" name="edit1" id="PART_NO" multiple="0" onetimepopulated="0" inbinding="1" top="20" left="30" width="60" height="20"><link linktype="default" persistentuniqueid="compUid_2"><condition default="1" name="Default" whattodowithcontrol="0" valuescompareoperator="0" parameterscompareoperator="0" conditionmultiselectoperator="0"><data_info datatype="1" modifiedrequest="0" datasource="UNI00036P_importIds.fex" ibif_ex="UNI00036P_importIds" addalloption="0" sourcetype="typeFex" cacheruntimedata="0" accept="0" operation="NONE" selectedvalue="" checkForDuplicateValues="0" displayfield="PART_NO" datafield="PART_NO" ibiapp_app="unilab general masters_unilab masters_interspec ibiwork baseapp" requestid="1"><![CDATA[]]>
+						</data_info></condition></link></input_control><input_control bindcontrolid="compUid_2" elementtype="8" name="IMPORTID" id="IMPORTID" multiple="0" onetimepopulated="0" inbinding="1" top="20" left="140" width="60" height="20"><link linktype="default" persistentuniqueid="compUid_3" from="compUid_1"><condition default="1" name="Default" whattodowithcontrol="0" valuescompareoperator="0" parameterscompareoperator="0" conditionmultiselectoperator="0" resolveparameterfq="PART_NO" resolveparameter="PART_NO"><data_info datatype="1" modifiedrequest="0" datasource="UNI00036P_importIds.fex" ibif_ex="UNI00036P_importIds" addalloption="0" sourcetype="typeFex" cacheruntimedata="0" accept="0" operation="NONE" selectedvalue="" checkForDuplicateValues="0" displayfield="IMPORTID" datafield="IMPORTID" ibiapp_app="unilab general masters_unilab masters_interspec ibiwork baseapp" requestid="2" fieldtoresolveparameter="PART_NO" dynalldisplayvalue="ALL"><![CDATA[]]></data_info></condition></link></input_control><input_control bindcontrolid="compUid_3" elementtype="8" name="combobox1" id="combobox1" multiple="0" onetimepopulated="1" inbinding="1" top="20" left="250" width="60" height="20"><link linktype="default" persistentuniqueid="compUid_1"><condition default="1" name="Default" whattodowithcontrol="0" valuescompareoperator="0" parameterscompareoperator="0" conditionmultiselectoperator="0"><data_info datatype="0" modifiedrequest="0" datasource="sqlout.mas" ibif_ex="sqlout" addalloption="0" sourcetype="typeMaster" cacheruntimedata="0" accept="0" operation="NONE"><static_values><static value="DISPERSION" display="Dispersion" selected="1" noinput="0"></static><static value="STANDARD" display="BoM Tree" selected="0" noinput="0"></static><static value="RAW" display="Raw Materials" selected="0" noinput="0"></static></static_values></data_info></condition></link></input_control></input_controls><requests nextrequestsid="2"><request requestid="0" sourcetype="typeFex" targettype="iframe" targetname="iframe1" ibif_ex="UNI00036R_dispersion.fex" activereport="0" reportcolumns="" reportrealcolumns="" ibiapp_app="unilab general masters_unilab masters_interspec ibiwork baseapp">
+			</request></requests><other_bound_objects></other_bound_objects></rootxmlnode></skript>
+</SCRIPT>
+</BODY></HTML>
