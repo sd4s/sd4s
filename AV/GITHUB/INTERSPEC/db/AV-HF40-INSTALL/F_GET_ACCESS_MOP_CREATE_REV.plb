@@ -1,0 +1,37 @@
+CREATE OR REPLACE FUNCTION F_Get_Access_Mop_Create_Rev wrapped 
+a000000
+b2
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+9f6 412
+bOroQoNnmKGBD0wBFIESyRLcXp4wg40rLiAFfHRVrZ3mnK8+aTbNrdmm6ei2smEaocCYQUZr
+pTicYRFtzbuuT+JdtHknylLgIiIJzxS36BeiXv9pC8tqCq/+/mrZbSkcT3RCHD+dy2DLqrHV
+Ri8rYHAmsoYRCAnh53kWr0qzdvuxynizHgq8trgpWE33uISNbZI+6F2NzD7r1chAPNmhOKiD
+ol3dE33MS2nouiBM4GujpKpg6m2B/30VQgxQ7ZHjgVUcXRjlPUcBOHn2idRF6k7BgeguU0Kb
+O78Js/rOMLutQqLuKbeU8XigAgMn0y2IofZ8f1s+/7HntuHykywZbb33gkfTAiVscJYn1gWn
+muZzHHwRM1gziDIM985iutPPp92GgkAjtcuVrXR/0NyevyfYOCYhy5gHHQH/hDWZooxxwlx9
+zOg6w85w3hS73KL+6AXvWmfe458xonkQBSWLGo0Esd93q1wqaHW5ygoMw/P/qyN9bDxoqiAU
+ud2KEoODC+o4adLzVFpblbp2kPYPdHAN8G9R1O/ljB/NwI2NgVSgtNuOYGswddDGNs09Fgx4
+snjc3V3u3g7Aw0mlVvGc4OKtfmDpPziTTVlsE8Cjr5h+LIBJfh4X84YnVUNtYduiuVVUkFH8
+7BNQn/aR71SkDZSan0nLZejgY7lySgGyyo3KQCEHeiDnJH/aw3NCMKRBD0FA+MXZEV8GL9C1
+HEDBxRSJq3zw/MS7AbTYjG+6+pIf+FVSRrvBZRqyHNlqSIMq/Gimd2cwsvZ3hi4EmqDEwKSu
+ZPz/3IU9WwTJf7F94Uxuj2jr1In7x0wYsuz0hhdXT6QTv9y5zRlwo+WKP/ps9YDPA/gusyyX
+gFgO+iExFq3hHwt+OIYaAlGMxMRLrJuar5CaAFDAs/vrJo0vnIJnvSTYJ/u3JpB5a/rGtFsB
+pBBeyhGUNDcXILP4J9oiT7XafJ9U3aKs0sUjUkSd5+eksLT8ry/ESfcnLTekxHMkW3spVVI4
+4zaxf5/vfp3kW8VE3xM=
+
+/
