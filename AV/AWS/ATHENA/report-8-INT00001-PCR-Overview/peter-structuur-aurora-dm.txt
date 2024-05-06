@@ -1,0 +1,24 @@
+AURORA-DB:	db_prd_ens_lims
+
+Schema				table					view			Function			opmerking
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+sc_interspec_ens		ITOIRAW												replication interspec-BLOB
+				<source-tables Interspec>
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+sc_unilab_ens			<source-tables Unilab>
+									<base-MV PCR-overview>
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+sc_lims_dal			<base-config-tables PCR-overview>								lokaal beheerd + inhoud
+												<functions PCR-overview>	lokaal beheerd
+									<base-MV PCR-overview>					lokaal beheerd
+									<top-MV PCR-overview>					lokaal beheerd
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+sc_unilab_ens_staging		UTBLOB												replication unilab-BLOB
+
+
+
