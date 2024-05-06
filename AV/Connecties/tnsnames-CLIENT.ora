@@ -1,0 +1,272 @@
+#################################################################
+#PRODUCTIE-OMGEVINGEN  UNILAB/INTERSPEC/REPM
+#################################################################
+#
+UNILAB_PRD=
+  (DESCRIPTION=
+    (ADDRESS=
+      (PROTOCOL=TCP)
+      (HOST=oracleprod.vredestein.com)
+      (PORT=1521)
+    )
+    (CONNECT_DATA=
+      (SID=U611)
+    )
+  )
+#
+INTERSPEC_PRD=
+  (DESCRIPTION=
+    (ADDRESS=
+      (PROTOCOL=TCP)
+      (HOST=oracleProd.vredestein.com)
+      (PORT=1521)
+    )
+    (CONNECT_DATA=
+      (SID=IS61)
+    )
+  )
+#
+REPM_PRD=
+  (DESCRIPTION=
+    (ADDRESS=
+      (PROTOCOL=TCP)
+      (HOST=oracleprod.vredestein.com)
+      (PORT=1521)
+    )
+    (CONNECT_DATA=
+      (SID=REPM)
+    )
+  )
+#
+RM_REPOSITORY=
+  (DESCRIPTION=
+    (ADDRESS=
+      (PROTOCOL=TCP)
+      (HOST=oracleProd)
+      (PORT=1521)
+    )
+    (CONNECT_DATA=
+      (SID=REPM)
+    )
+  )
+  
+#  nieuwe repository Business Objects XI (gebruiker RMUSER) vanaf de LIMSREPORT_64-server !!!
+RM_REPOSITORY_XI =
+  (DESCRIPTION =
+    (ADDRESS_LIST =
+      (ADDRESS = (PROTOCOL = TCP)(HOST = ORACLEPROD.vredestein.com)(PORT = 1521))
+    )
+    (CONNECT_DATA =
+      (SERVER = DEDICATED)
+      (SERVICE_NAME = REPM)
+    )
+  )
+  
+  
+#
+# WORDT DEZE GEBRUIKT VANUIT HYPERMESH??? 
+#
+HYPERION=
+  (DESCRIPTION=
+    (ADDRESS=
+      (PROTOCOL=TCP)
+      (HOST=172.19.2.84)
+      (PORT=1521)
+    )
+    (CONNECT_DATA=
+      (SID=orcl)
+    )
+  )
+
+#################################################################
+#TEST-OMGEVINGEN UNILAB/INTERSPEC/REPM
+#################################################################
+#
+UNILAB_TST=
+  (DESCRIPTION=
+    (ADDRESS=
+      (PROTOCOL=TCP)
+      (HOST=oracleprod_test.vredestein.com)
+      (PORT=1521)
+    )
+    (CONNECT_DATA=
+      (SID=U611)
+    )
+  )
+#
+INTERSPEC_TST=
+  (DESCRIPTION=
+    (ADDRESS=
+      (PROTOCOL=TCP)
+      (HOST=oracleprod_test.vredestein.com)
+      (PORT=1521)
+    )
+    (CONNECT_DATA=
+      (SID=IS61)
+    )
+  )
+#
+U611_TST=
+  (DESCRIPTION=
+    (ADDRESS=
+      (PROTOCOL=TCP)
+      (HOST=oracleprod_test.vredestein.com)
+      (PORT=1521)
+    )
+    (CONNECT_DATA=
+	   (SERVER=DECICATED)
+      (SID=U611)
+	  (SERVICE_NAME=U611)
+    )
+  )
+
+#
+#################################################################
+#OUDE VERSIE 6.4 LIMS-DATABASES
+#################################################################
+
+UNILAB_OLD=
+  (DESCRIPTION=
+    (ADDRESS=
+      (PROTOCOL=TCP)
+      (HOST=oracleprod-old)
+      (PORT=1521)
+    )
+    (CONNECT_DATA=
+      (SID=U611)
+    )
+  )
+
+INTERSPEC_OLD=
+  (DESCRIPTION=
+    (ADDRESS=
+      (PROTOCOL=TCP)
+      (HOST=oracleprod-old)
+      (PORT=1521)
+    )
+    (CONNECT_DATA=
+      (SID=IS61)
+    )
+  )
+
+
+#
+#################################################################
+#OVERIGE DATABASES
+#################################################################
+OSF=
+  (DESCRIPTION=
+    (ADDRESS=
+      (PROTOCOL=TCP)
+      (HOST=menger7)
+      (PORT=1521)
+    )
+    (CONNECT_DATA=
+      (SID=db733)
+    )
+  )
+#
+PMS=
+  (DESCRIPTION=
+    (ADDRESS=
+      (PROTOCOL=TCP)
+      (HOST=hungreps01.apollotyres.com)
+      (PORT=1521)
+    )
+    (CONNECT_DATA=
+      (SERVER=dedicated)
+      (SERVICE_NAME=XE)
+    )
+  )
+#
+PMS_MIXER =
+  (DESCRIPTION = 
+    (ADDRESS = (PROTOCOL = TCP)(HOST = 172.25.28.1)(PORT = 1521))
+    (CONNECT_DATA =
+      (SERVICE_NAME = pms014)
+    )
+  )
+
+
+#################################################################
+#TIJDELIJKE/ONTWIKKEL-DATABASES
+#################################################################
+XE=
+  (DESCRIPTION=
+    (ADDRESS=
+      (PROTOCOL=TCP)
+      (HOST=BROEK_01981.apollotyres.com)
+      (PORT=1521)
+    )
+    (CONNECT_DATA=
+      (SERVER=dedicated)
+      (SERVICE_NAME=XE)
+    )
+  )
+#
+PATRICK=
+  (DESCRIPTION=
+    (ADDRESS=
+      (PROTOCOL=TCP)
+      (HOST=goossens_03047.apollotyres.com)
+      (PORT=1521)
+    )
+    (CONNECT_DATA=
+      (SERVER=dedicated)
+      (SERVICE_NAME=XE)
+    )
+  )
+#
+XE_VIRTUAL=
+  (DESCRIPTION=
+    (ADDRESS=
+      (PROTOCOL=TCP)
+      (HOST=172.30.68.118)
+      (PORT=1521)
+    )
+    (CONNECT_DATA=
+      (SERVER=dedicated)
+      (SERVICE_NAME=XE)
+    )
+  )
+#
+EXTPROC_CONNECTION_DATA=
+  (DESCRIPTION=
+    (ADDRESS=
+      (PROTOCOL=IPC)
+      (KEY=EXTPROC1)
+    )
+    (CONNECT_DATA=
+      (PRESENTATION=RO)
+      (SID=PLSExtProc)
+    )
+  )
+#
+ORACLR_CONNECTION_DATA=
+  (DESCRIPTION=
+    (ADDRESS=
+      (PROTOCOL=IPC)
+      (KEY=EXTPROC1)
+    )
+    (CONNECT_DATA=
+      (PRESENTATION=RO)
+      (SID=CLRExtProc)
+    )
+  )
+#
+SIT_DEV=
+  (DESCRIPTION=
+    (ADDRESS=
+      (PROTOCOL=TCP)
+      (HOST=7.35.181.147)
+      (PORT=1521)
+    )
+    (CONNECT_DATA=
+      (SID=XE)
+    )
+  )
+
+#################################################################
+#EIND
+#################################################################
+

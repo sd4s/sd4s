@@ -1,0 +1,86 @@
+--
+www.zoom.com
+--
+Zoom ID: 91221162432
+
+
+
+
+--opstarten
+C:\WINDOWS\system32>net use h: /delete
+C:\WINDOWS\system32>net use o: /delete
+C:\WINDOWS\system32>net use i: /delete
+C:\WINDOWS\system32>net use n: /delete
+C:\WINDOWS\system32>net use k: /delete
+
+C:\WINDOWS\system32>net use h: /home
+C:\WINDOWS\system32>net use n: \\ensdnas01\apps
+C:\WINDOWS\system32>net use o: \\ensmmis.vredestein.com\netwerk
+C:\WINDOWS\system32>net use i: \\tce00.vredestein.com\data
+C:\WINDOWS\system32>rem net use x: \\172.19.0.55\PVRnD
+C:\WINDOWS\system32>net use g: \\lmdanass01\planttech
+C:\WINDOWS\system32>net use k: \\lmdanass01\limdaplant
+C:\WINDOWS\system32>rem net use m: \\lmdanass01\Peter.Schepens
+
+C:\WINDOWS\system32>if exist H:\logon.bat call h:\logon.bat
+C:\WINDOWS\system32>if not exist "C:\Program Files\Siemens\SIT\Unilab 6.4\Scmgt.exe" goto unilab_ok
+C:\WINDOWS\system32>if not exist "C:\Program Files (x86)\Siemens\SIT\Unilab 6.4\Scmgt.exe" goto unilab64_ok
+C:\WINDOWS\system32>\\ensdc00\netlogon\chkOracle.exe
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
