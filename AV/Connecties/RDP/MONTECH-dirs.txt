@@ -1,0 +1,22 @@
+--Directories on Montech-server as input for PIBS/AMES-interface
+
+--MONTECH output-folder = INPUT-folder PIBS/AMES-interface:
+\\Montech-01\MontechServer$\Output
+
+--MONTECH ready-folder = ARCHIVE-folder after processed the file to PIBS/AMES
+\\Montech-01\MontechServer$\Ready
+
+--MONTECH not-processed-folder = WHEN somethings go wrong during processing PIBS/AMES-file
+\\Montech-01\MontechServer$\NotProcessed
+
+
+--************************************************
+--RESULT-OUTPUT processing montech.xml
+\\LIMSCLIENT\C:\Log\Montech
+--************************************************
+
+--************************************************
+--RESULT-OUTPUT messages send to PIBS
+\\LIMSCLIENT\C:\PibsMessages
+--************************************************
+

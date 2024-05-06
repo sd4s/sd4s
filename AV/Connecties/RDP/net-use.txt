@@ -1,0 +1,8 @@
+
+1)maak peter.bat bestand aan
+
+set %Gebruiker=peter.schepens
+set %Wachtwoord=spat!al015
+net use m: \\oracleprod_test\E\DBA  /persistent:yes    /user:ad\%Gebruiker% %Wachtwoord%
+pause
+
