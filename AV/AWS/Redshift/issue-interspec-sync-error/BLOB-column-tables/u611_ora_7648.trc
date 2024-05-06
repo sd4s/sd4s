@@ -1,0 +1,323 @@
+Trace file C:\ORACLE\diag\rdbms\u611\u611\trace\u611_ora_7648.trc
+Oracle Database 11g Release 11.2.0.4.0 - 64bit Production
+Windows NT Version V6.2  
+CPU                 : 40 - type 8664, 20 Physical Cores
+Process Affinity    : 0x0x0000000000000000
+Memory (Avail/Total): Ph:35418M/65185M, Ph+PgF:44396M/74913M 
+Instance name: u611
+Redo thread mounted by this instance: 1
+Oracle process number: 76
+Windows thread id: 7648, image: ORACLE.EXE (SHAD)
+
+
+*** 2023-12-05 09:18:33.323
+*** SESSION ID:(254.3307) 2023-12-05 09:18:33.323
+*** CLIENT ID:() 2023-12-05 09:18:33.323
+*** SERVICE NAME:(U611) 2023-12-05 09:18:33.323
+*** MODULE NAME:(repctl@ip-172-23-2-67 (TNS V1-V3)) 2023-12-05 09:18:33.323
+*** ACTION NAME:() 2023-12-05 09:18:33.323
+ 
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:18:41.226
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:18:54.856
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:18:57.777
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:18:58.870
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:19:07.557
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:19:10.246
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:19:12.668
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:19:16.673
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:19:21.696
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:19:27.311
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:19:32.007
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:19:38.918
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:19:43.832
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:19:46.035
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:19:49.083
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:19:51.036
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:19:55.677
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:19:59.273
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:20:04.623
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:20:08.717
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:20:12.999
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:20:16.905
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:20:23.501
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:20:28.377
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:20:32.784
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:20:35.613
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:20:39.723
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:20:44.468
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:20:49.281
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:20:53.735
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:20:59.080
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:21:02.823
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:21:05.466
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:21:08.850
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:21:10.647
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:21:12.945
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:21:15.524
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:21:19.353
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:21:20.979
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:21:24.496
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:21:27.360
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:21:29.457
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:21:33.545
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:21:35.485
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:21:39.489
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:21:44.587
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:21:46.653
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:21:52.668
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:21:57.991
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:22:01.587
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:22:03.353
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:22:10.574
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:22:57.939
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:23:32.245
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:24:46.547
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:25:40.966
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:26:58.454
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:27:14.218
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:27:22.240
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:29:03.402
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:29:10.816
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:31:11.542
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:33:11.275
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:35:14.097
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:37:45.067
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:40:04.662
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:40:11.752
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:41:59.408
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:46:36.841
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:47:24.792
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:48:18.729
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:50:47.852
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:52:15.652
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:55:23.324
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:56:17.677
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:56:35.236
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 09:59:02.142
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 10:04:19.987
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 10:09:29.271
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 10:09:36.013
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 10:15:21.342
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 10:15:28.044
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 10:17:27.182
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 10:17:34.973
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 10:24:38.281
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 10:25:08.775
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 10:25:15.792
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 10:25:43.314
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 10:26:44.086
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 10:27:40.254
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 10:28:33.992
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 10:29:15.544
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 10:29:23.709
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 10:30:24.592
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 10:31:39.864
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 10:31:46.481
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 10:37:56.911
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 10:42:52.445
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
+
+*** 2023-12-05 10:47:53.921
+Initial buffer sizes: read 1024K, overflow 832K, change 805K
