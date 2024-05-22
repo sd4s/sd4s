@@ -1,0 +1,224 @@
+rem Request open port-numbers
+rem port-nr:  	139	SMB-original
+rem 		445	SMB-later versions
+rem            1521     Oracle-client
+rem            3389     Windows WBT-server used for remote-desktop
+rem            5985     Windows remote management via http
+rem           54688     
+rem           56924     
+rem           57235
+
+netstat -na
+
+Active Connections
+
+  Proto  Local Address          Foreign Address        State
+  TCP    0.0.0.0:21             0.0.0.0:0              LISTENING
+  TCP    0.0.0.0:80             0.0.0.0:0              LISTENING
+  TCP    0.0.0.0:135            0.0.0.0:0              LISTENING
+  TCP    0.0.0.0:445            0.0.0.0:0              LISTENING
+  TCP    0.0.0.0:1521           0.0.0.0:0              LISTENING
+  TCP    0.0.0.0:1556           0.0.0.0:0              LISTENING
+  TCP    0.0.0.0:3389           0.0.0.0:0              LISTENING
+  TCP    0.0.0.0:5985           0.0.0.0:0              LISTENING
+  TCP    0.0.0.0:8081           0.0.0.0:0              LISTENING
+  TCP    0.0.0.0:13724          0.0.0.0:0              LISTENING
+  TCP    0.0.0.0:13782          0.0.0.0:0              LISTENING
+  TCP    0.0.0.0:47001          0.0.0.0:0              LISTENING
+  TCP    0.0.0.0:49152          0.0.0.0:0              LISTENING
+  TCP    0.0.0.0:49153          0.0.0.0:0              LISTENING
+  TCP    0.0.0.0:49154          0.0.0.0:0              LISTENING
+  TCP    0.0.0.0:49155          0.0.0.0:0              LISTENING
+  TCP    0.0.0.0:49156          0.0.0.0:0              LISTENING
+  TCP    0.0.0.0:49173          0.0.0.0:0              LISTENING
+  TCP    0.0.0.0:49174          0.0.0.0:0              LISTENING
+  TCP    0.0.0.0:49175          0.0.0.0:0              LISTENING
+  TCP    0.0.0.0:49176          0.0.0.0:0              LISTENING
+  TCP    0.0.0.0:53322          0.0.0.0:0              LISTENING
+  TCP    0.0.0.0:54895          0.0.0.0:0              LISTENING
+  TCP    127.0.0.1:1521         127.0.0.1:56864        ESTABLISHED
+  TCP    127.0.0.1:1521         127.0.0.1:56958        ESTABLISHED
+  TCP    127.0.0.1:1521         127.0.0.1:57062        ESTABLISHED
+  TCP    127.0.0.1:1521         127.0.0.1:57172        ESTABLISHED
+  TCP    127.0.0.1:1521         127.0.0.1:57195        ESTABLISHED
+  TCP    127.0.0.1:1521         127.0.0.1:58127        ESTABLISHED
+  TCP    127.0.0.1:1521         127.0.0.1:58147        ESTABLISHED
+  TCP    127.0.0.1:1521         127.0.0.1:58264        ESTABLISHED
+  TCP    127.0.0.1:1521         127.0.0.1:58271        ESTABLISHED
+  TCP    127.0.0.1:1521         127.0.0.1:58302        ESTABLISHED
+  TCP    127.0.0.1:1521         127.0.0.1:58355        ESTABLISHED
+  TCP    127.0.0.1:1521         127.0.0.1:58356        ESTABLISHED
+  TCP    127.0.0.1:1521         127.0.0.1:58460        ESTABLISHED
+  TCP    127.0.0.1:1557         0.0.0.0:0              LISTENING
+  TCP    127.0.0.1:49158        0.0.0.0:0              LISTENING
+  TCP    127.0.0.1:49163        0.0.0.0:0              LISTENING
+  TCP    127.0.0.1:49163        127.0.0.1:49166        ESTABLISHED
+  TCP    127.0.0.1:49163        127.0.0.1:49170        ESTABLISHED
+  TCP    127.0.0.1:49166        127.0.0.1:49163        ESTABLISHED
+  TCP    127.0.0.1:49167        0.0.0.0:0              LISTENING
+  TCP    127.0.0.1:49170        127.0.0.1:49163        ESTABLISHED
+  TCP    127.0.0.1:56864        127.0.0.1:1521         ESTABLISHED
+  TCP    127.0.0.1:56958        127.0.0.1:1521         ESTABLISHED
+  TCP    127.0.0.1:57062        127.0.0.1:1521         ESTABLISHED
+  TCP    127.0.0.1:57172        127.0.0.1:1521         ESTABLISHED
+  TCP    127.0.0.1:57195        127.0.0.1:1521         ESTABLISHED
+  TCP    127.0.0.1:58127        127.0.0.1:1521         ESTABLISHED
+  TCP    127.0.0.1:58147        127.0.0.1:1521         ESTABLISHED
+  TCP    127.0.0.1:58264        127.0.0.1:1521         ESTABLISHED
+  TCP    127.0.0.1:58271        127.0.0.1:1521         ESTABLISHED
+  TCP    127.0.0.1:58302        127.0.0.1:1521         ESTABLISHED
+  TCP    127.0.0.1:58355        127.0.0.1:1521         ESTABLISHED
+  TCP    127.0.0.1:58356        127.0.0.1:1521         ESTABLISHED
+  TCP    127.0.0.1:58460        127.0.0.1:1521         ESTABLISHED
+  TCP    172.30.0.34:139        0.0.0.0:0              LISTENING
+  TCP    172.30.0.34:445        172.29.56.54:52235     ESTABLISHED
+  TCP    172.30.0.34:445        172.29.56.205:49746    ESTABLISHED
+  TCP    172.30.0.34:445        172.30.18.43:32834     ESTABLISHED
+  TCP    172.30.0.34:445        172.30.22.0:53042      ESTABLISHED
+  TCP    172.30.0.34:445        172.30.22.0:53044      ESTABLISHED
+  TCP    172.30.0.34:445        172.30.22.0:53045      ESTABLISHED
+  TCP    172.30.0.34:445        172.30.22.0:53046      ESTABLISHED
+  TCP    172.30.0.34:445        172.30.67.129:49580    ESTABLISHED
+  TCP    172.30.0.34:1521       172.16.65.45:59447     ESTABLISHED
+  TCP    172.30.0.34:1521       172.16.152.43:53889    ESTABLISHED
+  TCP    172.30.0.34:1521       172.16.152.70:51983    ESTABLISHED
+  TCP    172.30.0.34:1521       172.25.207.73:57493    ESTABLISHED
+  TCP    172.30.0.34:1521       172.25.207.92:56687    ESTABLISHED
+  TCP    172.30.0.34:1521       172.25.207.117:57106   ESTABLISHED
+  TCP    172.30.0.34:1521       172.25.207.219:51638   ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.20:64311     ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.20:64337     ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.21:55973     ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.23:49963     ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.23:51874     ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.27:51960     ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.27:52140     ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.31:52349     ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.54:59124     ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.54:62441     ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.54:62485     ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.59:55141     ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.65:56752     ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.76:62720     ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.79:51051     ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.79:51376     ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.79:55651     ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.80:55670     ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.96:51118     ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.118:50800    ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.118:50817    ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.125:58359    ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.133:49935    ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.141:53754    ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.153:53029    ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.159:63173    ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.175:49428    ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.175:49433    ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.175:49436    ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.188:51864    ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.225:57761    ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.234:56337    ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.234:56443    ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.234:56545    ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.234:57538    ESTABLISHED
+  TCP    172.30.0.34:1521       172.29.56.234:63334    ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.0.25:56238      ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.0.25:56519      ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.0.38:1064       ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.0.38:1070       ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.0.38:1166       ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.2.160:52426     ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.2.160:52461     ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.2.160:53401     ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.2.160:54438     ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.2.160:54540     ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.2.160:57032     ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.2.160:57892     ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.2.160:58159     ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.65.3:63010      ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.65.206:63311    ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.65.206:64177    ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.65.245:55507    ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.66.217:64649    ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.66.217:64766    ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.66.244:55284    ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.67.152:53874    ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.67.157:58131    ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.68.0:50784      ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.68.54:59779     ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.68.54:64210     ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.68.56:58959     ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.68.145:61786    ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.68.224:53956    ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.68.225:50683    ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.68.233:55546    ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.68.233:55785    ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.68.234:63882    ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.69.6:64716      ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.69.9:54915      ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.69.10:52417     ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.69.10:58516     ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.69.11:63211     ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.69.18:63093     ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.69.36:53393     ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.69.36:62941     ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.69.38:58548     ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.69.38:59575     ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.69.59:52445     ESTABLISHED
+  TCP    172.30.0.34:1521       172.30.69.69:53503     ESTABLISHED
+  TCP    172.30.0.34:3389       172.29.56.118:65446    ESTABLISHED
+  TCP    172.30.0.34:5985       172.30.67.129:52432    TIME_WAIT
+  TCP    172.30.0.34:5985       172.30.67.129:52433    TIME_WAIT
+  TCP    172.30.0.34:54688      35.164.235.110:443     CLOSE_WAIT
+  TCP    172.30.0.34:56924      172.30.2.4:445         ESTABLISHED
+  TCP    172.30.0.34:57235      172.16.128.1:55899     TIME_WAIT
+  TCP    [::]:21                [::]:0                 LISTENING
+  TCP    [::]:80                [::]:0                 LISTENING
+  TCP    [::]:135               [::]:0                 LISTENING
+  TCP    [::]:445               [::]:0                 LISTENING
+  TCP    [::]:1521              [::]:0                 LISTENING
+  TCP    [::]:1556              [::]:0                 LISTENING
+  TCP    [::]:3389              [::]:0                 LISTENING
+  TCP    [::]:5985              [::]:0                 LISTENING
+  TCP    [::]:8081              [::]:0                 LISTENING
+  TCP    [::]:47001             [::]:0                 LISTENING
+  TCP    [::]:49152             [::]:0                 LISTENING
+  TCP    [::]:49153             [::]:0                 LISTENING
+  TCP    [::]:49154             [::]:0                 LISTENING
+  TCP    [::]:49155             [::]:0                 LISTENING
+  TCP    [::]:49156             [::]:0                 LISTENING
+  TCP    [::]:49173             [::]:0                 LISTENING
+  TCP    [::]:49174             [::]:0                 LISTENING
+  TCP    [::]:49175             [::]:0                 LISTENING
+  TCP    [::]:49176             [::]:0                 LISTENING
+  TCP    [::]:53322             [::]:0                 LISTENING
+  TCP    [::]:54895             [::]:0                 LISTENING
+  TCP    [::1]:49157            [::]:0                 LISTENING
+  TCP    [::1]:49160            [::1]:49161            ESTABLISHED
+  TCP    [::1]:49161            [::1]:49160            ESTABLISHED
+  TCP    [fe80::d586:49f3:2a18:20f7%14]:1521  [fe80::d586:49f3:2a18:20f7%14]:49172  ESTABLISHED
+  TCP    [fe80::d586:49f3:2a18:20f7%14]:1521  [fe80::d586:49f3:2a18:20f7%14]:53289  ESTABLISHED
+  TCP    [fe80::d586:49f3:2a18:20f7%14]:1521  [fe80::d586:49f3:2a18:20f7%14]:54894  ESTABLISHED
+  TCP    [fe80::d586:49f3:2a18:20f7%14]:49158  [::]:0                 LISTENING
+  TCP    [fe80::d586:49f3:2a18:20f7%14]:49172  [fe80::d586:49f3:2a18:20f7%14]:1521  ESTABLISHED
+  TCP    [fe80::d586:49f3:2a18:20f7%14]:53289  [fe80::d586:49f3:2a18:20f7%14]:1521  ESTABLISHED
+  TCP    [fe80::d586:49f3:2a18:20f7%14]:54894  [fe80::d586:49f3:2a18:20f7%14]:1521  ESTABLISHED
+  UDP    0.0.0.0:123            *:*
+  UDP    0.0.0.0:500            *:*
+  UDP    0.0.0.0:3389           *:*
+  UDP    0.0.0.0:4500           *:*
+  UDP    0.0.0.0:5355           *:*
+  UDP    0.0.0.0:8082           *:*
+  UDP    127.0.0.1:58938        *:*
+  UDP    127.0.0.1:59381        *:*
+  UDP    127.0.0.1:59382        *:*
+  UDP    127.0.0.1:65303        *:*
+  UDP    172.30.0.34:137        *:*
+  UDP    172.30.0.34:138        *:*
+  UDP    [::]:123               *:*
+  UDP    [::]:500               *:*
+  UDP    [::]:3389              *:*
+  UDP    [::]:4500              *:*
+  UDP    [::]:5355              *:*
+  UDP    [::]:8082              *:*
+
