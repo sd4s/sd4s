@@ -1,0 +1,22 @@
+rem SCRIPT om HERSTART VAN UNILAB-JOBS ALS SERVICE TE SCHEDULEN.
+rem The .lnk file is a standard windows shortcut to a batch file.
+rem All this because:
+rem service does not know how to start in a folder,
+rem cmd.exe does not know how to start in a folder
+
+rem OPEN COMMAND-WINDOW:
+
+sc create Unilab-jobs DisplayName= "Unilab-jobs" binpath= "cmd.exe /C E:\DBA\dba\dba-restart-db-job-unilab.lnk" type= own start= auto
+pause
+
+rem Hierna bij deze nieuwe JOB nog wel het SERVICE STARTUP-TYPE als AUTOMATIC(DELAYED START) instellen via [services]
+rem en hem vervolgens via dependencies-TABBLAD te koppelen aan de bestaande SERVICE = OracleServiceU611
+rem
+
+rem VERWIJDER de WINDOWS-service weer:
+rem   sc delete Unilab-jobs
+rem   pause
+
+
+rem einde script.
+
