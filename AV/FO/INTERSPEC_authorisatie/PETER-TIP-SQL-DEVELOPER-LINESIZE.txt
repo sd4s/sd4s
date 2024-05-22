@@ -1,0 +1,13 @@
+Om ervoor te zorgen dat gehele output op 1 regel komt te staan, NEEM onderstaande regels op in je script:
+
+SET SERVEROUTPUT ON
+SET LINESIZE 32000
+
+EN zet buffer-size op UNLIMITED door als eerste regel in je BEGIN-section op te nemen:
+BEGIN
+  DMBS_OUTPUT.ENABLE(buffer_size=>NULL);
+etc
+
+END;
+/
+
