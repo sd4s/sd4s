@@ -1,0 +1,23 @@
+<soap:Envelope xmlns:xsl="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <UpdateOrCreateArticle xmlns="http://apollovredestein.com/interspec_sap">
+      <SequenceNr>243023</SequenceNr>
+      <Plant>5M01</Plant>
+      <Article>E1BH195520QPPX-G</Article>
+      <TemplateArticle>TEMPLATE_EG_PCR</TemplateArticle>
+      <Description>GREENTYRE QUATRAC PRO +  XL                  </Description>
+      <ArticleGroup>NY</ArticleGroup>
+      <UoM>EA</UoM>
+      <Carrier>PLR4</Carrier>
+      <PackageQuantity>16</PackageQuantity>
+      <UnitWeight>10.732</UnitWeight>
+      <ArticleType>G</ArticleType>
+      <InFinalProd>true</InFinalProd>
+      <MaxShelfLife>30</MaxShelfLife>
+      <MinAging>-1</MinAging>
+      <OldArticleCode>E1BH195520QPPX-G</OldArticleCode>
+      <SecondGradeArticle/>
+      <QR_Status>QR 4</QR_Status>
+    </UpdateOrCreateArticle>
+  </soap:Body>
+</soap:Envelope>

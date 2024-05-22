@@ -1,0 +1,24 @@
+Inloggen website:	www.gitlab.com
+gitlab-UN:		peterschepens
+PW:			Spat!alData4sGitLab001
+
+Hierna met GOOGLE-authenticat een 2FA-code opvragen en invullen !!!
+
+
+Inloggen vanuit GIT-BASH vanuit git:
+gitlab-UN:	peterschepens
+PW:		glpat-nK1HhwVsqh2z3eT12oFR		(=PERSONAL-access-token hiervoor aangemaakt vanuit gitlab-website)
+
+
+--voorbeeld: 
+
+Peter.Schepens@Schepens_01820 MINGW64 /c/GITHUB-WORK
+$ git clone https://gitlab.com/apollotyres/avbv/rad/lims/updweights.git
+Cloning into 'updweights'...
+remote: HTTP Basic: Access denied
+remote: You must use a personal access token with 'read_repository' or 'write_repository' scope for Git over HTTP.
+remote: You can generate one at https://gitlab.com/-/profile/personal_access_tokens
+fatal: Authentication failed for 'https://gitlab.com/apollotyres/avbv/rad/lims/updweights.git/'
+
+
+

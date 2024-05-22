@@ -1,0 +1,24 @@
+<soap:Envelope xmlns:xsl="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <UpdateOrCreateProcessingGroups xmlns="http://apollovredestein.com/interspec_sap">
+      <SequenceNr>243018</SequenceNr>
+      <Plant>5M01</Plant>
+      <Article>E1LV568</Article>
+      <TemplateArticle>TEMPLATE_ET</TemplateArticle>
+      <ProcessingGroups>
+        <ProcessingGroup>
+          <LineNr>10</LineNr>
+          <GroupName>QUADR</GroupName>
+          <ProdVersion>10</ProdVersion>
+          <WorkInstrRef>10</WorkInstrRef>
+          <BomVersion>1</BomVersion>
+          <ControlKey>ZP04</ControlKey>
+          <ProcessNorm>0</ProcessNorm>
+          <CarrierCode/>
+          <PackageQuantity/>
+          <Machine_Recipe_Code/>
+        </ProcessingGroup>
+      </ProcessingGroups>
+    </UpdateOrCreateProcessingGroups>
+  </soap:Body>
+</soap:Envelope>

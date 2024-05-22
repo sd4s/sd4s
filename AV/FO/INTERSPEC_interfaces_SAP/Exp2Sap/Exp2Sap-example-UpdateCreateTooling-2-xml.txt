@@ -1,0 +1,69 @@
+<soap:Envelope xmlns:xsl="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <UpdateOrCreateTooling xmlns="http://apollovredestein.com/interspec_sap">
+      <SequenceNr>243160</SequenceNr>
+      <Plant>5M01</Plant>
+      <Article>E1CY254518USAX-G</Article>
+      <ProcessingGroups>
+        <ProcessingGroup>
+          <GroupName>APBMI</GroupName>
+          <Tooling>
+            <Tool>
+              <ToolNumber>10</ToolNumber>
+              <ToolType>BTS18 MECH.</ToolType>
+              <ToolCount>1</ToolCount>
+              <ToolTypeType/>
+            </Tool>
+            <Tool>
+              <ToolNumber>20</ToolNumber>
+              <ToolType>LR18-45</ToolType>
+              <ToolCount>1</ToolCount>
+              <ToolTypeType/>
+            </Tool>
+            <Tool>
+              <ToolNumber>30</ToolNumber>
+              <ToolType>MS18-110</ToolType>
+              <ToolCount>1</ToolCount>
+              <ToolTypeType/>
+            </Tool>
+            <Tool>
+              <ToolNumber>40</ToolNumber>
+              <ToolType>HAR18  TYPE3</ToolType>
+              <ToolCount>1</ToolCount>
+              <ToolTypeType/>
+            </Tool>
+          </Tooling>
+        </ProcessingGroup>
+        <ProcessingGroup>
+          <GroupName>APBMJ</GroupName>
+          <Tooling>
+            <Tool>
+              <ToolNumber>10</ToolNumber>
+              <ToolType>BTS18 MECH.</ToolType>
+              <ToolCount>1</ToolCount>
+              <ToolTypeType/>
+            </Tool>
+            <Tool>
+              <ToolNumber>20</ToolNumber>
+              <ToolType>LR18-45</ToolType>
+              <ToolCount>1</ToolCount>
+              <ToolTypeType/>
+            </Tool>
+            <Tool>
+              <ToolNumber>30</ToolNumber>
+              <ToolType>MS18-110</ToolType>
+              <ToolCount>1</ToolCount>
+              <ToolTypeType/>
+            </Tool>
+            <Tool>
+              <ToolNumber>40</ToolNumber>
+              <ToolType>HAR18  TYPE3</ToolType>
+              <ToolCount>1</ToolCount>
+              <ToolTypeType/>
+            </Tool>
+          </Tooling>
+        </ProcessingGroup>
+      </ProcessingGroups>
+    </UpdateOrCreateTooling>
+  </soap:Body>
+</soap:Envelope>

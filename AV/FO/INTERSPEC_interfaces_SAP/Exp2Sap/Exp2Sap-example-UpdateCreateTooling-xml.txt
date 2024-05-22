@@ -1,0 +1,28 @@
+<soap:Envelope xmlns:xsl="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <UpdateOrCreateTooling xmlns="http://apollovredestein.com/interspec_sap">
+      <SequenceNr>243021</SequenceNr>
+      <Plant>5M01</Plant>
+      <Article>E1LV568</Article>
+      <ProcessingGroups>
+        <ProcessingGroup>
+          <GroupName>QUADR</GroupName>
+          <Tooling>
+            <Tool>
+              <ToolNumber>10</ToolNumber>
+              <ToolType>DQ267</ToolType>
+              <ToolCount>1</ToolCount>
+              <ToolTypeType/>
+            </Tool>
+            <Tool>
+              <ToolNumber>20</ToolNumber>
+              <ToolType>PQ133</ToolType>
+              <ToolCount>1</ToolCount>
+              <ToolTypeType/>
+            </Tool>
+          </Tooling>
+        </ProcessingGroup>
+      </ProcessingGroups>
+    </UpdateOrCreateTooling>
+  </soap:Body>
+</soap:Envelope>

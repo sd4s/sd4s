@@ -1,0 +1,45 @@
+<soap:Envelope xmlns:xsl="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <UpdateOrCreateArticle xmlns="http://apollovredestein.com/interspec_sap">
+      <SequenceNr>243108</SequenceNr>
+      <Plant>5M01</Plant>
+      <Article>AP19555020HQPPA02</Article>
+      <TemplateArticle>TEMPLATE_EF_PCR</TemplateArticle>
+      <Description>195/55 R 20 95H XL Quatrac Pro+</Description>
+      <ArticleGroup>V5</ArticleGroup>
+      <UoM>EA</UoM>
+      <Carrier>EMPBD</Carrier>
+      <PackageQuantity>15</PackageQuantity>
+      <UnitWeight>10.742</UnitWeight>
+      <ArticleType>E</ArticleType>
+      <InFinalProd>true</InFinalProd>
+      <MaxShelfLife>-1</MaxShelfLife>
+      <MinAging>-1</MinAging>
+      <OldArticleCode>E1H195/55R20QPPX</OldArticleCode>
+      <SecondGradeArticle/>
+      <MouldCode>4527</MouldCode>
+      <ProfileName>Quatrac Pro+</ProfileName>
+      <LoadRange>XL</LoadRange>
+      <RunFlatInd>false</RunFlatInd>
+      <TyreTypePCT_ACT>Tubeless</TyreTypePCT_ACT>
+      <MaxSpeed>0</MaxSpeed>
+      <RadialConstruction>true</RadialConstruction>
+      <DotInd>true</DotInd>
+      <E-ApprovalCodeSound> 028634 S2WR2</E-ApprovalCodeSound>
+      <E-approvalCode>E4 02126540</E-approvalCode>
+      <PliesSidewall>1 POLYESTER</PliesSidewall>
+      <PliesTread>1 POLYESTER + 2 STEEL + 2 POLY</PliesTread>
+      <TyrePress>290</TyrePress>
+      <MaxPressure>340</MaxPressure>
+      <MaxLoadKg>690</MaxLoadKg>
+      <MaxLoadLbs>1521</MaxLoadLbs>
+      <EtrtoTargetRimWidth>6</EtrtoTargetRimWidth>
+      <EtrtoLslRimWidth>5.5</EtrtoLslRimWidth>
+      <EtrtoUslRimWidth>7</EtrtoUslRimWidth>
+      <ApprRimWidthPlus>false</ApprRimWidthPlus>
+      <ApprRimWidthMinus>false</ApprRimWidthMinus>
+      <EC_VehicleClass>C1</EC_VehicleClass>
+      <QR_Status>QR 4</QR_Status>
+    </UpdateOrCreateArticle>
+  </soap:Body>
+</soap:Envelope>
