@@ -1,0 +1,50 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+METHOD:PUBLISH
+PRODID:-//LogMeIn//GoToWebinar//EN
+X-MS-OLK-FORCEINSPECTOROPEN:TRUE
+BEGIN:VTIMEZONE
+TZID:Asia/Kolkata
+LAST-MODIFIED:20201011T015911Z
+TZURL:http://tzurl.org/zoneinfo-outlook/Asia/Kolkata
+X-LIC-LOCATION:Asia/Kolkata
+BEGIN:STANDARD
+TZNAME:IST
+TZOFFSETFROM:+0530
+TZOFFSETTO:+0530
+DTSTART:19700101T000000
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+DTSTAMP:20210930T133322Z
+DTSTART;TZID=Asia/Kolkata:20211011T100000
+DTEND;TZID=Asia/Kolkata:20211011T113000
+SUMMARY:GoToWebinar - Machine Learning Basics - 11 October
+LOCATION:GoToWebinar - See conference call information below
+UID:-1368557083@logmein.com
+ORGANIZER:daisylv@amazon.com
+DESCRIPTION:1. Click and join at the specified time and date:\nhttps://gl
+ obal.gotowebinar.com/join/8376381262245324299/752919925\nNote: This link
+  should not be shared with others\; it is unique to you.\n\nWhat is mach
+ ine learning? How can machine learning solve business problems? When is 
+ it appropriate to use a machine learning model? What are the phases of a
+  machine learning pipeline? In this course\, you get an overview of the 
+ concepts\, terminology\, and processes of the exciting field of machine 
+ learning! \n\n\n
+X-ALT-DESC;FMTTYPE=text/html:<HTML><HEAD><TITLE></TITLE><BODY><FONT SIZE=
+ 2><b>1. Click and join at the specified time and date:</b></FONT><BR><FO
+ NT SIZE=2>https://global.gotowebinar.com/join/8376381262245324299/752919
+ 925</FONT><BR><FONT SIZE=2>Note: This link should not be shared with oth
+ ers\; it is unique to you.</FONT><BR><BR><FONT SIZE=2>What is machine le
+ arning? How can machine learning solve business problems? When is it app
+ ropriate to use a machine learning model? What are the phases of a machi
+ ne learning pipeline? In this course\, you get an overview of the concep
+ ts\, terminology\, and processes of the exciting field of machine learni
+ ng! \n\n</FONT><BR></BODY></HTML>
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+END:VCALENDAR
