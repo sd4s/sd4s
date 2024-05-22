@@ -1,0 +1,68 @@
+###########################################################################
+# 
+# SIMATIC IT Unilab database : initialisation file for oracle
+# 
+# initU611.ora
+# 
+# Created on 02-13-2019 14:07:19 by the installation script
+# 
+############################################################################
+
+# --------------------------------------------------------
+# General db settings
+# --------------------------------------------------------
+db_name = 'U611'
+# Unilab was optimized for RULE-based optimizer
+# but starting from Oracle 11 we are forced to use the cost-based optimizer
+optimizer_mode = 'FIRST_ROWS'
+optimizer_index_cost_adj = 20
+compatible='11.2.0'
+
+# Control files and dump destinations
+control_files = ('D:\database\U611\ctl1\ctrlU611.dbf','D:\database\U611\ctl2\ctrlU611.dbf')
+diagnostic_dest='D:\database\U611'
+
+# Archive redo-log entries
+# Don't forget to switch logmode in database too
+# Archive log must be enabled manually after database creation
+#log_archive_dest = 'E:\FlashRecovery\U611\archive'
+#log_archive_format = 'log_%S.arc'
+
+# Unilab archiving
+open_cursors = 500
+
+# --------------------------------------------------------
+# Customisable parameters
+# --------------------------------------------------------
+# remote_login_passwordfile = 'none' | 'shared'| 'exclusive'
+remote_login_passwordfile = 'EXCLUSIVE'
+memory_target = 12070M
+log_checkpoint_interval = 10000
+processes = 1500
+# db_block_size can't be changed after db creation ! must be at least 8192 for Enterprise manger repository
+db_block_size = 8192
+# db_file_multiblock_read_count = 16
+dml_locks = 200
+# job queues used for event mgr, unilink, etc... - minimum 4
+job_queue_processes = 5
+#timed_statistics = 'TRUE'
+undo_management = 'AUTO'
+undo_retention = 60
+undo_tablespace = 'UNI_UNDO'
+# o7_dictionary_accessibility: nomore necessary to set to FALSE since Unilab 6.1
+o7_dictionary_accessibility = 'FALSE'
+# audit_trail necessary for session auditing
+audit_trail = 'NONE'
+# unicode support (must be char in all cases)
+nls_length_semantics = 'CHAR'
+nls_nchar_conv_excp = 'TRUE'
+shared_servers=0
+CLUSTER_DATABASE='FALSE'
+INSTANCE_TYPE='RDBMS'
+#set the following setting to FALSE if you encounter problems with case sensitive passwords
+SEC_CASE_SENSITIVE_LOGON='TRUE'
+DEFERRED_SEGMENT_CREATION='FALSE'
+# --------------------------------------------------------
+# add own initialisation parameters here
+# --------------------------------------------------------
+

@@ -1,0 +1,71 @@
+##############################################################################
+# Copyright (c) 1991, 2001, 2002 by Oracle Corporation
+##############################################################################
+ 
+###########################################
+# Archive
+###########################################
+log_archive_format=ARC%S_%R.%T
+ 
+###########################################
+# Cache and I/O
+###########################################
+db_block_size=8192
+ 
+###########################################
+# Cursors and Library Cache
+###########################################
+open_cursors=300
+ 
+###########################################
+# Database Identification
+###########################################
+db_domain=""
+db_name="IS61"
+ 
+###########################################
+# File Configuration
+###########################################
+db_create_file_dest="D:\database\IS61\data"
+db_create_online_log_dest_1=D:\database\IS61\ctl1
+db_create_online_log_dest_2=D:\database\IS61\ctl2
+db_recovery_file_dest="E:\FlashRecovery\IS61\IS61\ARCHIVELOG"
+db_recovery_file_dest_size=31457280000
+ 
+###########################################
+# Miscellaneous
+###########################################
+compatible=11.2.0.0.0
+diagnostic_dest=C:\Oracle
+memory_target=12582912000
+ 
+###########################################
+# NLS
+###########################################
+nls_length_semantics=CHAR
+ 
+###########################################
+# Processes and Sessions
+###########################################
+processes=150
+sessions=170
+ 
+###########################################
+# Security and Auditing
+###########################################
+audit_file_dest="C:\Oracle\admin\IS61\adump"
+audit_trail=db
+remote_login_passwordfile=EXCLUSIVE
+ 
+###########################################
+# Shared Server
+###########################################
+dispatchers="(PROTOCOL=TCP) (SERVICE=IS61XDB)"
+ 
+###########################################
+# System Managed Undo and Rollback Segments
+###########################################
+undo_tablespace=UNDOTBS1
+ 
+control_files=("D:\DATABASE\IS61\CTL1\IS61\CONTROLFILE\O1_MF_9JG8DOTW_.CTL", "D:\DATABASE\IS61\CTL2\IS61\CONTROLFILE\O1_MF_9JG8DOVD_.CTL")
+ 
