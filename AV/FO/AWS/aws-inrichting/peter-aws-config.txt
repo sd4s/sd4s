@@ -1,0 +1,23 @@
+Private subnet						subnet-00452649517141c37	Available	vpc-0bf0bf5ad27c31e5c | otm							10.0.1.0/24
+Apollo-ANALYTICS-Subnet1-Private	subnet-0403b30f82ae8e18d	Available	vpc-0b85f846948cbf569 | Apollo-ANALYTICS-VPC-Mumbai	10.102.0.0/24
+Public subnet						subnet-05b99806309b56a9b 	Available	vpc-0bf0bf5ad27c31e5c | otm							10.0.0.0/24
+Apollo-ANALYTICS-Subnet2-Public		subnet-0871884b4487d5971	Available	vpc-0b85f846948cbf569 | Apollo-ANALYTICS-VPC-Mumbai	10.102.1.0/24
+
+
+Apollo-ANALYTICS-Default-RT
+rtb-098276a2fae67f9b0
+
+
+tgw-0309b459256261ebb
+vpce-0742c340f1a592e2a
+
+com.amazonaws.ap-south-1.s3
+pl-78a54011
+
+Node role	Public IP address	Private IP address
+Compute-0	 3.109.147.236		10.102.0.142
+Compute-1	65.2.87.70			10.102.0.113
+Leader	  	13.233.41.108		10.102.0.176
+
+nat-04f47d43b4f295b7d
+35.154.38.148
