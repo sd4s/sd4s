@@ -1,0 +1,42 @@
+--STARTUP
+-- Define service and instance startup options	-STARTUP -SID sid | -ASMSID sid | -MGMTDBSID sid | -IOSSID sid |-APXSID sid [-SYSPWD pass] [-STARTTYPE srvc|inst|srvc,inst] [-PFILE filename | -SPFILE]
+For this command, note the following:
+-STARTUP 	indicates that you are starting an instance that already exists. This is a mandatory parameter.
+-SID SID 	is the name of the instance to start.
+-ASMSID SID 	is the name of the Oracle Automatic Storage Management instance to start.
+-STARTTYPE 	srvc, inst indicates whether to start the service or the instance. One or both values can be specified. If it is not specified, then the registry is checked for the current setting.
+		-STARTTYPE srvc is the equivalent of running net start oracleservicesid from the command line.
+		-STARTTYPE inst is the equivalent of running startup within SQL*Plus.
+-PFILE 		filename is the initialization parameter file to be used with this instance. Ensure that you specify the complete path name of this file, including drive letter.
+-SPFILE 	indicates that a server parameter file (SPFILE) be used during startup instead of a PFILE.
+
+
+$ORACLE_HOME/bin/oradim -STARTUP -SID IS61 -STARTTYPE tstc -SPFILE
+$ORACLE_HOME/bin/oradim -STARTUP -SID REPM -STARTTYPE tstc -SPFILE
+$ORACLE_HOME/bin/oradim -STARTUP -SID U611 -STARTTYPE tstc -SPFILE
+
+
+--SHUTDOWN
+--Define service and instance shutdown options	-SHUTDOWN -SID sid | -ASMSID sid | -MGMTDBSID sid | -IOSSID sid | -APXSID sid [-SYSPWD pass] [-SHUTTYPE srvc|inst|srvc,inst] [-SHUTMODE normal|immediate|abort]
+For this command, note the following:
+-SHUTDOWN 	indicates that you are stopping an instance. This is a mandatory parameter.
+-SID SID 	specifies the name of the instance to stop.
+-ASMSID SID 	is the name of the Oracle Automatic Storage Management instance to stop.
+-SHUTTYPE 	srvc, inst indicates whether to stop the service or the instance. One or both values can be specified. If it is not specified, then the registry is checked for the current setting.
+		-SHUTMODE specifies how to stop an instance. This is an optional parameter. If you do not specify how to stop an instance, then immediate is the default mode.
+
+$ORACLE_HOME\bin\oradim -SHUTDOWN -SID REPM -SHUTMODE abort
+$ORACLE_HOME\bin\oradim -SHUTDOWN -SID U611 -SHUTMODE abort
+$ORACLE_HOME\bin\oradim -SHUTDOWN -SID IS61 -SHUTMODE abort
+
+
+--Demo Start Oracle services on startup using the SPFILE:
+
+ORADIM -EDIT -SID U611 -STARTMODE auto -SRVCSTART SYSTEM -SPFILE 
+ORADIM -EDIT -SID IS61 -STARTMODE auto -SRVCSTART SYSTEM -SPFILE 
+ORADIM -EDIT -SID REPM -STARTMODE auto -SRVCSTART SYSTEM -SPFILE 
+
+
+--
+--EINDE
+--

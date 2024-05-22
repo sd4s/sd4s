@@ -1,0 +1,107 @@
+--Creating an Instance Using ORADIM
+--Learn how to create an Oracle Database instance using ORADIM.
+--To use ORADIM to create an instance, enter:
+--oradim [-NEW -SID SID] | -SRVC service_name | -ASMSID SID | -ASMSRVC service_name [-SYSPWD password][-MAXUSERS number][-STARTMODE auto | manual] [-SRVCSTART system | demand] [-PFILE filename | -SPFILE] [-SHUTMODE normal | immediate | abort] [-TIMEOUT secs] [-RUNAS osusr[/ospass]]
+--
+For this command, note the following:
+-NEW 		indicates that you are creating a new instance. This is a mandatory parameter.
+-SID 		SID is the name of the instance to create.
+-SRVC 		service_name is the name of the service to create (OracleServiceSID).
+-ASMSID 	SID is the name of the Oracle Automatic Storage Management instance to create.
+-ASMSRVC 	service_name is the name of the Oracle Automatic Storage Management service to create.
+-SYSPWD 	password is the system password.
+-MAXUSERS 	number is the number of users defined in the password file. The default is 5.
+-STARTMODE 	auto | manual indicates whether to start the instance when the Oracle Database service is started. The default is manual.
+-SRVCSTART 	system | demand indicates whether to start the Oracle Database service upon computer restart. Default is demand. Here, system specifies that the service be configured to automatically start when the system boots or reboots. Demand specifies that the user has to explicitly start the service.
+-PFILE 		filename is the initialization parameter file to be used with this instance. Ensure that you specify the complete path name of this file, including the drive letter.
+-SPFILE 	indicates that a server parameter file (SPFILE) be used during startup instead of a PFILE.
+-SHUTMODE 	specifies how to stop an instance. It requires an argument and the default is immediate. If SHUTMODE is omitted, then there is no attempt made to shutdown the instance when the service is shut down.
+-TIMEOUT 	secs sets the maximum time to wait (in seconds) before the service for a particular SID stops. The default is 90 seconds. It cannot be used without the SHUTDOWN argument.
+-RUNAS 		osusr[/ospass] ("run as") makes it possible to specify both the Oracle Home User and its password. If the given osusr is different from the Oracle Home User, then the Oracle Home User is used instead of the osusr along with the given ospass.
+Though the ospass can be specified on the command line, Oracle recommends accepting ospass through stdin.
+ORADIM creates Oracle Database service, Oracle VSS Writer service, and Oracle Scheduler service to run under the Oracle Home User account. If this account is a Windows Local User Account or Windows Domain User Account, then ORADIM prompts for the password for that account and accepts the same through stdin.
+
+set ORACLE_SID=IS61
+C:\oracle\product\11.2.0\dbhome_1\BIN\oradim -NEW -SID IS61 -STARTMODE auto -SPFILE 
+
+
+
+--STOP de ORACLE-SERVICES
+NET STOP OracleServiceIS61
+NET STOP OracleServiceu611
+NET STOP OracleServiceREPM
+
+
+--Demo wijzig een bestaande SERVICE om de Oracle services te starten na REBOOT on startup using the SPFILE ipv initieel aangemaakt PFILE !!!
+--start cmd.exe ALS ADMINISTRATOR !!!!
+set ORACLE_SID=IS61
+C:\oracle\product\11.2.0\dbhome_1\BIN\ORADIM -EDIT -SID IS61 -STARTMODE auto -SRVCSTART SYSTEM -SPFILE 
+set ORACLE_SID=U611
+C:\oracle\product\11.2.0\dbhome_1\BIN\ORADIM -EDIT -SID U611 -STARTMODE auto -SRVCSTART SYSTEM -SPFILE 
+set ORACLE_SID=REPM
+C:\oracle\product\11.2.0\dbhome_1\BIN\ORADIM -EDIT -SID REPM -STARTMODE auto -SRVCSTART SYSTEM -SPFILE 
+
+
+
+--Verwijder ORACLE-SERVICE
+ORADIM -DELETE -SID IS61
+ORADIM -DELETE -SID U611
+ORADIM -DELETE -SID REPM
+
+
+
+
+--STARTUP DATABASE 
+-- Define service and instance startup options	-STARTUP -SID sid | -ASMSID sid | -MGMTDBSID sid | -IOSSID sid |-APXSID sid [-SYSPWD pass] [-STARTTYPE srvc|inst|srvc,inst] [-PFILE filename | -SPFILE]
+For this command, note the following:
+-STARTUP 	indicates that you are starting an instance that already exists. This is a mandatory parameter.
+-SID SID 	is the name of the instance to start.
+-ASMSID SID 	is the name of the Oracle Automatic Storage Management instance to start.
+-STARTTYPE 	srvc, inst indicates whether to start the service or the instance. One or both values can be specified. If it is not specified, then the registry is checked for the current setting.
+		-STARTTYPE srvc is the equivalent of running net start oracleservicesid from the command line.
+		-STARTTYPE inst is the equivalent of running startup within SQL*Plus.
+-PFILE 		filename is the initialization parameter file to be used with this instance. Ensure that you specify the complete path name of this file, including drive letter.
+-SPFILE 	indicates that a server parameter file (SPFILE) be used during startup instead of a PFILE.
+
+
+$ORACLE_HOME/bin/oradim -STARTUP -SID IS61 -STARTTYPE srvc,inst -SPFILE
+$ORACLE_HOME/bin/oradim -STARTUP -SID REPM -STARTTYPE srvc,inst -SPFILE
+$ORACLE_HOME/bin/oradim -STARTUP -SID U611 -STARTTYPE srvc,inst -SPFILE
+
+
+--SHUTDOWN
+--Define service and instance shutdown options	-SHUTDOWN -SID sid | -ASMSID sid | -MGMTDBSID sid | -IOSSID sid | -APXSID sid [-SYSPWD pass] [-SHUTTYPE srvc|inst|srvc,inst] [-SHUTMODE normal|immediate|abort]
+For this command, note the following:
+-SHUTDOWN 	indicates that you are stopping an instance. This is a mandatory parameter.
+-SID SID 	specifies the name of the instance to stop.
+-ASMSID SID 	is the name of the Oracle Automatic Storage Management instance to stop.
+-SHUTTYPE 	srvc, inst indicates whether to stop the service or the instance. One or both values can be specified. If it is not specified, then the registry is checked for the current setting.
+		-SHUTMODE specifies how to stop an instance. This is an optional parameter. If you do not specify how to stop an instance, then immediate is the default mode.
+
+$ORACLE_HOME\bin\oradim -SHUTDOWN -SID REPM -SHUTMODE immediate
+$ORACLE_HOME\bin\oradim -SHUTDOWN -SID U611 -SHUTMODE immediate
+$ORACLE_HOME\bin\oradim -SHUTDOWN -SID IS61 -SHUTMODE immediate
+
+
+
+/*
+ORACLEPROD-TEST: ORADIM.LOG
+Thu Sep 03 13:19:32 2020	C:\oracle\product\11.2.0\dbhome_1\bin\oradim.exe -shutdown -sid u611 -usrpwd * -shutmode immediate -log oradim.log 
+Thu Sep 03 13:20:01 2020	C:\oracle\product\11.2.0\dbhome_1\bin\oradim.exe -startup -sid u611 -usrpwd * -pfile C:\oracle\product\11.2.0\dbhome_1\database\initU611.ora -log oradim.log -nocheck 0 
+
+ORACLEPROD: ORADIM.LOG
+Thu Nov 19 12:22:26 2020	c:\oracle\product\11.2.0\dbhome_1\bin\oradim.exe -shutdown -sid repm -usrpwd * -shutmode immediate -log oradim.log 
+Thu Nov 19 12:45:29 2020	c:\oracle\product\11.2.0\dbhome_1\bin\oradim.exe -startup -sid is61 -usrpwd * -pfile C:\Oracle\product\11.2.0\dbhome_1\database\initIS61.ora -log oradim.log -nocheck 0 
+Thu Nov 19 12:45:51 2020	c:\oracle\product\11.2.0\dbhome_1\bin\oradim.exe -startup -sid u611 -usrpwd * -pfile C:\Oracle\product\11.2.0\dbhome_1\database\initU611.ora -log oradim.log -nocheck 0 
+Thu Nov 19 12:45:55 2020	ORA-00205: error in identifying control file, check alert log for more info
+Thu Nov 19 12:46:01 2020	c:\oracle\product\11.2.0\dbhome_1\bin\oradim.exe -startup -sid repm -usrpwd * -pfile C:\Oracle\product\11.2.0\dbhome_1\database\initREPM.ora -log oradim.log -nocheck 0 
+
+
+--CONCLUSIE: PFILE VAN UNILAB is niet GOED !!. De controle-files waarnaar verwezen wordt in de PFILE bestaan (GELUKKIG) niet.
+--OPLOSSING: Create pfile from spfile !!!
+
+*/
+
+--
+--EINDE
+--
