@@ -1,0 +1,8 @@
+rem create windows service via cli:
+
+sc create minecraft-server DisplayName= "minecraft-server" binpath= "cmd.exe /C C:\Users\Administrator\Desktop\rungui1151.lnk" type= own start= auto
+
+rem The .lnk file is a standard windows shortcut to a batch file.
+rem All this because:
+rem service does not know how to start in a folder,
+rem cmd.exe does not know how to start in a folder
