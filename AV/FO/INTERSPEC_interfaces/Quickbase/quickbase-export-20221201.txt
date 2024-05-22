@@ -1,0 +1,754 @@
+PART-PROPERTIES
+
+'PA.PART_NO'||';'||'PA.DESCRIPTION'||';'||'PP.PLANT'||';'||'H.REVISION'||';'||'H.STATUS'||';'||'H.FRAME_ID'||';'||'H.CLASS3_ID'||';'||'PRODUCTCAT_DESC'||';'||'ST.SORT_DESC'||';'||'SP.SECTION_ID'||';'||'SECTION_DESC'||';'||'SP.SUB_SECTION_ID'||';'||'SU                                                                                                      
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+pa.part_no;pa.description;pp.plant;h.revision;h.status;h.frame_id;h.class3_id;productcat_desc;st.sort_desc;sp.section_id;section_desc;sp.sub_section_id;subsection_desc;sp.property_group;prop_group_desc;sp.property;property_desc;sp.attribute;sp.uom_id;uom_desc;sp.test_method;test_desc;sp.num_1;sp.num_2;sp.char_1;sp.char_2;ch.characteristic_id;char_desc
+
+
+PA.PART_NO||';'||PA.DESCRIPTION||';'||PP.PLANT||';'||H.REVISION||';'||H.STATUS||';'||H.FRAME_ID||';'||H.CLASS3_ID||';'||C3.DESCRIPTION||';'||ST.SORT_DESC||';'||SP.SECTION_ID||';'||S.DESCRIPTION||';'||SP.SUB_SECTION_ID||';'||SS.DESCRIPTION||';'||SP.PRO                                                                                                                                                                                                                                                                                                                                                             
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703455;Brand;0;;;;;;;;;900486;Vredestein
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703418;Category;0;;;;;;;;;900530;All Season
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703544;Load index class;0;;;;;;;;;900611;XL
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703422;Productline;0;;;;;;;;;647;Quatrac
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714215;Structure;0;;;;;;;;;903544;Radial
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714201;Traction marking;0;;;;;;;;;900485;No
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711128;Tubetype/tubeless;0;;;;;;;;;901099;Tubeless
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711748;Tyre class;0;;;;;;;;;901322;C1
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;705088;Winter indication;0;;;;;;;;;903196;M&S+Alpine
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;712289;DOT Manufacturers Code;0;;;;;;;19B726;;;
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705629;DOT Plant Code;0;;;;;;;023;;;
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;713757;Made in ;0;;;;;;;HUNGARY;;;
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705210;Max. load;0;;;;;;;615 kg (1356 lbs);;;
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705669;Max. pressure;0;700591;kPa;;;;;350 kPa (51 psi);;;
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705229;Plies sidewall;0;;;;;;;1 POLYESTER;;;
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705230;Plies tread;0;;;;;;;1 POLYESTER + 2 STEEL + 1 POLYAMIDE;;;
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705233;Quality grading;0;;;;;;;400 A A;;;
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705634;Size designation;0;;;;;;;195/55 R 16 91V;;;
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703417;Aspect ratio;0;;;;;;;55;;;
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703421;Load index;0;;;;;;;91;;;
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703420;Load index (dual);0;;;;;;;;;;
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703423;Rimcode;0;;;;;;;16;;;
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703424;Section width;0;;;;;;;195;;;
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703425;Speed index;0;;;;;;;V;;;
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704176;Labels Noise;714102;Europe;0;;;;;2;70;;;;
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704177;Labels Rolling resistance;714102;Europe;0;;;;;;;;;900612;C
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704178;Labels Wet grip;714102;Europe;0;;;;;;;;;903480;B
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;713132;Temperature;0;;;;;;;;;903479;A
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714127;Traction;0;;;;;;;;;903479;A
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714128;Tread wear;0;;;;;;;;;903489;400
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713825;Commercial DA article code;0;;;;;;;;;;
+GF_1955516QT6XV;195/55R16 91V XL Quatrac;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713824;Commercial article code;0;;;;;;;AP19555016VQT6A02;;;
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703455;Brand;0;;;;;;;;;900486;Vredestein
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703418;Category;0;;;;;;;;;900529;Winter
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703544;Load index class;0;;;;;;;;;900611;XL
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703422;Productline;0;;;;;;;;;903289;Wintrac Pro
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714215;Structure;0;;;;;;;;;903544;Radial
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714201;Traction marking;0;;;;;;;;;;
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711128;Tubetype/tubeless;0;;;;;;;;;901099;Tubeless
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711748;Tyre class;0;;;;;;;;;901322;C1
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;705088;Winter indication;0;;;;;;;;;903196;M&S+Alpine
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;712289;DOT Manufacturers Code;0;;;;;;;4M0000;;;
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705629;DOT Plant Code;0;;;;;;;023;;;
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;713757;Made in ;0;;;;;;;HUNGARY;;;
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705210;Max. load;0;;;;;;;650 kg/1433 lbs;;;
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705669;Max. pressure;0;700591;kPa;;;;;350 kPa (51 psi);;;
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705229;Plies sidewall;0;;;;;;;1 POLYESTER;;;
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705230;Plies tread;0;;;;;;;1 POLYESTER + 2 STEEL + 1 POLYAMIDE;;;
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705233;Quality grading;0;;;;;;;;;;
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705634;Size designation;0;;;;;;;215/45 R 18 93V;;;
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703417;Aspect ratio;0;;;;;;;45;;;
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703421;Load index;0;;;;;;;93;;;
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703420;Load index (dual);0;;;;;;;;;;
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;711189;Ply rating;0;;;;;;;No;;;
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703423;Rimcode;0;;;;;;;18;;;
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703424;Section width;0;;;;;;;215;;;
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703425;Speed index;0;;;;;;;V;;;
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704176;Labels Noise;714102;Europe;0;;;;;2;72;;;;
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704177;Labels Rolling resistance;714102;Europe;0;;;;;;;;;900614;E
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704178;Labels Wet grip;714102;Europe;0;;;;;;;;;903480;B
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;713132;Temperature;0;;;;;;;;;;
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714127;Traction;0;;;;;;;;;;
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714128;Tread wear;0;;;;;;;;;;
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713825;Commercial DA article code;0;;;;;;;AP21545018VWPR202;;;
+GF_2154518WPRXV;215/45R18 93V XL Wintrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713824;Commercial article code;0;;;;;;;AP21545018VWPRA02;;;
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700579;General information;0;(none);701563;General tyre characteristics;703455;Brand;0;;;;;;;;;900903;Apollo
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700579;General information;0;(none);701563;General tyre characteristics;703418;Category;0;;;;;;;;;900530;All Season
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700579;General information;0;(none);701563;General tyre characteristics;703544;Load index class;0;;;;;;;;;900611;XL
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700579;General information;0;(none);701563;General tyre characteristics;703422;Productline;0;;;;;;;;;901390;Alnac 4G All season
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700579;General information;0;(none);701563;General tyre characteristics;714215;Structure;0;;;;;;;;;903544;Radial
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700579;General information;0;(none);701563;General tyre characteristics;711128;Tubetype/tubeless;0;;;;;;;;;901099;Tubeless
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700579;General information;0;(none);701563;General tyre characteristics;711748;Tyre class;0;;;;;;;;;901322;C1
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700579;General information;0;(none);701563;General tyre characteristics;705088;Winter indication;0;;;;;;;;;903196;M&S+Alpine
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700579;General information;0;(none);701568;Sidewall designation;712289;DOT Manufacturers Code;0;;;;;;;5LC726;;;
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700579;General information;0;(none);701568;Sidewall designation;705629;DOT Plant Code;0;;;;;;;023;;;
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700579;General information;0;(none);701568;Sidewall designation;713757;Made in ;0;;;;;;;HUNGARY;;;
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700579;General information;0;(none);701568;Sidewall designation;705210;Max. load;0;;;;;;;850 kg (1874 lbs);;;
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700579;General information;0;(none);701568;Sidewall designation;705669;Max. pressure;0;700591;kPa;;;;;350 kPa (51 psi);;;
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700579;General information;0;(none);701568;Sidewall designation;705229;Plies sidewall;0;;;;;;;1 POLYESTER;;;
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700579;General information;0;(none);701568;Sidewall designation;705230;Plies tread;0;;;;;;;1 POLYESTER + 2 STEEL + 2 POLYAMIDE;;;
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700579;General information;0;(none);701568;Sidewall designation;705233;Quality grading;0;;;;;;;400 A A;;;
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700579;General information;0;(none);701568;Sidewall designation;705634;Size designation;0;;;;;;;225/55 R 18 102V;;;
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700579;General information;0;(none);701569;Size;703417;Aspect ratio;0;;;;;;;55;;;
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700579;General information;0;(none);701569;Size;703421;Load index;0;;;;;;;102;;;
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700579;General information;0;(none);701569;Size;703423;Rimcode;0;;;;;;;18;;;
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700579;General information;0;(none);701569;Size;703424;Section width;0;;;;;;;225;;;
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700579;General information;0;(none);701569;Size;703425;Speed index;0;;;;;;;V;;;
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;701095;Labels and certification;0;(none);704176;Labels Noise;714102;Europe;0;;;;;2;72;;;;
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;701095;Labels and certification;0;(none);704177;Labels Rolling resistance;714102;Europe;0;;;;;;;;;903480;B
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;701095;Labels and certification;0;(none);704178;Labels Wet grip;714102;Europe;0;;;;;;;;;900612;C
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;701095;Labels and certification;0;(none);704180;Quality grading UTQG;713132;Temperature;0;;;;;;;;;903479;A
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714127;Traction;0;;;;;;;;;903479;A
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714128;Tread wear;0;;;;;;;;;903489;400
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700755;SAP information;0;(none);704056;SAP articlecode;713825;Commercial DA article code;0;;;;;;;AL22555018VAA4202;;;
+GF_2255518AA4XV;225/55R18 102V Alnac 4G All Season XL;GYO;10;116;A_PCR;700309;Passenger Car Tyres;SUBMIT QR3;700755;SAP information;0;(none);704056;SAP articlecode;713824;Commercial article code;0;;;;;;;AL22555018VAA4A02;;;
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;703455;Brand;0;;;;;;;;;900486;Vredestein
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;703418;Category;0;;;;;;;;;900528;Summer
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;703544;Load index class;0;;;;;;;;;900611;XL
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;703422;Productline;0;;;;;;;;;699;Ultrac * MO
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;714215;Structure;0;;;;;;;;;903544;Radial
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;714201;Traction marking;0;;;;;;;;;900484;Yes
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;711128;Tubetype/tubeless;0;;;;;;;;;901099;Tubeless
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;711748;Tyre class;0;;;;;;;;;901322;C1
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;705088;Winter indication;0;;;;;;;;;900596;None
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;712289;DOT Manufacturers Code;0;;;;;;;5LFA13;;;
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;705629;DOT Plant Code;0;;;;;;;023;;;
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;713757;Made in ;0;;;;;;;HUNGARY;;;
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;705210;Max. load;0;;;;;;;850 kg (1874 Ibs);;;
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;705669;Max. pressure;0;700591;kPa;;;;;350 kPa (51 psi);;;
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;705229;Plies sidewall;0;;;;;;;2 POLYESTER;;;
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;705230;Plies tread;0;;;;;;;2 POLYESTER + 2 STEEL + 1 POLYAMIDE;;;
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;705233;Quality grading;0;;;;;;;320 AA A;;;
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;705634;Size designation;0;;;;;;;225/55 R 18 102Y;;;
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701569;Size;703417;Aspect ratio;0;;;;;;;55;;;
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701569;Size;703421;Load index;0;;;;;;;102;;;
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701569;Size;703420;Load index (dual);0;;;;;;;;;;
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701569;Size;703423;Rimcode;0;;;;;;;18;;;
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701569;Size;703424;Section width;0;;;;;;;225;;;
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701569;Size;703425;Speed index;0;;;;;;;Y;;;
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;701095;Labels and certification;0;(none);704176;Labels Noise;714102;Europe;0;;;;;2;69;;;;
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;701095;Labels and certification;0;(none);704177;Labels Rolling resistance;714102;Europe;0;;;;;;;;;903479;A
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;701095;Labels and certification;0;(none);704178;Labels Wet grip;714102;Europe;0;;;;;;;;;903480;B
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;701095;Labels and certification;0;(none);704180;Quality grading UTQG;713132;Temperature;0;;;;;;;;;903479;A
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714127;Traction;0;;;;;;;;;903494;AA
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714128;Tread wear;0;;;;;;;;;900928;320
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700755;SAP information;0;(none);704056;SAP articlecode;713825;Commercial DA article code;0;;;;;;;;;;
+GF_2255518ULAQB;225/55 R18 102 Y XL Ultrac* MO - RM spec;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700755;SAP information;0;(none);704056;SAP articlecode;713824;Commercial article code;0;;;;;;;AP22555018YULAAB2;;;
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;703455;Brand;0;;;;;;;;;900486;Vredestein
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;703418;Category;0;;;;;;;;;900528;Summer
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;703544;Load index class;0;;;;;;;;;900611;XL
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;703422;Productline;0;;;;;;;;;699;Ultrac * MO
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;714215;Structure;0;;;;;;;;;903544;Radial
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;714201;Traction marking;0;;;;;;;;;900484;Yes
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;711128;Tubetype/tubeless;0;;;;;;;;;901099;Tubeless
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;711748;Tyre class;0;;;;;;;;;901322;C1
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;705088;Winter indication;0;;;;;;;;;900596;None
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;712289;DOT Manufacturers Code;0;;;;;;;5LFA13;;;
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;705629;DOT Plant Code;0;;;;;;;023;;;
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;713757;Made in ;0;;;;;;;HUNGARY;;;
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;705210;Max. load;0;;;;;;;850 kg (1874 Ibs);;;
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;705669;Max. pressure;0;700591;kPa;;;;;350 kPa (51 psi);;;
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;705229;Plies sidewall;0;;;;;;;2 POLYESTER;;;
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;705230;Plies tread;0;;;;;;;2 POLYESTER + 2 STEEL + 1 POLYAMIDE;;;
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;705233;Quality grading;0;;;;;;;320 AA A;;;
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;705634;Size designation;0;;;;;;;225/55 R 18 102Y;;;
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701569;Size;703417;Aspect ratio;0;;;;;;;55;;;
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701569;Size;703421;Load index;0;;;;;;;102;;;
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701569;Size;703420;Load index (dual);0;;;;;;;;;;
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701569;Size;703423;Rimcode;0;;;;;;;18;;;
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701569;Size;703424;Section width;0;;;;;;;225;;;
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701569;Size;703425;Speed index;0;;;;;;;Y;;;
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;701095;Labels and certification;0;(none);704176;Labels Noise;714102;Europe;0;;;;;2;69;;;;
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;701095;Labels and certification;0;(none);704177;Labels Rolling resistance;714102;Europe;0;;;;;;;;;903479;A
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;701095;Labels and certification;0;(none);704178;Labels Wet grip;714102;Europe;0;;;;;;;;;903480;B
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;701095;Labels and certification;0;(none);704180;Quality grading UTQG;713132;Temperature;0;;;;;;;;;903479;A
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714127;Traction;0;;;;;;;;;903494;AA
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714128;Tread wear;0;;;;;;;;;900928;320
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700755;SAP information;0;(none);704056;SAP articlecode;713825;Commercial DA article code;0;;;;;;;;;;
+GF_2255518ULAYB;225/55 R18 102 Y XL Ultrac* BMW OE  MO ;GYO;1;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700755;SAP information;0;(none);704056;SAP articlecode;713824;Commercial article code;0;;;;;;;AP22555018YULAXB2;;;
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703455;Brand;0;;;;;;;;;900486;Vredestein
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703418;Category;0;;;;;;;;;900528;Summer
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703544;Load index class;0;;;;;;;;;900643;Normal
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703422;Productline;0;;;;;;;;;903187;Ultrac Satin
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714215;Structure;0;;;;;;;;;903544;Radial
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714201;Traction marking;0;;;;;;;;;;
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711128;Tubetype/tubeless;0;;;;;;;;;901099;Tubeless
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711748;Tyre class;0;;;;;;;;;901322;C1
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;705088;Winter indication;0;;;;;;;;;900596;None
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;712289;DOT Manufacturers Code;0;;;;;;;W50000;;;
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705629;DOT Plant Code;0;;;;;;;023;;;
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;713757;Made in ;0;;;;;;;HUNGARY;;;
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705210;Max. load;0;;;;;;;775 kg (1709 lbs);;;
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705669;Max. pressure;0;700591;kPa;;;;;350 kPa (51 psi);;;
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705229;Plies sidewall;0;;;;;;;1 POLYESTER;;;
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705230;Plies tread;0;;;;;;;1 POLYESTER + 2 STEEL + 1 POLYAMIDE;;;
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705233;Quality grading;0;;;;;;;280 AA A;;;
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705634;Size designation;0;;;;;;;225/55 ZR 19 99W;;;
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703417;Aspect ratio;0;;;;;;;55;;;
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703421;Load index;0;;;;;;;99;;;
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703420;Load index (dual);0;;;;;;;;;;
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;711189;Ply rating;0;;;;;;;No;;;
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703423;Rimcode;0;;;;;;;19;;;
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703424;Section width;0;;;;;;;225;;;
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703425;Speed index;0;;;;;;;W;;;
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704176;Labels Noise;714102;Europe;0;;;;;2;71;;;;
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704177;Labels Rolling resistance;714102;Europe;0;;;;;;;;;903480;B
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704178;Labels Wet grip;714102;Europe;0;;;;;;;;;903480;B
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;713132;Temperature;0;;;;;;;;;903479;A
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714127;Traction;0;;;;;;;;;903494;AA
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714128;Tread wear;0;;;;;;;;;903500;280
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713825;Commercial DA article code;0;;;;;;;AP22555019WUSA200;;;
+GF_2255519USANW;225/55R19 99W ULTRAC SATIN;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713824;Commercial article code;0;;;;;;;AP22555019WUSAA00;;;
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703455;Brand;0;;;;;;;;;900486;Vredestein
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703418;Category;0;;;;;;;;;900530;All Season
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703544;Load index class;0;;;;;;;;;900611;XL
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703422;Productline;0;;;;;;;;;903526;Quatrac Pro
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714215;Structure;0;;;;;;;;;903544;Radial
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714201;Traction marking;0;;;;;;;;;;
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711128;Tubetype/tubeless;0;;;;;;;;;901099;Tubeless
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711748;Tyre class;0;;;;;;;;;901322;C1
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;705088;Winter indication;0;;;;;;;;;903196;M&S+Alpine
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;712289;DOT Manufacturers Code;0;;;;;;;E40000;;;
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705629;DOT Plant Code;0;;;;;;;023;;;
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;713757;Made in ;0;;;;;;;HUNGARY;;;
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705210;Max. load;0;;;;;;;900 kg/1984 lbs;;;
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705669;Max. pressure;0;700591;kPa;;;;;350 kPa (51 psi);;;
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705229;Plies sidewall;0;;;;;;;1 RAYON;;;
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705230;Plies tread;0;;;;;;;1 RAYON + 2 STEEL + 2 POLYAMIDE;;;
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705233;Quality grading;0;;;;;;;400 A A;;;
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705634;Size designation;0;;;;;;;225/60 R 18 104V;;;
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703417;Aspect ratio;0;;;;;;;60;;;
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703421;Load index;0;;;;;;;104;;;
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703420;Load index (dual);0;;;;;;;;;;
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;711189;Ply rating;0;;;;;;;No;;;
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703423;Rimcode;0;;;;;;;18;;;
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703424;Section width;0;;;;;;;225;;;
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703425;Speed index;0;;;;;;;V;;;
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704176;Labels Noise;714102;Europe;0;;;;;2;72;;;;
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704177;Labels Rolling resistance;714102;Europe;0;;;;;;;;;900612;C
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704178;Labels Wet grip;714102;Europe;0;;;;;;;;;903480;B
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;713132;Temperature;0;;;;;;;;;;
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714127;Traction;0;;;;;;;;;;
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714128;Tread wear;0;;;;;;;;;;
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713825;Commercial DA article code;0;;;;;;;AP22560018VQPR202;;;
+GF_2256018QPRXV;225/60R18 104V XL Quatrac Pro;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713824;Commercial article code;0;;;;;;;AP22560018VQPRA02;;;
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703455;Brand;0;;;;;;;;;900486;Vredestein
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703418;Category;0;;;;;;;;;900529;Winter
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703544;Load index class;0;;;;;;;;;900611;XL
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703422;Productline;0;;;;;;;;;903289;Wintrac Pro
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714215;Structure;0;;;;;;;;;903544;Radial
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714201;Traction marking;0;;;;;;;;;;
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711128;Tubetype/tubeless;0;;;;;;;;;901099;Tubeless
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711748;Tyre class;0;;;;;;;;;901322;C1
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;705088;Winter indication;0;;;;;;;;;903196;M&S+Alpine
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;712289;DOT Manufacturers Code;0;;;;;;;2R0000;;;
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705629;DOT Plant Code;0;;;;;;;023;;;
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;713757;Made in ;0;;;;;;;HUNGARY;;;
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705210;Max. load;0;;;;;;;690 kg/1521 lbs;;;
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705669;Max. pressure;0;700591;kPa;;;;;350 kPa/ 51 psi;;;
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705229;Plies sidewall;0;;;;;;;1 POLYESTER;;;
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705230;Plies tread;0;;;;;;;1 POLYESTER + 2 STEEL + 1 POLYAMIDE;;;
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705233;Quality grading;0;;;;;;;;;;
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705634;Size designation;0;;;;;;;235/40 R 18 95W;;;
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703417;Aspect ratio;0;;;;;;;40;;;
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703421;Load index;0;;;;;;;95;;;
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703420;Load index (dual);0;;;;;;;;;;
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;711189;Ply rating;0;;;;;;;No;;;
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703423;Rimcode;0;;;;;;;18;;;
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703424;Section width;0;;;;;;;235;;;
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703425;Speed index;0;;;;;;;W;;;
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704176;Labels Noise;714102;Europe;0;;;;;2;72;;;;
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704177;Labels Rolling resistance;714102;Europe;0;;;;;;;;;900614;E
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704178;Labels Wet grip;714102;Europe;0;;;;;;;;;903480;B
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;713132;Temperature;0;;;;;;;;;;
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714127;Traction;0;;;;;;;;;;
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714128;Tread wear;0;;;;;;;;;;
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713825;Commercial DA article code;0;;;;;;;AP23540018WWPR202;;;
+GF_2354018WPRXW;235/40R18 95W Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713824;Commercial article code;0;;;;;;;AP23540018WWPRA02;;;
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703455;Brand;0;;;;;;;;;900486;Vredestein
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703418;Category;0;;;;;;;;;900529;Winter
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703544;Load index class;0;;;;;;;;;900611;XL
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703422;Productline;0;;;;;;;;;903289;Wintrac Pro
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714215;Structure;0;;;;;;;;;903544;Radial
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714201;Traction marking;0;;;;;;;;;;
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711128;Tubetype/tubeless;0;;;;;;;;;901099;Tubeless
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711748;Tyre class;0;;;;;;;;;901322;C1
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;705088;Winter indication;0;;;;;;;;;903196;M&S+Alpine
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;712289;DOT Manufacturers Code;0;;;;;;;E60000;;;
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705629;DOT Plant Code;0;;;;;;;023;;;
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;713757;Made in ;0;;;;;;;HUNGARY;;;
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705210;Max. load;0;;;;;;;775kg (1709 lbs);;;
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705669;Max. pressure;0;700591;kPa;;;;;350 kPa (51 psi);;;
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705229;Plies sidewall;0;;;;;;;1 POLYESTER;;;
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705230;Plies tread;0;;;;;;;1 POLYESTER + 2 STEEL + 1 POLYAMIDE;;;
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705233;Quality grading;0;;;;;;;;;;
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705634;Size designation;0;;;;;;;235/45 R 19 99V;;;
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703417;Aspect ratio;0;;;;;;;45;;;
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703421;Load index;0;;;;;;;99;;;
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703420;Load index (dual);0;;;;;;;;;;
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;711189;Ply rating;0;;;;;;;No;;;
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703423;Rimcode;0;;;;;;;19;;;
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703424;Section width;0;;;;;;;235;;;
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703425;Speed index;0;;;;;;;V;;;
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704176;Labels Noise;714102;Europe;0;;;;;2;72;;;;
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704177;Labels Rolling resistance;714102;Europe;0;;;;;;;;;900614;E
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704178;Labels Wet grip;714102;Europe;0;;;;;;;;;903480;B
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713825;Commercial DA article code;0;;;;;;;AP23545019VWPR202;;;
+GF_2354519WPRXV;235/45R19 99V Wintrac Pro XL;GYO;15;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713824;Commercial article code;0;;;;;;;AP23545019VWPRA02;;;
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703455;Brand;0;;;;;;;;;900486;Vredestein
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703418;Category;0;;;;;;;;;900529;Winter
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703544;Load index class;0;;;;;;;;;900611;XL
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703422;Productline;0;;;;;;;;;903289;Wintrac Pro
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714215;Structure;0;;;;;;;;;903544;Radial
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714201;Traction marking;0;;;;;;;;;;
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711128;Tubetype/tubeless;0;;;;;;;;;901099;Tubeless
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711748;Tyre class;0;;;;;;;;;901322;C1
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;705088;Winter indication;0;;;;;;;;;903196;M&S+Alpine
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;712289;DOT Manufacturers Code;0;;;;;;;840000;;;
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705629;DOT Plant Code;0;;;;;;;023;;;
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;713757;Made in ;0;;;;;;;HUNGARY;;;
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705210;Max. load;0;;;;;;;875 kg/1929 lbs;;;
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705669;Max. pressure;0;700591;kPa;;;;;350 kPa (51 psi);;;
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705229;Plies sidewall;0;;;;;;;2 RAYON;;;
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705230;Plies tread;0;;;;;;;2 RAYON + 2 STEEL + 1 POLYAMIDE;;;
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705233;Quality grading;0;;;;;;;;;;
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705634;Size designation;0;;;;;;;235/50 R 19 103V;;;
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703417;Aspect ratio;0;;;;;;;50;;;
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703421;Load index;0;;;;;;;103;;;
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703420;Load index (dual);0;;;;;;;;;;
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;711189;Ply rating;0;;;;;;;No;;;
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703423;Rimcode;0;;;;;;;19;;;
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703424;Section width;0;;;;;;;235;;;
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703425;Speed index;0;;;;;;;V;;;
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704176;Labels Noise;714102;Europe;0;;;;;2;72;;;;
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704177;Labels Rolling resistance;714102;Europe;0;;;;;;;;;900612;C
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704178;Labels Wet grip;714102;Europe;0;;;;;;;;;903480;B
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;713132;Temperature;0;;;;;;;;;;
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714127;Traction;0;;;;;;;;;;
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714128;Tread wear;0;;;;;;;;;;
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713825;Commercial DA article code;0;;;;;;;AP23550019VWPR202;;;
+GF_2355019WPRXV;235/50R19 103V Wintrac Pro XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713824;Commercial article code;0;;;;;;;AP23550019VWPRA02;;;
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;703455;Brand;0;;;;;;;;;900903;Apollo
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;703418;Category;0;;;;;;;;;900530;All Season
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;703544;Load index class;0;;;;;;;;;900611;XL
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;703422;Productline;0;;;;;;;;;901390;Alnac 4G All season
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;714215;Structure;0;;;;;;;;;903544;Radial
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;711128;Tubetype/tubeless;0;;;;;;;;;901099;Tubeless
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;711748;Tyre class;0;;;;;;;;;901322;C1
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701563;General tyre characteristics;705088;Winter indication;0;;;;;;;;;903196;M&S+Alpine
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;712289;DOT Manufacturers Code;0;;;;;;;7AC728;;;
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;705629;DOT Plant Code;0;;;;;;;023;;;
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;713757;Made in ;0;;;;;;;HUNGARY;;;
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;705210;Max. load;0;;;;;;;875 kg (1929 lbs);;;
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;705669;Max. pressure;0;700591;kPa;;;;;350 kPa (51 psi);;;
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;705229;Plies sidewall;0;;;;;;;1 POLYESTER;;;
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;705230;Plies tread;0;;;;;;;1 POLYESTER + 2 STEEL + 2 POLYAMIDE;;;
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;705233;Quality grading;0;;;;;;;400 A A;;;
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701568;Sidewall designation;705634;Size designation;0;;;;;;;235/55 R 17 103Y;;;
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701569;Size;703417;Aspect ratio;0;;;;;;;55;;;
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701569;Size;703421;Load index;0;;;;;;;103;;;
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701569;Size;703423;Rimcode;0;;;;;;;17;;;
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701569;Size;703424;Section width;0;;;;;;;235;;;
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700579;General information;0;(none);701569;Size;703425;Speed index;0;;;;;;;Y;;;
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;701095;Labels and certification;0;(none);704176;Labels Noise;714102;Europe;0;;;;;2;72;;;;
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;701095;Labels and certification;0;(none);704177;Labels Rolling resistance;714102;Europe;0;;;;;;;;;903480;B
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;701095;Labels and certification;0;(none);704178;Labels Wet grip;714102;Europe;0;;;;;;;;;900612;C
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;701095;Labels and certification;0;(none);704180;Quality grading UTQG;713132;Temperature;0;;;;;;;;;903479;A
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714127;Traction;0;;;;;;;;;903479;A
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714128;Tread wear;0;;;;;;;;;903489;400
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700755;SAP information;0;(none);704056;SAP articlecode;713825;Commercial DA article code;0;;;;;;;AL23555017YAA4202;;;
+GF_2355517AA4XY;235/55R17 103Y Alnac 4G All Season XL;GYO;9;126;A_PCR;700309;Passenger Car Tyres;CRRNT QR3;700755;SAP information;0;(none);704056;SAP articlecode;713824;Commercial article code;0;;;;;;;AL23555017YAA4A02;;;
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703455;Brand;0;;;;;;;;;900486;Vredestein
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703418;Category;0;;;;;;;;;900530;All Season
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703544;Load index class;0;;;;;;;;;900611;XL
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703422;Productline;0;;;;;;;;;903526;Quatrac Pro
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714215;Structure;0;;;;;;;;;903544;Radial
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714201;Traction marking;0;;;;;;;;;;
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711128;Tubetype/tubeless;0;;;;;;;;;901099;Tubeless
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711748;Tyre class;0;;;;;;;;;901322;C1
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;705088;Winter indication;0;;;;;;;;;903196;M&S+Alpine
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;712289;DOT Manufacturers Code;0;;;;;;;3L0000;;;
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705629;DOT Plant Code;0;;;;;;;023;;;
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;713757;Made in ;0;;;;;;;HUNGARY;;;
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705210;Max. load;0;;;;;;;900 kg/1984 lbs;;;
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705669;Max. pressure;0;700591;kPa;;;;;350 kPa (51 psi);;;
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705229;Plies sidewall;0;;;;;;;1 RAYON;;;
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705230;Plies tread;0;;;;;;;1 RAYON + 2 STEEL + 2 POLYAMIDE;;;
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705233;Quality grading;0;;;;;;;400 A A;;;
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705634;Size designation;0;;;;;;;235/55 R 18 104V;;;
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703417;Aspect ratio;0;;;;;;;55;;;
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703421;Load index;0;;;;;;;104;;;
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703420;Load index (dual);0;;;;;;;;;;
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;711189;Ply rating;0;;;;;;;No;;;
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703423;Rimcode;0;;;;;;;18;;;
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703424;Section width;0;;;;;;;235;;;
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703425;Speed index;0;;;;;;;V;;;
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704176;Labels Noise;714102;Europe;0;;;;;2;72;;;;
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704177;Labels Rolling resistance;714102;Europe;0;;;;;;;;;900612;C
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704178;Labels Wet grip;714102;Europe;0;;;;;;;;;903480;B
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;713132;Temperature;0;;;;;;;;;;
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714127;Traction;0;;;;;;;;;;
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714128;Tread wear;0;;;;;;;;;;
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713825;Commercial DA article code;0;;;;;;;AP23555018VQPR202;;;
+GF_2355518QPRXV;235/55R18 104V XL Quatrac Pro;GYO;18;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713824;Commercial article code;0;;;;;;;AP23555018VQPRA02;;;
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703455;Brand;0;;;;;;;;;900486;Vredestein
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703418;Category;0;;;;;;;;;900530;All Season
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703544;Load index class;0;;;;;;;;;900611;XL
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703422;Productline;0;;;;;;;;;903526;Quatrac Pro
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714215;Structure;0;;;;;;;;;903544;Radial
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714201;Traction marking;0;;;;;;;;;;
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711128;Tubetype/tubeless;0;;;;;;;;;901099;Tubeless
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711748;Tyre class;0;;;;;;;;;901322;C1
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;705088;Winter indication;0;;;;;;;;;903196;M&S+Alpine
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;712289;DOT Manufacturers Code;0;;;;;;;7U0000;;;
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705629;DOT Plant Code;0;;;;;;;023;;;
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;713757;Made in ;0;;;;;;;HUNGARY;;;
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705210;Max. load;0;;;;;;;690 kg (1521 lbs);;;
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705669;Max. pressure;0;700591;kPa;;;;;350 kPa (51 psi);;;
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705229;Plies sidewall;0;;;;;;;2 POLYESTER;;;
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705230;Plies tread;0;;;;;;;2 POLYESTER + 2 STEEL + 2 POLYAMIDE;;;
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705233;Quality grading;0;;;;;;;400 A A;;;
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705634;Size designation;0;;;;;;;245/35 R 20 95Y;;;
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703417;Aspect ratio;0;;;;;;;35;;;
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703421;Load index;0;;;;;;;95;;;
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703420;Load index (dual);0;;;;;;;;;;
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;711189;Ply rating;0;;;;;;;No;;;
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703423;Rimcode;0;;;;;;;20;;;
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703424;Section width;0;;;;;;;245;;;
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703425;Speed index;0;;;;;;;Y;;;
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704176;Labels Noise;714102;Europe;0;;;;;2;71;;;;
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704177;Labels Rolling resistance;714102;Europe;0;;;;;;;;;900614;E
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704178;Labels Wet grip;714102;Europe;0;;;;;;;;;903480;B
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713825;Commercial DA article code;0;;;;;;;AP24535020YQPR202;;;
+GF_2453520QPRXY;245/35R20 95Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713824;Commercial article code;0;;;;;;;AP24535020YQPRA02;;;
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703455;Brand;0;;;;;;;;;900486;Vredestein
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703418;Category;0;;;;;;;;;900529;Winter
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703544;Load index class;0;;;;;;;;;900611;XL
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703422;Productline;0;;;;;;;;;903289;Wintrac Pro
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714215;Structure;0;;;;;;;;;903544;Radial
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714201;Traction marking;0;;;;;;;;;;
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711128;Tubetype/tubeless;0;;;;;;;;;901099;Tubeless
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711748;Tyre class;0;;;;;;;;;901322;C1
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;705088;Winter indication;0;;;;;;;;;903196;M&S+Alpine
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;712289;DOT Manufacturers Code;0;;;;;;;2P0000;;;
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705629;DOT Plant Code;0;;;;;;;023;;;
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;713757;Made in ;0;;;;;;;HUNGARY;;;
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705210;Max. load;0;;;;;;;730 kg/1609 lbs;;;
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705669;Max. pressure;0;700591;kPa;;;;;350 kPa/ 51 psi;;;
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705229;Plies sidewall;0;;;;;;;1 POLYESTER;;;
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705230;Plies tread;0;;;;;;;1 POLYESTER + 2 STEEL + 1 POLYAMIDE;;;
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705233;Quality grading;0;;;;;;;;;;
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705634;Size designation;0;;;;;;;245/40 R 18 97W;;;
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703417;Aspect ratio;0;;;;;;;40;;;
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703421;Load index;0;;;;;;;97;;;
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703420;Load index (dual);0;;;;;;;;;;
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;711189;Ply rating;0;;;;;;;No;;;
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703423;Rimcode;0;;;;;;;18;;;
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703424;Section width;0;;;;;;;245;;;
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703425;Speed index;0;;;;;;;W;;;
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704176;Labels Noise;714102;Europe;0;;;;;2;72;;;;
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704177;Labels Rolling resistance;714102;Europe;0;;;;;;;;;900614;E
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704178;Labels Wet grip;714102;Europe;0;;;;;;;;;903480;B
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;713132;Temperature;0;;;;;;;;;;
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714127;Traction;0;;;;;;;;;;
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714128;Tread wear;0;;;;;;;;;;
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713825;Commercial DA article code;0;;;;;;;AP24540018WWPR202;;;
+GF_2454018WPRXW;245/40R18 97W Wintrac Pro XL;GYO;14;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713824;Commercial article code;0;;;;;;;AP24540018WWPRA02;;;
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703455;Brand;0;;;;;;;;;900486;Vredestein
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703418;Category;0;;;;;;;;;900530;All Season
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703544;Load index class;0;;;;;;;;;900611;XL
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703422;Productline;0;;;;;;;;;903526;Quatrac Pro
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714215;Structure;0;;;;;;;;;903544;Radial
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714201;Traction marking;0;;;;;;;;;;
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711128;Tubetype/tubeless;0;;;;;;;;;901099;Tubeless
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711748;Tyre class;0;;;;;;;;;901322;C1
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;705088;Winter indication;0;;;;;;;;;903196;M&S+Alpine
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;712289;DOT Manufacturers Code;0;;;;;;;5X0000;;;
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705629;DOT Plant Code;0;;;;;;;023;;;
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;713757;Made in ;0;;;;;;;HUNGARY;;;
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705210;Max. load;0;;;;;;;775 kg (1709 lbs);;;
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705669;Max. pressure;0;700591;kPa;;;;;350 kPa (51 psi);;;
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705229;Plies sidewall;0;;;;;;;1 RAYON;;;
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705230;Plies tread;0;;;;;;;1 RAYON + 2 STEEL + 2 POLYAMIDE;;;
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705233;Quality grading;0;;;;;;;400 A A;;;
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705634;Size designation;0;;;;;;;245/40 R 20 99Y;;;
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703417;Aspect ratio;0;;;;;;;40;;;
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703421;Load index;0;;;;;;;99;;;
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703420;Load index (dual);0;;;;;;;;;;
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;711189;Ply rating;0;;;;;;;No;;;
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703423;Rimcode;0;;;;;;;20;;;
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703424;Section width;0;;;;;;;245;;;
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703425;Speed index;0;;;;;;;Y;;;
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704176;Labels Noise;714102;Europe;0;;;;;2;71;;;;
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704177;Labels Rolling resistance;714102;Europe;0;;;;;;;;;900612;C
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704178;Labels Wet grip;714102;Europe;0;;;;;;;;;903480;B
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;713132;Temperature;0;;;;;;;;;903479;A
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714127;Traction;0;;;;;;;;;903479;A
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714128;Tread wear;0;;;;;;;;;903489;400
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713825;Commercial DA article code;0;;;;;;;AP24540020YQPR202;;;
+GF_2454020QPRXY;245/40R20 99Y XL Quatrac Pro;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713824;Commercial article code;0;;;;;;;AP24540020YQPRA02;;;
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703455;Brand;0;;;;;;;;;900486;Vredestein
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703418;Category;0;;;;;;;;;900529;Winter
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703544;Load index class;0;;;;;;;;;900611;XL
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703422;Productline;0;;;;;;;;;903289;Wintrac Pro
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714215;Structure;0;;;;;;;;;903544;Radial
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714201;Traction marking;0;;;;;;;;;;
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711128;Tubetype/tubeless;0;;;;;;;;;901099;Tubeless
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711748;Tyre class;0;;;;;;;;;901322;C1
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;705088;Winter indication;0;;;;;;;;;903196;M&S+Alpine
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;712289;DOT Manufacturers Code;0;;;;;;;320000;;;
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705629;DOT Plant Code;0;;;;;;;023;;;
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;713757;Made in ;0;;;;;;;HUNGARY;;;
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705210;Max. load;0;;;;;;;710 kg/1565 lbs;;;
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705669;Max. pressure;0;700591;kPa;;;;;350 kPa/ 51 psi;;;
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705229;Plies sidewall;0;;;;;;;2 RAYON;;;
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705230;Plies tread;0;;;;;;;2 RAYON + 2 STEEL + 1 POLYAMIDE;;;
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705233;Quality grading;0;;;;;;;;;;
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705634;Size designation;0;;;;;;;255/35 R 19 96Y;;;
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703417;Aspect ratio;0;;;;;;;35;;;
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703421;Load index;0;;;;;;;96;;;
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703420;Load index (dual);0;;;;;;;;;;
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;711189;Ply rating;0;;;;;;;No;;;
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703423;Rimcode;0;;;;;;;19;;;
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703424;Section width;0;;;;;;;255;;;
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703425;Speed index;0;;;;;;;Y;;;
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704176;Labels Noise;714102;Europe;0;;;;;2;73;;;;
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704177;Labels Rolling resistance;714102;Europe;0;;;;;;;;;900614;E
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704178;Labels Wet grip;714102;Europe;0;;;;;;;;;903480;B
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713825;Commercial DA article code;0;;;;;;;AP25535019YWPR202;;;
+GF_2553519WPRXY;255/35R19 96Y WINTRAC PRO XL;GYO;16;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713824;Commercial article code;0;;;;;;;AP25535019YWPRA02;;;
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701563;General tyre characteristics;703455;Brand;0;;;;;;;;;900486;Vredestein
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701563;General tyre characteristics;703418;Category;0;;;;;;;;;900530;All Season
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701563;General tyre characteristics;703544;Load index class;0;;;;;;;;;900611;XL
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701563;General tyre characteristics;703422;Productline;0;;;;;;;;;903526;Quatrac Pro
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701563;General tyre characteristics;714215;Structure;0;;;;;;;;;903544;Radial
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701563;General tyre characteristics;714201;Traction marking;0;;;;;;;;;;
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701563;General tyre characteristics;711128;Tubetype/tubeless;0;;;;;;;;;901099;Tubeless
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701563;General tyre characteristics;711748;Tyre class;0;;;;;;;;;901322;C1
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701563;General tyre characteristics;705088;Winter indication;0;;;;;;;;;903196;M&S+Alpine
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701568;Sidewall designation;712289;DOT Manufacturers Code;0;;;;;;;5V0000;;;
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701568;Sidewall designation;705629;DOT Plant Code;0;;;;;;;023;;;
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701568;Sidewall designation;713757;Made in ;0;;;;;;;HUNGARY;;;
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701568;Sidewall designation;705210;Max. load;0;;;;;;;730 kg (1609 lbs);;;
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701568;Sidewall designation;705669;Max. pressure;0;700591;kPa;;;;;350 kPa (51 psi);;;
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701568;Sidewall designation;705229;Plies sidewall;0;;;;;;;1 RAYON;;;
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701568;Sidewall designation;705230;Plies tread;0;;;;;;;1 RAYON + 2 STEEL + 2 POLYAMIDE;;;
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701568;Sidewall designation;705233;Quality grading;0;;;;;;;400 A A;;;
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701568;Sidewall designation;705634;Size designation;0;;;;;;;255/35 R 20 97Y;;;
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701569;Size;703417;Aspect ratio;0;;;;;;;35;;;
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701569;Size;703421;Load index;0;;;;;;;97;;;
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701569;Size;703420;Load index (dual);0;;;;;;;;;;
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701569;Size;711189;Ply rating;0;;;;;;;No;;;
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701569;Size;703423;Rimcode;0;;;;;;;20;;;
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701569;Size;703424;Section width;0;;;;;;;255;;;
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700579;General information;0;(none);701569;Size;703425;Speed index;0;;;;;;;Y;;;
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;701095;Labels and certification;0;(none);704176;Labels Noise;714102;Europe;0;;;;;2;73;;;;
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;701095;Labels and certification;0;(none);704177;Labels Rolling resistance;714102;Europe;0;;;;;;;;;900614;E
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;701095;Labels and certification;0;(none);704178;Labels Wet grip;714102;Europe;0;;;;;;;;;903480;B
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;701095;Labels and certification;0;(none);704180;Quality grading UTQG;713132;Temperature;0;;;;;;;;;903479;A
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714127;Traction;0;;;;;;;;;903479;A
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714128;Tread wear;0;;;;;;;;;903489;400
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700755;SAP information;0;(none);704056;SAP articlecode;713825;Commercial DA article code;0;;;;;;;AP25535020YQPR202;;;
+GF_2553520QPRXY;255/35R20 97Y XL Quatrac Pro;GYO;13;1;A_PCR;700309;Passenger Car Tyres;DEV;700755;SAP information;0;(none);704056;SAP articlecode;713824;Commercial article code;0;;;;;;;AP25535020YQPRA02;;;
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703455;Brand;0;;;;;;;;;900486;Vredestein
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703418;Category;0;;;;;;;;;900529;Winter
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703544;Load index class;0;;;;;;;;;900611;XL
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703422;Productline;0;;;;;;;;;903289;Wintrac Pro
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714215;Structure;0;;;;;;;;;903544;Radial
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714201;Traction marking;0;;;;;;;;;;
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711128;Tubetype/tubeless;0;;;;;;;;;901099;Tubeless
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711748;Tyre class;0;;;;;;;;;901322;C1
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;705088;Winter indication;0;;;;;;;;;903196;M&S+Alpine
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;712289;DOT Manufacturers Code;0;;;;;;;120000;;;
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705629;DOT Plant Code;0;;;;;;;023;;;
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;713757;Made in ;0;;;;;;;HUNGARY;;;
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705210;Max. load;0;;;;;;;925 kg/2039 lbs;;;
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705669;Max. pressure;0;700591;kPa;;;;;350 kPa (51 psi);;;
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705229;Plies sidewall;0;;;;;;;2 RAYON;;;
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705230;Plies tread;0;;;;;;;2 RAYON + 2 STEEL + 1 POLYAMIDE;;;
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705233;Quality grading;0;;;;;;;;;;
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705634;Size designation;0;;;;;;;255/45 R 20 105V;;;
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703417;Aspect ratio;0;;;;;;;45;;;
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703421;Load index;0;;;;;;;105;;;
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703420;Load index (dual);0;;;;;;;;;;
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;711189;Ply rating;0;;;;;;;No;;;
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703423;Rimcode;0;;;;;;;20;;;
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703424;Section width;0;;;;;;;255;;;
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703425;Speed index;0;;;;;;;V;;;
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704176;Labels Noise;714102;Europe;0;;;;;2;73;;;;
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704177;Labels Rolling resistance;714102;Europe;0;;;;;;;;;900612;C
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704178;Labels Wet grip;714102;Europe;0;;;;;;;;;903480;B
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;713132;Temperature;0;;;;;;;;;;
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714127;Traction;0;;;;;;;;;;
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714128;Tread wear;0;;;;;;;;;;
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713825;Commercial DA article code;0;;;;;;;AP25545020VWPR202;;;
+GF_2554520WPRXV;255/45 R20 105V WINTRAC PRO XL ;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713824;Commercial article code;0;;;;;;;AP25545020VWPRA02;;;
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703455;Brand;0;;;;;;;;;900486;Vredestein
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703418;Category;0;;;;;;;;;900529;Winter
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703544;Load index class;0;;;;;;;;;900611;XL
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703422;Productline;0;;;;;;;;;903289;Wintrac Pro
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714215;Structure;0;;;;;;;;;903544;Radial
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714201;Traction marking;0;;;;;;;;;;
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711128;Tubetype/tubeless;0;;;;;;;;;901099;Tubeless
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711748;Tyre class;0;;;;;;;;;901322;C1
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;705088;Winter indication;0;;;;;;;;;903196;M&S+Alpine
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;712289;DOT Manufacturers Code;0;;;;;;;LH0000;;;
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705629;DOT Plant Code;0;;;;;;;023;;;
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;713757;Made in ;0;;;;;;;HUNGARY;;;
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705210;Max. load;0;;;;;;;975 kg/2149 lbs;;;
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705669;Max. pressure;0;700591;kPa;;;;;350 kPa (51 psi);;;
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705229;Plies sidewall;0;;;;;;;2 RAYON;;;
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705230;Plies tread;0;;;;;;;2 RAYON + 2 STEEL + 1 POLYAMIDE;;;
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705233;Quality grading;0;;;;;;;;;;
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705634;Size designation;0;;;;;;;255/50 R 19 107V;;;
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703417;Aspect ratio;0;;;;;;;50;;;
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703421;Load index;0;;;;;;;107;;;
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703420;Load index (dual);0;;;;;;;;;;
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;711189;Ply rating;0;;;;;;;No;;;
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703423;Rimcode;0;;;;;;;19;;;
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703424;Section width;0;;;;;;;255;;;
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703425;Speed index;0;;;;;;;V;;;
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704176;Labels Noise;714102;Europe;0;;;;;2;73;;;;
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704177;Labels Rolling resistance;714102;Europe;0;;;;;;;;;900612;C
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704178;Labels Wet grip;714102;Europe;0;;;;;;;;;903480;B
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;713132;Temperature;0;;;;;;;;;;
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714127;Traction;0;;;;;;;;;;
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714128;Tread wear;0;;;;;;;;;;
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713825;Commercial DA article code;0;;;;;;;AP25550019VWPR202;;;
+GF_2555019WPRXV;255/50R19 107V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713824;Commercial article code;0;;;;;;;AP25550019VWPRA02;;;
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703455;Brand;0;;;;;;;;;900486;Vredestein
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703418;Category;0;;;;;;;;;900529;Winter
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703544;Load index class;0;;;;;;;;;900611;XL
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703422;Productline;0;;;;;;;;;903289;Wintrac Pro
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714215;Structure;0;;;;;;;;;903544;Radial
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714201;Traction marking;0;;;;;;;;;;
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711128;Tubetype/tubeless;0;;;;;;;;;901099;Tubeless
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711748;Tyre class;0;;;;;;;;;901322;C1
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;705088;Winter indication;0;;;;;;;;;903196;M&S+Alpine
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;712289;DOT Manufacturers Code;0;;;;;;;P60000;;;
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705629;DOT Plant Code;0;;;;;;;023;;;
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;713757;Made in ;0;;;;;;;HUNGARY;;;
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705210;Max. load;0;;;;;;;1090 kg/2403 lbs;;;
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705669;Max. pressure;0;700591;kPa;;;;;350 kPa (51 psi);;;
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705229;Plies sidewall;0;;;;;;;2 RAYON;;;
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705230;Plies tread;0;;;;;;;2 RAYON + 2 STEEL + 1 POLYAMIDE;;;
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705233;Quality grading;0;;;;;;;;;;
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705634;Size designation;0;;;;;;;255/55 R 19 111V;;;
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703417;Aspect ratio;0;;;;;;;55;;;
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703421;Load index;0;;;;;;;111;;;
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703420;Load index (dual);0;;;;;;;;;;
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;711189;Ply rating;0;;;;;;;No;;;
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703423;Rimcode;0;;;;;;;19;;;
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703424;Section width;0;;;;;;;255;;;
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703425;Speed index;0;;;;;;;V;;;
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704176;Labels Noise;714102;Europe;0;;;;;2;73;;;;
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704177;Labels Rolling resistance;714102;Europe;0;;;;;;;;;900612;C
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704178;Labels Wet grip;714102;Europe;0;;;;;;;;;903480;B
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;713132;Temperature;0;;;;;;;;;;
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714127;Traction;0;;;;;;;;;;
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714128;Tread wear;0;;;;;;;;;;
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713825;Commercial DA article code;0;;;;;;;AP25555019VWPR202;;;
+GF_2555519WPRXV;255/55R19 111V Wintrac Pro XL;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713824;Commercial article code;0;;;;;;;AP25555019VWPRA02;;;
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703455;Brand;0;;;;;;;;;900486;Vredestein
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703418;Category;0;;;;;;;;;900530;All Season
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703544;Load index class;0;;;;;;;;;900611;XL
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703422;Productline;0;;;;;;;;;903526;Quatrac Pro
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714215;Structure;0;;;;;;;;;903544;Radial
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714201;Traction marking;0;;;;;;;;;;
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711128;Tubetype/tubeless;0;;;;;;;;;901099;Tubeless
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711748;Tyre class;0;;;;;;;;;901322;C1
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;705088;Winter indication;0;;;;;;;;;903196;M&S+Alpine
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;712289;DOT Manufacturers Code;0;;;;;;;LP0000;;;
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705629;DOT Plant Code;0;;;;;;;023;;;
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;713757;Made in ;0;;;;;;;HUNGARY;;;
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705210;Max. load;0;;;;;;;950 kg (2094 lbs);;;
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705669;Max. pressure;0;700591;kPa;;;;;350 kPa (51 psi);;;
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705229;Plies sidewall;0;;;;;;;2 RAYON;;;
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705230;Plies tread;0;;;;;;;2 RAYON + 2 STEEL + 2 POLYAMIDE;;;
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705233;Quality grading;0;;;;;;;400 A A;;;
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705634;Size designation;0;;;;;;;275/40 R 20 106Y;;;
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703417;Aspect ratio;0;;;;;;;40;;;
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703421;Load index;0;;;;;;;106;;;
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703420;Load index (dual);0;;;;;;;;;;
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;711189;Ply rating;0;;;;;;;No;;;
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703423;Rimcode;0;;;;;;;20;;;
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703424;Section width;0;;;;;;;275;;;
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703425;Speed index;0;;;;;;;Y;;;
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704176;Labels Noise;714102;Europe;0;;;;;2;73;;;;
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704177;Labels Rolling resistance;714102;Europe;0;;;;;;;;;900612;C
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704178;Labels Wet grip;714102;Europe;0;;;;;;;;;903480;B
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;713132;Temperature;0;;;;;;;;;903479;A
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714127;Traction;0;;;;;;;;;903479;A
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714128;Tread wear;0;;;;;;;;;903489;400
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713825;Commercial DA article code;0;;;;;;;AP27540020YQPR202;;;
+GF_2754020QPRXY;275/40R20 106Y XL Quatrac Pro;GYO;12;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713824;Commercial article code;0;;;;;;;AP27540020YQPRA02;;;
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703455;Brand;0;;;;;;;;;900486;Vredestein
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703418;Category;0;;;;;;;;;900529;Winter
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703544;Load index class;0;;;;;;;;;900611;XL
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;703422;Productline;0;;;;;;;;;903289;Wintrac Pro
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714215;Structure;0;;;;;;;;;903544;Radial
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;714201;Traction marking;0;;;;;;;;;;
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711128;Tubetype/tubeless;0;;;;;;;;;901099;Tubeless
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;711748;Tyre class;0;;;;;;;;;901322;C1
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701563;General tyre characteristics;705088;Winter indication;0;;;;;;;;;903196;M&S+Alpine
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;712289;DOT Manufacturers Code;0;;;;;;;7V0000;;;
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705629;DOT Plant Code;0;;;;;;;023;;;
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;713757;Made in ;0;;;;;;;HUNGARY;;;
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705210;Max. load;0;;;;;;;1060 kg/2337 lbs;;;
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705669;Max. pressure;0;700591;kPa;;;;;350 kPa (51 psi);;;
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705229;Plies sidewall;0;;;;;;;2 RAYON;;;
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705230;Plies tread;0;;;;;;;2 RAYON + 2 STEEL + 1 POLYAMIDE;;;
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705233;Quality grading;0;;;;;;;;;;
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701568;Sidewall designation;705634;Size designation;0;;;;;;;275/45 R 20 110V;;;
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703417;Aspect ratio;0;;;;;;;45;;;
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703421;Load index;0;;;;;;;110;;;
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703420;Load index (dual);0;;;;;;;;;;
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;711189;Ply rating;0;;;;;;;No;;;
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703423;Rimcode;0;;;;;;;20;;;
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703424;Section width;0;;;;;;;275;;;
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700579;General information;0;(none);701569;Size;703425;Speed index;0;;;;;;;V;;;
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704176;Labels Noise;714102;Europe;0;;;;;2;73;;;;
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704177;Labels Rolling resistance;714102;Europe;0;;;;;;;;;900612;C
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704178;Labels Wet grip;714102;Europe;0;;;;;;;;;903480;B
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;713132;Temperature;0;;;;;;;;;;
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714127;Traction;0;;;;;;;;;;
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;701095;Labels and certification;0;(none);704180;Quality grading UTQG;714128;Tread wear;0;;;;;;;;;;
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713825;Commercial DA article code;0;;;;;;;AP27545020VWPR202;;;
+GF_2754520WPRXV;275/45 R20 110V WINTRAC PRO XL;GYO;13;128;A_PCR;700309;Passenger Car Tyres;CRRNT QR5;700755;SAP information;0;(none);704056;SAP articlecode;713824;Commercial article code;0;;;;;;;AP27545020VWPRA02;;;
+
+708 rows selected. 
+
+part-no WEIGHT
+
+'PART_NO'||';'||'WEIGH
+----------------------
+PART_NO;WEIGHT_UNIT_KG
+
+
+PART_NO||';'||WEIGHT_UNIT_KG                               
+-----------------------------------------------------------
+GF_2555519WPRXV;14.2571201803608540544139349597860947959
+GF_2154518WPRXV;9.20590974813371507458808246660134266217
+GF_2255518ULAYB;10.9909939167
+GF_2255519USANW;10.9978770048642613026215677257970332801
+GF_2355518QPRXV;11.4509461323263069724722136476374575269
+GF_2453520QPRXY;11.8414380524472365747293448558285256229
+GF_2454018WPRXW;10.4978615302900794975303154699385249988
+GF_2454020QPRXY;11.7771760266208207777665686539897457374
+GF_2554520WPRXV;13.9343620458562936455455589493515037452
+GF_2754520WPRXV;14.8733529960265337281503396790513890393
+GF_2256018QPRXV;11.5545141045440871703777100493342412053
+GF_2555019WPRXV;14.0176231035108581315717462230963578754
+GF_2754020QPRXY;15.0051135778750123701887528884671012836
+GF_2255518AA4XV;10.7822374094
+GF_2354018WPRXW;10.2931027498894815754547149035830754897
+GF_2355517AA4XY;11.08839755
+GF_2553519WPRXY;12.0307529744405170764031069908194145425
+GF_1955516QT6XV;7.6908853043
+GF_2255518ULAQB;10.9909939167
+GF_2354519WPRXV;11.1766802182411809308713199253722498917
+GF_2355019WPRXV;12.9487036401306682693463417075697026633
+GF_2553520QPRXY;11.6820247952776527474366612754510923313
+
+22 rows selected. 
+

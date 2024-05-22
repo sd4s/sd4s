@@ -1,0 +1,132 @@
+--DAGELIJKSE controle in UPDWEIGHTS.EXE
+--Het lijkt er op dat er geen SELECTIE zit op de GEWICHT-vergelijking tussen huidige-stand + nieuwe stand vwb gewichten !!
+--Alle CURRENT-part-no worden iedere keer weer gecontroleerd. 
+--Indien PART-NO/ARTICLECODE matchen wordt er een controle gedaan op gewicht. Dus artikelen die of in de ene/andere tabel wel voorkomen en andere niet, doen niet mee in de check !!
+--Er wordt alleen WEL een "HARDE" selectie op artikelen/groupen (=KMGKOD) gedaan:
+/*
+UpdateGrp(aqArticlesHu, 'GD', Ready[0]);
+UpdateGrp(aqArticlesHu, 'GM', Ready[1]);
+UpdateGrp(aqArticlesHu, 'GC', Ready[2]);
+UpdateGrp(aqArticlesHu, 'GX', Ready[3]);
+UpdateGrp(aqArticlesHu, 'GR', Ready[4]);
+UpdateGrp(aqArticlesHu, 'GL', Ready[5]);
+UpdateGrp(aqArticlesHu, 'GS', Ready[6]);
+UpdateGrp(aqArticlesHu, 'GT', Ready[7]);        
+UpdateGrp(aqArticlesHu, 'GB', Ready[8]);        
+UpdateGrp(aqArticlesHu, 'GE', Ready[9]);        
+UpdateGrp(aqArticlesHu, 'GG', Ready[10]);        
+UpdateGrp(aqArticlesHu, 'GV', Ready[11]);        
+UpdateGrp(aqArticlesHu, 'GF', Ready[12]);        
+UpdateGrp(aqArticlesHu, 'XG', Ready[13]);   
+--    
+UpdateGrp(aqArticlesENS, 'E1', Ready[15]);        
+*/
+
+---------------------------
+--INHOUD bestaande TABEL AVSPECICATION_WEIGHT
+---------------------------
+SELECT KMGKOD, COUNT(*)
+FROM AVSPECIFICATION_WEIGHT 
+WHERE STATUS_TYPE='CURRENT'
+GROUP BY KMGKOD
+ORDER BY KMGKOD
+;
+/*
+G3	1		--not in sap-interface-selection
+GA	1  		--not in sap-interface-selection
+GI	4 		--not in sap-interface-selection
+--
+GB	212
+GC	38
+GD	2685
+GE	8
+GF	739
+GG	608
+GL	179
+GM	1865
+GR	772
+GS	106
+GT	603
+GV	833
+GX	15
+XG	13238
+--
+E1	5548
+*/
+
+-----------------------------------------
+-- INHOUD NIEUWE TABEL DBA_VW_CRRNT_SAP_WEIGHT
+-----------------------------------------
+SELECT KMGKOD, COUNT(*)
+FROM DBA_VW_CRRNT_SAP_WEIGHT
+GROUP BY KMGKOD
+ORDER BY KMGKOD
+;
+/*
+GI	3	--not in sap-interface-selection
+SE	102	--not in sap-interface-selection
+SQ	8	--not in sap-interface-selection
+SW	205	--not in sap-interface-selection
+--
+GB	381
+GC	32
+GD	8    --hier zit wel een groot verschil...
+GE	8
+GF	724
+GG	595
+GL	104
+GM	678	--hier zit wel een groot verschil...
+GR	633
+GS	100
+GT	338
+GV	747
+GX	12
+XG	12858
+--
+E1	3715
+*/
+
+--
+--CONCLUSIE: De UpdWeights.exe-procedure kan dus gewoon meerdere keren per dag draaien !!!. 
+--           We zullen dus geen objecten missen door proces meerdere keren te draaien.
+--
+--VRAAG: hoe lang draait het controle-proces / UpdWeights.exe ? Nakijken in logging. Normaal ongeveer 1 minuut !!
+
+
+--if (round(100000 * article.Weight) <> round(100000 * aqSpecificationWeight.Fields[8].AsFloat))
+--then begin
+
+select weight, round(10000* weight) from avspecification_weight where rownum<100
+/*
+14.901	149010
+14.483	144830
+8.51	85100
+10.46	104600
+7.19	71900
+15.961	159610
+12.57	125700
+14.212	142120
+15.026	150260
+12.306	123060
+5.927	59270
+*/
+
+/*
+CONCLUSIE: Dit betekent dus dat er in de basis op 4-cijfers achter de komma wordt gecontroleerd of 
+           er een verschil in gewicht is tussen huidige stand (=AVSPECIFICATION.WEIGHT) en de NIEUWE-STAND (was: as400.artgew  wordt: dba_vw_crrnt_sap_weight) !!!
+		   Dat is dus in bijna alle gevallen !!
+		   Volgens gaan we dus heel veel mutaties krijgen die naar SAP verstuurd gaan worden...
+*/		   
+
+--TEST-SCENARIO:
+--Het is misschien een optie om de SAP-MUTATIE-URL in de UPDWEIGHTS.INI file aan te passen (bijv. naar een TEST-omgeving) om te zien wat er verstuurd gaat worden !!
+--Mocht dit teveel zijn dan misschien alsnog 
+--1)de DELPHI-CODE aanpassen en de controle wijzigen zodat we bijv. maar op 2 cijfers achter de komma gaan controleren...
+--2)een update uitvoeren op tabel AVSPECIFICATION_WEIGHT + AANPASSEN NIEUWE-VIEW DBA_VW_CRRNT_WEIGHT_SAP zodat daar ALLEEN gewichten met 2 cijfers achter de komma opgehaald worden.
+
+
+
+
+
+--einde script.
+

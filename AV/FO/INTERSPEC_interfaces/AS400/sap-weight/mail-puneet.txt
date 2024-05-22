@@ -1,0 +1,16 @@
+From: Puneet Sabharwal <puneet.sabharwal@apollotyres.com> 
+Sent: Thursday, August 03, 2023 18:02
+To: Patrick Goossens <patrick.goossens@apollotyres.com>; Swati Khera <SWATI.KHERA@APOLLOTYRES.COM>; Rajesh Mishra <rajesh.mishra@apollotyres.com>
+Cc: Saurabh Kumar <saurabh.kumar@apollotyres.com>
+Subject: RE: AS400 migration, SAP support required
+
+Hello Patrick,
+
+Please find the attached:
+1)	Export 8 – Extract of Finished Goods (XFIN – Mat Type) EU (HU & ENS) and not marked for deletion in SAP: with Net wt & gross wt
+2)	Export 9 – Extract of Semi-Finished Goods (XSFG – Mat Type) EU (HU & ENS) and not marked for deletion in SAP: with Net wt & gross wt
+
+Let me know in case you need more details.
+
+Best Regards,
+Puneet Sabharwal
