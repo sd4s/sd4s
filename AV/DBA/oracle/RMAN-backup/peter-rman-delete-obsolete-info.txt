@@ -1,0 +1,145 @@
+--This tutorial explains how to identify the backups that are obsolete and expired, and how to properly delete them from RMAN.
+--The main parameter that decides what to delete is the retention policy. 
+--To identify your retention policy, connect using RMAN and and execute “show all” and look for the following line.
+--RMAN Retention Policy
+--In the following example, retention policy is 4 days. So, any backup that is older than 4 days is considered obsolete and old.
+
+$ rman target /
+RMAN> SHOW ALL;
+CONFIGURE RETENTION POLICY TO RECOVERY WINDOW OF 4 DAYS;
+
+--In our example above, any backup that we have in our system (both on RMAN catalog, 
+--and as physical RMAN backup files at the filesystem level) that is older than 4 days is considered obsolete. 
+--Please keep in mind that sometimes it might not be just 4 days. It depends on whether a full-backup is available 
+--within the last 4 days. If you don’t have a full backup in the last 4 days, then what RMAN considers as obsolete 
+--will be even longer than that. i.e Until the last full backup.
+--Obsolete backups are those that are not required to satisfy RMAN requirement of what is specified in the retention policy 
+--to recover the database from the backup.
+--The following three things will happen when you perform “DELETE OBSOLETE” from RMAN prompt:
+--1:The physical backup files are removed from the filesystem level (or from tape backup)
+--2:The backup entries are removed from the RMAN recovery catalog
+--3:The entries are marked as DELETED in the Oracle control file
+
+--View Backups Before Delete Obsolete
+RMAN> show all;
+
+using target database control file instead of recovery catalog
+RMAN configuration parameters for database with db_unique_name U611 are:
+CONFIGURE RETENTION POLICY TO REDUNDANCY 1; # default
+CONFIGURE BACKUP OPTIMIZATION OFF; # default
+CONFIGURE DEFAULT DEVICE TYPE TO DISK; # default
+CONFIGURE CONTROLFILE AUTOBACKUP OFF; # default
+CONFIGURE CONTROLFILE AUTOBACKUP FORMAT FOR DEVICE TYPE DISK TO '%F'; # default
+CONFIGURE DEVICE TYPE DISK PARALLELISM 1 BACKUP TYPE TO BACKUPSET; # default
+CONFIGURE DATAFILE BACKUP COPIES FOR DEVICE TYPE DISK TO 1; # default
+CONFIGURE ARCHIVELOG BACKUP COPIES FOR DEVICE TYPE DISK TO 1; # default
+CONFIGURE CHANNEL DEVICE TYPE DISK FORMAT   'E:\BACKUP\U611\BCK_%t_%s_%p.BAK';
+CONFIGURE MAXSETSIZE TO UNLIMITED; # default
+CONFIGURE ENCRYPTION FOR DATABASE OFF; # default
+CONFIGURE ENCRYPTION ALGORITHM 'AES128'; # default
+CONFIGURE COMPRESSION ALGORITHM 'BASIC' AS OF RELEASE 'DEFAULT' OPTIMIZE FOR LOAD TRUE ; # default
+CONFIGURE ARCHIVELOG DELETION POLICY TO BACKED UP 2 TIMES TO DISK;
+CONFIGURE SNAPSHOT CONTROLFILE NAME TO 'C:\ORACLE\PRODUCT\11.2.0\DBHOME_1\DATABASE\SNCFU611.ORA'; # default
+
+--View Backups Before Delete Obsolete
+--Note: The 4th column which has the title of “S” is Status column. 
+--The value “X” indicates EXPIRED status. 
+--The value “A” indicates AVAILABLE status.
+
+RMAN> list backup summary;
+
+List of Backups
+===============
+Key     TY LV S Device Type Completion Time #Pieces #Copies Compressed Tag
+------- -- -- - ----------- --------------- ------- ------- ---------- ---
+4123    B  0  A DISK        24-SEP-21       1       1       NO         TAG20210924T183004
+4125    B  1  A DISK        24-SEP-21       1       1       NO         INCR LEVEL 1
+4127    B  1  A DISK        25-SEP-21       1       1       NO         INCR LEVEL 1
+4129    B  1  A DISK        26-SEP-21       1       1       NO         INCR LEVEL 1
+4131    B  1  A DISK        27-SEP-21       1       1       NO         INCR LEVEL 1
+4133    B  1  A DISK        28-SEP-21       1       1       NO         INCR LEVEL 1
+4135    B  1  A DISK        29-SEP-21       1       1       NO         INCR LEVEL 1
+4136    B  1  A DISK        29-SEP-21       1       1       NO         INCR LEVEL 1
+
+
+--Before we start executing the delete obsolete command, it is always recommended to do a crosscheck of the backup 
+RMAN> crosscheck backup;
+
+allocated channel: ORA_DISK_1
+channel ORA_DISK_1: SID=106 device type=DISK
+crosschecked backup piece: found to be 'AVAILABLE'
+backup piece handle=E:\BACKUP\U611\BCK_1084127404_4166_1.BAK RECID=4123 STAMP=1084127404
+crosschecked backup piece: found to be 'AVAILABLE'
+backup piece handle=E:\BACKUP\U611\BCK_1084134603_4168_1.BAK RECID=4125 STAMP=1084134603
+crosschecked backup piece: found to be 'AVAILABLE'
+backup piece handle=E:\BACKUP\U611\BCK_1084221003_4170_1.BAK RECID=4127 STAMP=1084221003
+crosschecked backup piece: found to be 'AVAILABLE'
+backup piece handle=E:\BACKUP\U611\BCK_1084307403_4172_1.BAK RECID=4129 STAMP=1084307403
+crosschecked backup piece: found to be 'AVAILABLE'
+backup piece handle=E:\BACKUP\U611\BCK_1084393803_4174_1.BAK RECID=4131 STAMP=1084393803
+crosschecked backup piece: found to be 'AVAILABLE'
+backup piece handle=E:\BACKUP\U611\BCK_1084480203_4176_1.BAK RECID=4133 STAMP=1084480203
+crosschecked backup piece: found to be 'AVAILABLE'
+backup piece handle=E:\BACKUP\U611\BCK_1084566603_4178_1.BAK RECID=4135 STAMP=1084566603
+crosschecked backup piece: found to be 'AVAILABLE'
+backup piece handle=E:\BACKUP\U611\BCK_1084567340_4179_1.BAK RECID=4136 STAMP=1084567341
+Crosschecked 8 objects
+
+
+--Delete Obsolete RMAN backup
+RMAN> DELETE OBSOLETE
+RMAN> DELETE NOPROMPT OBSOLETE
+--if you want to delete obsolete backup based on your own recovery window criteria (instead of what 
+--is configured in RMAN when you do “show all”), you can specify it as shown below. The following will 
+--delete old backups based on recovery window of 10 days.
+RMAN> DELETE NOPROMPT OBSOLETE RECOVERY WINDOW OF 10 DAYS
+
+
+--What is an Expired Backup?
+--When you have an entry in the RMAN repository for a backup, but there are no corresponding physical rman backup 
+--files at the filesystem level, that is considered as expired entry.
+
+--Note: The 4th column which has the title of “S” is Status column. 
+--The value “X” indicates EXPIRED status. 
+--The value “A” indicates AVAILABLE status.
+RMAN> CROSSCHECK BACKUP
+
+RMAN> LIST BACKUP SUMMARY
+
+RMAN> DELETE EXPIRED BACKUP;
+RMAN> DELETE NOPROMPT EXPIRED BACKUP;
+
+
+
+--ARCHIVELOG-FILES
+--As part of the regular backup file log maintenance, the recovery window and redundancy commands are usually 
+--used within backup scripts to define how long the RMAN backups would stay on disk or on tape.
+--For archive log retention, the DELETE ARCHIVELOG command is utilized.
+--To clean-up older archives the “backup archivelog delete input” is very commonly used to manage the archive log retention on disk.
+--This however has a very serious drawback because as soon as the backup is finished all the archive logs are purged.
+--In this scenario if recovery is required then the backup of the archive from tape has to be restored and then they can be applied. 
+--This increases the downtime due to the slower recovery rate from tape.
+--Also for environments that extract data from archive logs, immediate purging of these log files could interfere with processes 
+--like Golden Gate and Streams, in case these processes are down for some reason and the backup job fires, it will remove the 
+--archive logs that will be required on the process start-up.
+--Thus to retain these archive logs for a longer time the following can used in the RMAN backup script to manage the archive logs on disk.
+
+RMAN>DELETE ARCHIVELOG ALL COMPLETED BEFORE ‘sysdate-1’;
+RMAN>DELETE ARCHIVELOG ALL BACKED UP 2 TIMES to disk;
+RMAN>DELETE NOPROMPT ARCHIVELOG UNTIL SEQUENCE = 3790;
+RMAN> delete noprompt archivelog until time ‘SYSDATE-10’;
+
+--Oracle does not allow deleting of older archive, the workaround is to use the “FORCE” keyword if we are sure that we no 
+--longer need those archives.
+RMAN> DELETE FORCE ARCHIVELOG ALL BACKED UP 2 TIMES to disk;
+
+--Delete Archivelog Backups
+--The following command can be used to manage the backup of the archive log when storage space needs to be released.
+RMAN> DELETE BACKUP OF archivelog UNTIL TIME=’sysdate-5′;
+
+--Obsolete database backups
+--Backups that fall outside the specified recovery window can be purged using the obsolete command
+RMAN> DELETE OBSOLETE RECOVERY WINDOW OF 4 DAYS;
+
+
+

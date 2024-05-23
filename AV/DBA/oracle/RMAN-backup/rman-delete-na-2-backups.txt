@@ -1,0 +1,145 @@
+--show current use of storage on flash_recovery_area_usage
+SQL> col percent_space_used format 990.00
+SQL> col percent_space_reclaimable format 990.00
+SQL> select * from v$flash_recovery_area_usage;
+--
+dynamic-perforamnce-view: V$RMAN_CONFIGURATION
+-- 
+TIP:
+Deletion policy staat op none in RMAN-input-file. In BATCH-file van FULL/INCREMENTAL wordt apart een DELETE-OBSOLETE-commando gegeven.
+Dit zou ook met regels in de configuration-file kunnen:
+CONFIGURE RETENTION POLICY TO REDUNDANCY 2;
+CONFIGURE ARCHIVELOG DELETION POLICY TO BACKED UP 2 TIMES TO DISK;
+
+--
+RMAN Retention Policy
+The RMAN retention policy determines how long backups are kept for and how many copies are retained.
+The retention policy can be defined in terms of:
+* REDUNDANCY 		- number of copies to retain
+* RECOVERY WINDOW 	- number of days to retain backups
+--
+The retention policy is configured by the RETENTION POLICY parameter. The default value is:   CONFIGURE RETENTION POLICY TO REDUNDANCY 1; 
+To specify a recovery window of 1 day use:                                                    CONFIGURE RETENTION POLICY TO RECOVERY WINDOW OF 1 DAYS; 
+--
+Backup files can be marked as expired or obsolete.
+* Expired - RMAN has performed a crosscheck and the file cannot be found
+* Obsolete - based on the retention policy the file is not needed for recovery
+The backup retention policy only applies to full or level 0 datafile and control file backups.
+The retention policy does not directly affect archived redo logs and incremental level 1 backups. These files become obsolete when no full backups exist that need them.
+Datafile backup sets cannot be deleted until all datafile backups within the backup set are obsolete.
+Obsolete backups can be identified using the REPORT OBSOLETE command and deleted using the DELETE OBSOLETE command.
+The retention policy can also be set to NONE: 		RMAN> CONFIGURE RETENTION POLICY TO NONE;
+To revert to the default value use:					RMAN> CONFIGURE RETENTION POLICY CLEAR;
+
+
+--dd. 20-09-2021
+--INSTELLEN RMAN-CONFIGURATIE-SETTINGS. VOLGENS MIJ IS ALLEEN DE ARCHIVELOG-DELETION-POLICY NOODZAKELIJK VOOR AWS-REPLICATION !!!
+--OF WE WEL/NIET DE TWEEDE BACKUP-FILE BEWAREN MAAKT NIET UIT VOOR BEWAREN VAN DE ARCHIVELOGS...
+--
+set oracle_sid=REPM
+rman target sys/moonflower 
+--OF: 
+RMAN target sys/moonflower@REPM
+RMAN> SHOW ALL
+RMAN> SHOW RETENTION POLICY
+--RMAN configuration parameters for database with db_unique_name REPM are:
+--CONFIGURE RETENTION POLICY TO REDUNDANCY 1; # default
+--
+--Configureer dat we altijd 2 (FULL)BACKUPFILES hebben !!!. 
+--LET OP: Dit zorgt er wel voor dat we meer ruimte op de ORACLEPROD(_TEST) nodig zullen hebben !!!
+--dd. 20-09-2021: backup-files aanwezig: full-backup van 17-09-2021, + incremental van 17,18 en 19.
+--                archive-log-files aanwezig: flashrecovery/repm archive-logs van 18(2x), 19(1x) en 20(1x) september.
+--
+--remove backup-files:
+RMAN> CONFIGURE RETENTION POLICY TO REDUNDANCY 2;
+--new RMAN configuration parameters:
+--CONFIGURE RETENTION POLICY TO REDUNDANCY 2;
+--new RMAN configuration parameters are successfully stored
+--
+--remove archive-log-files:
+RMAN> CONFIGURE ARCHIVELOG DELETION POLICY TO BACKED UP 2 TIMES TO DISK;
+--new RMAN configuration parameters:
+--CONFIGURE ARCHIVELOG DELETION POLICY TO BACKED UP 2 TIMES TO DISK;
+--new RMAN configuration parameters are successfully stored
+
+--maak-full-backup van REPM (smiddags voordat savonds de INCREMENTAL-backup loopt...).
+@bck_full_repm.bat
+--set oracle_sid=REPM
+--rman target sys/moonflower <E:\Backup\bck_full.inp  >>E:\Backup\bck-log\bck_full_repm.log
+
+--RESULTATEN na FULL-BACKUP
+--dd. 20-09-2021: backup-files aanwezig: full-backup van 17/20 aanwezig, incremental van 17 (savonds),18, en 19.
+--                archive-log-files aanwezig: flashrecovery/repm archive-logs van 18(2x), 19(1x) en 20(1x) september.
+--IS MOOI. DIT IS OOK WAT WE WILLEN !!!
+
+--PLAN VOOR 21-09-2021: op 20/09 draait savonds nog incremental, draai op 21/09 smiddags weer een full-backup. 
+--
+
+--stand 21-09-2021 09:00 uur sochtends:   backup-files aanwezig: full-backup van 17 (met incremental van 17,18,19) en 20 (met incremental 20) aanwezig !!
+--                                        archive-log-files aanwezig: flashrecovery/repm archive-logs van 18(2x), 19(1x), 20(1x) en 21 (1x) september.
+--                      Voorspelling: draai opnieuw full-backup. De oudste full-backup-file van 17 (en incr van 17,18,19) moeten dan verwijderd zijn (houden we full-backup van 20+21 over)
+--                                    en ook de archive-log-files van 18(2x),19(1x), 20(1x) en 21(1x). Uiteindelijk moet nog een INCR-backup van 20 overblijven (horen bij full-backup van 20)!!
+--CONCLUSIE: as expected. Het gaat nu om de volgende stap, het maken van een FULL-backup.
+--           De incrementele-backup van gisteravond, heeft dus geen invloed gehad op ARCHIVELOG-DELETION-POLICY aangezien de archive-logs van eerder
+--           nog gewoon zijn blijven staan !!! Alleen een FULL-BACKUP bepaalt aantal keer naar DISK gebackuped !!!.
+--
+@bck_full_repm.bat
+--set oracle_sid=REPM
+--rman target sys/moonflower <E:\Backup\bck_full.inp  >>E:\Backup\bck-log\bck_full_repm.log
+
+--RESULTATEN NA FULL-BACKUP
+--dd. 21-09-2021 (09:15): backup-files aanwezig: full-backup van 20 (with incr of 20 savonds) en 21. Er blijven dus 2 FULL-BACKUPs over.
+--                                               De full-backup van 17 (en incr. van 17,18,19) zijn verwijderd (=OK)
+--                        archivelog-files aanwezig: alleen de flash_recovery/repm-archive-logs van 21 (1x) ochtends.
+--                                                   De archive-logs van 18,19 en 20 zijn verwijderd. (=OK, denk ik. Ik weet nl. niet zeker van welk tijdstip de archive-log van de 20e was, waarschijn van voor de full-backup).
+--
+--CONCLUSIE: het automatisch schonen van backup-files + archive-log-files gaat zoals voorspeld.
+--           We kunnen keuze maken om Aantal-backups gelijk te laten lopen met de ARCHIVE-logs, of de backup-files toch al na 1 week te schonen. 
+--           Als we besluiten om ze extra te bewaren dan komen we wel ruimte tekort op de ORACLE-servers. Dat lijkt dus niet handig.
+--           DUS ALLEEN:  								CONFIGURE ARCHIVELOG DELETION POLICY TO BACKED UP 2 TIMES TO DISK;
+--           EN RETENTION-POLICY TERUG NAAR DEFAULT=1:  CONFIGURE RETENTION POLICY TO REDUNDANCY 1;
+--
+--           letop: backup-files + archivelog-files ouder dan aantal dagen in redundancy/recovery-window worden pas obsolete INDIEN oracle deze NIET meer
+--                  nodig heeft voor RECOVERY. Betekent in ons geval dat alle INCREMENTELE en BIJBEHORENDE-LEVEL-0 (FULL BACKUP), pas obsolete worden zodra
+--                  alle gerelateerde INCREMENTELE backups niet meer in het redundancy/recovery-window vallen !!!!!
+--                  Door redundancy/recovery-window op 1 te zetten, worden automatisch alle INCREMENTELE en bijbehorende LEVEL-0 direct obsolete. 
+--                  En worden om die reden ook direct verwijderd na het volgende DELETE OBSOLETE commando !!. 
+--                  Dat kun je dus voorkomen door redundancy/recovery-window op 2 DAYS te zetten, maar dat betekent dan wel dat we op ONZE DB-SERVER wel ruimte
+--                  moeten hebben voor 2 FULL-BACKUPS (en incrementele).
+--                  AANGEZIEN WE DEZE RUIMTE NIET HEBBEN (NIET OP ORACLEPROD EN NIET OP ORACLEPROD_TEST !!!) ZULLEN WE HET MOETEN DOEN MET redundancy/recovery-window = 1 dag !!!
+--                  en zullen we truukje uit moeten halen om de archivelogs te bewaren !!!!
+--
+--DD. 21-09-2021: INSTELLEN ORACLEPROD_TEST IS61/U611 :
+--
+RMAN target sys/moonflower@IS61
+SHOW ALL
+/*
+using target database control file instead of recovery catalog
+RMAN configuration parameters for database with db_unique_name U611 are:
+CONFIGURE RETENTION POLICY TO REDUNDANCY 1; # default
+CONFIGURE BACKUP OPTIMIZATION OFF; # default
+CONFIGURE DEFAULT DEVICE TYPE TO DISK; # default
+CONFIGURE CONTROLFILE AUTOBACKUP OFF; # default
+CONFIGURE CONTROLFILE AUTOBACKUP FORMAT FOR DEVICE TYPE DISK TO '%F'; # default
+CONFIGURE DEVICE TYPE DISK PARALLELISM 1 BACKUP TYPE TO BACKUPSET; # default
+CONFIGURE DATAFILE BACKUP COPIES FOR DEVICE TYPE DISK TO 1; # default
+CONFIGURE ARCHIVELOG BACKUP COPIES FOR DEVICE TYPE DISK TO 1; # default
+CONFIGURE CHANNEL DEVICE TYPE DISK FORMAT   'E:\BACKUP\U611\BCK_%t_%s_%p.BAK';
+CONFIGURE MAXSETSIZE TO UNLIMITED; # default
+CONFIGURE ENCRYPTION FOR DATABASE OFF; # default
+CONFIGURE ENCRYPTION ALGORITHM 'AES128'; # default
+CONFIGURE COMPRESSION ALGORITHM 'BASIC' AS OF RELEASE 'DEFAULT' OPTIMIZE FOR LOAD TRUE ; # default
+CONFIGURE ARCHIVELOG DELETION POLICY TO NONE; # default
+CONFIGURE SNAPSHOT CONTROLFILE NAME TO 'C:\ORACLE\PRODUCT\11.2.0\DBHOME_1\DATABASE\SNCFU611.ORA'; # default
+*/
+CONFIGURE ARCHIVELOG DELETION POLICY TO BACKED UP 2 TIMES TO DISK;
+
+RMAN target sys/moonflower@U611
+SHOW ALL;
+CONFIGURE ARCHIVELOG DELETION POLICY TO BACKED UP 2 TIMES TO DISK;
+
+
+--
+--einde script
+--
+
