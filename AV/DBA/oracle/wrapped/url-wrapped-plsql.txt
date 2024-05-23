@@ -1,0 +1,10 @@
+https://www.codecrete.net/UnwrapIt/
+
+when you are using http://www.codecrete.net/UnwrapIt/
+I would suggest that you store the wrapped object into a file on your workstation and then use the load file option on the site. 
+
+When you copy and paste you are not assured of integrity of what you paste. That being said the easiest thing to do is to load the add on
+
+https://www.salvis.com/blog/2015/05/17/introducing-plsql-unwrapper-for-sql-developer/
+
+into sql developer. It is a simple right click option to unwrap the code.
