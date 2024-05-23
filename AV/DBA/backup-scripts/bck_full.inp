@@ -1,0 +1,4 @@
+backup incremental level 0 database;
+change archivelog from time 'sysdate-14' uncatalog;
+delete noprompt obsolete;
+catalog recovery area noprompt;
