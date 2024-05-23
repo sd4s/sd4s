@@ -1,0 +1,4 @@
+C:\TEMP\oracle-12-2-0-1\client\stage\Components\oracle.dbdev\12.2.0.1.0\1\DataFiles\filegroup1.jar!/sqldeveloper/sqldeveloper/lib/log4j-1.2.13.jar contains Log4J-1.x   <= 1.2.17 _OLD_
+C:\TEMP\oracle-12-2-0-1\client\stage\Components\oracle.swd.oui.core\12.2.0.1.4\1\DataFiles\filegroup1.jar!/oui/jlib/jlib/log4j-core.jar contains Log4J-1.x   <= 1.2.17 _OLD_
+C:\TEMP\sqldeveloper\sqldeveloper\lib\log4j-core.jar contains Log4J-2.x   >= 2.10.0 _VULNERABLE_
+C:\TEMP\sqldeveloper21.4\sqldeveloper\sqldeveloper\lib\log4j-core.jar contains Log4J-2.x   == 2.16.0 _OKAY_
