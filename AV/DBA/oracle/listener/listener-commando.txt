@@ -1,0 +1,12 @@
+--logging aanzetten
+set log_status on
+--trace-level:   
+--Level: One of the following trace levels:
+--off: for no trace output
+--user: for user trace information
+--admin: for administration trace information
+--support: for Oracle Support Services trace informatio
+set trc_level admin   
+
+
+

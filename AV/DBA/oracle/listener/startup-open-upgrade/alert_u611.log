@@ -1,0 +1,257 @@
+Tue Sep 01 09:13:00 2020
+Starting ORACLE instance (normal)
+LICENSE_MAX_SESSION = 0
+LICENSE_SESSIONS_WARNING = 0
+Initial number of CPU is 32
+Number of processor cores in the system is 16
+Number of processor sockets in the system is 2
+SMR is corrupted and will be recreated. All Health Check clients should disconnect and reconnect to the instance.
+Shared memory segment for instance monitoring created
+Picked latch-free SCN scheme 3
+Using LOG_ARCHIVE_DEST_1 parameter default value as USE_DB_RECOVERY_FILE_DEST
+Autotune of undo retention is turned on. 
+IMODE=BR
+ILAT =28
+LICENSE_MAX_USERS = 0
+SYS auditing is disabled
+NUMA system with 2 nodes detected
+Starting up:
+Oracle Database 11g Release 11.2.0.4.0 - 64bit Production.
+Windows NT Version V6.2  
+CPU                 : 32 - type 8664, 16 Physical Cores
+Process Affinity    : 0x0x0000000000000000
+Memory (Avail/Total): Ph:20388M/32733M, Ph+PgF:25734M/37597M 
+Using parameter settings in server-side spfile C:\ORACLE\PRODUCT\11.2.0\DBHOME_1\DATABASE\SPFILEU611.ORA
+System parameters with non-default values:
+  processes                = 150
+  nls_length_semantics     = "CHAR"
+  memory_target            = 12000M
+  control_files            = "D:\DATABASE\U611\CTL1\U611\CONTROLFILE\O1_MF_9JDRJVYS_.CTL"
+  control_files            = "D:\DATABASE\U611\CTL2\U611\CONTROLFILE\O1_MF_9JDRJVYS_.CTL"
+  db_block_size            = 8192
+  compatible               = "11.2.0.0.0"
+  db_create_file_dest      = "D:\database\U611\data"
+  db_create_online_log_dest_1= "D:\database\U611\ctl1"
+  db_create_online_log_dest_2= "D:\database\U611\ctl2"
+  db_recovery_file_dest    = "E:\FlashRecovery\U611\ARCHIVELOG"
+  db_recovery_file_dest_size= 50251250K
+  undo_tablespace          = "UNI_UNDO"
+  remote_login_passwordfile= "EXCLUSIVE"
+  db_domain                = ""
+  dispatchers              = "(PROTOCOL=TCP) (SERVICE=U611XDB)"
+  utl_file_dir             = "D:\unilink\in,D:\unilink\out,D:\unilink\err,D:\unilink\log,D:\database\U611\unarchive"
+  job_queue_processes      = 1000
+  audit_file_dest          = "C:\ORACLE\ADMIN\U611\ADUMP"
+  user_dump_dest           = "C:\Oracle\diag\rdbms\u611\u611\trace"
+  audit_trail              = "DB"
+  db_name                  = "U611"
+  open_cursors             = 300
+  diagnostic_dest          = "C:\ORACLE"
+Deprecated system parameters with specified values:
+  user_dump_dest           
+End of deprecated system parameter listing
+Tue Sep 01 09:13:03 2020
+PMON started with pid=2, OS id=11096 
+Tue Sep 01 09:13:03 2020
+PSP0 started with pid=3, OS id=16280 
+Tue Sep 01 09:13:04 2020
+VKTM started with pid=4, OS id=18240 at elevated priority
+VKTM running at (10)millisec precision with DBRM quantum (100)ms
+Tue Sep 01 09:13:04 2020
+GEN0 started with pid=5, OS id=17276 
+Tue Sep 01 09:13:04 2020
+DIAG started with pid=6, OS id=18072 
+Tue Sep 01 09:13:04 2020
+DBRM started with pid=7, OS id=15368 
+Tue Sep 01 09:13:04 2020
+DIA0 started with pid=8, OS id=16736 
+Tue Sep 01 09:13:04 2020
+MMAN started with pid=9, OS id=17968 
+Tue Sep 01 09:13:04 2020
+DBW0 started with pid=10, OS id=18428 
+Tue Sep 01 09:13:04 2020
+DBW1 started with pid=11, OS id=17736 
+Tue Sep 01 09:13:04 2020
+DBW2 started with pid=12, OS id=5616 
+Tue Sep 01 09:13:04 2020
+DBW3 started with pid=13, OS id=13828 
+Tue Sep 01 09:13:04 2020
+LGWR started with pid=14, OS id=13368 
+Tue Sep 01 09:13:04 2020
+CKPT started with pid=15, OS id=18172 
+Tue Sep 01 09:13:04 2020
+SMON started with pid=16, OS id=16968 
+Tue Sep 01 09:13:04 2020
+RECO started with pid=17, OS id=14464 
+Tue Sep 01 09:13:04 2020
+MMON started with pid=18, OS id=14328 
+Tue Sep 01 09:13:04 2020
+MMNL started with pid=19, OS id=18016 
+starting up 1 dispatcher(s) for network address '(ADDRESS=(PARTIAL=YES)(PROTOCOL=TCP))'...
+starting up 1 shared server(s) ...
+ORACLE_BASE from environment = C:\oracle
+Tue Sep 01 09:18:05 2020
+alter database mount
+Tue Sep 01 09:18:09 2020
+Successful mount of redo thread 1, with mount id 1818249229
+Database mounted in Exclusive Mode
+Lost write protection disabled
+Create Relation IPS_PACKAGE_UNPACK_HISTORY
+Completed: alter database mount
+Tue Sep 01 09:18:16 2020
+alter database open
+Beginning crash recovery of 1 threads
+Started redo scan
+Completed redo scan
+ read 2009 KB redo, 156 data blocks need recovery
+Started redo application at
+ Thread 1: logseq 341109, block 10830
+Recovery of Online Redo Log: Thread 1 Group 3 Seq 341109 Reading mem 0
+  Mem# 0: D:\DATABASE\U611\CTL1\U611\ONLINELOG\O1_MF_3_9JDRJW2Y_.LOG
+  Mem# 1: D:\DATABASE\U611\CTL2\U611\ONLINELOG\O1_MF_3_9JDRJW3G_.LOG
+Completed redo application of 0.94MB
+Completed crash recovery at
+ Thread 1: logseq 341109, block 14849, scn 6321413497
+ 156 data blocks read, 156 data blocks written, 2009 redo k-bytes read
+Database SCN compatibility initialized to 3
+LGWR: STARTING ARCH PROCESSES
+Tue Sep 01 09:18:17 2020
+ARC0 started with pid=23, OS id=19264 
+ARC0: Archival started
+LGWR: STARTING ARCH PROCESSES COMPLETE
+ARC0: STARTING ARCH PROCESSES
+Thread 1 advanced to log sequence 341110 (thread open)
+Tue Sep 01 09:18:19 2020
+ARC1 started with pid=24, OS id=18780 
+Tue Sep 01 09:18:19 2020
+ARC2 started with pid=25, OS id=16456 
+Tue Sep 01 09:18:19 2020
+ARC3 started with pid=26, OS id=19444 
+ARC1: Archival started
+ARC2: Archival started
+ARC2: Becoming the 'no FAL' ARCH
+ARC2: Becoming the 'no SRL' ARCH
+Tue Sep 01 09:18:20 2020
+Thread 1 opened at log sequence 341110
+  Current log# 1 seq# 341110 mem# 0: D:\DATABASE\U611\CTL1\U611\ONLINELOG\O1_MF_1_9JDRJW01_.LOG
+  Current log# 1 seq# 341110 mem# 1: D:\DATABASE\U611\CTL2\U611\ONLINELOG\O1_MF_1_9JDRJW0J_.LOG
+Successful open of redo thread 1
+ARC1: Becoming the heartbeat ARCH
+ARC3: Archival started
+ARC0: STARTING ARCH PROCESSES COMPLETE
+Tue Sep 01 09:18:21 2020
+SMON: enabling cache recovery
+Errors in file C:\ORACLE\diag\rdbms\u611\u611\trace\u611_ora_14744.trc:
+ORA-00704: bootstrap process failure
+ORA-39700: database must be opened with UPGRADE option
+Errors in file C:\ORACLE\diag\rdbms\u611\u611\trace\u611_ora_14744.trc:
+ORA-00704: bootstrap process failure
+ORA-39700: database must be opened with UPGRADE option
+Error 704 happened during db open, shutting down database
+USER (ospid: 14744): terminating the instance due to error 704
+Instance terminated by USER, pid = 14744
+ORA-1092 signalled during: alter database open...
+opiodr aborting process unknown ospid (14744) as a result of ORA-1092
+Tue Sep 01 09:18:25 2020
+ORA-1092 : opitsk aborting process
+Tue Sep 01 09:19:00 2020
+Starting ORACLE instance (normal)
+LICENSE_MAX_SESSION = 0
+LICENSE_SESSIONS_WARNING = 0
+Initial number of CPU is 32
+Number of processor cores in the system is 16
+Number of processor sockets in the system is 2
+Picked latch-free SCN scheme 3
+Using LOG_ARCHIVE_DEST_1 parameter default value as USE_DB_RECOVERY_FILE_DEST
+Autotune of undo retention is turned on. 
+IMODE=BR
+ILAT =28
+LICENSE_MAX_USERS = 0
+SYS auditing is disabled
+NUMA system with 2 nodes detected
+Starting up:
+Oracle Database 11g Release 11.2.0.4.0 - 64bit Production.
+Windows NT Version V6.2  
+CPU                 : 32 - type 8664, 16 Physical Cores
+Process Affinity    : 0x0x0000000000000000
+Memory (Avail/Total): Ph:20346M/32733M, Ph+PgF:25628M/37597M 
+Using parameter settings in server-side spfile C:\ORACLE\PRODUCT\11.2.0\DBHOME_1\DATABASE\SPFILEU611.ORA
+System parameters with non-default values:
+  processes                = 150
+  nls_length_semantics     = "CHAR"
+  memory_target            = 12000M
+  control_files            = "D:\DATABASE\U611\CTL1\U611\CONTROLFILE\O1_MF_9JDRJVYS_.CTL"
+  control_files            = "D:\DATABASE\U611\CTL2\U611\CONTROLFILE\O1_MF_9JDRJVYS_.CTL"
+  db_block_size            = 8192
+  compatible               = "11.2.0.0.0"
+  db_create_file_dest      = "D:\database\U611\data"
+  db_create_online_log_dest_1= "D:\database\U611\ctl1"
+  db_create_online_log_dest_2= "D:\database\U611\ctl2"
+  db_recovery_file_dest    = "E:\FlashRecovery\U611\ARCHIVELOG"
+  db_recovery_file_dest_size= 50251250K
+  undo_tablespace          = "UNI_UNDO"
+  remote_login_passwordfile= "EXCLUSIVE"
+  db_domain                = ""
+  dispatchers              = "(PROTOCOL=TCP) (SERVICE=U611XDB)"
+  utl_file_dir             = "D:\unilink\in,D:\unilink\out,D:\unilink\err,D:\unilink\log,D:\database\U611\unarchive"
+  job_queue_processes      = 1000
+  audit_file_dest          = "C:\ORACLE\ADMIN\U611\ADUMP"
+  user_dump_dest           = "C:\Oracle\diag\rdbms\u611\u611\trace"
+  audit_trail              = "DB"
+  db_name                  = "U611"
+  open_cursors             = 300
+  diagnostic_dest          = "C:\ORACLE"
+Deprecated system parameters with specified values:
+  user_dump_dest           
+End of deprecated system parameter listing
+Tue Sep 01 09:19:03 2020
+PMON started with pid=2, OS id=19028 
+Tue Sep 01 09:19:03 2020
+PSP0 started with pid=3, OS id=19200 
+Tue Sep 01 09:19:04 2020
+VKTM started with pid=4, OS id=19004 at elevated priority
+VKTM running at (10)millisec precision with DBRM quantum (100)ms
+Tue Sep 01 09:19:04 2020
+GEN0 started with pid=5, OS id=15412 
+Tue Sep 01 09:19:04 2020
+DIAG started with pid=6, OS id=18160 
+Tue Sep 01 09:19:04 2020
+DBRM started with pid=7, OS id=17552 
+Tue Sep 01 09:19:04 2020
+DIA0 started with pid=8, OS id=17628 
+Tue Sep 01 09:19:04 2020
+MMAN started with pid=9, OS id=19212 
+Tue Sep 01 09:19:04 2020
+DBW0 started with pid=10, OS id=19196 
+Tue Sep 01 09:19:04 2020
+DBW1 started with pid=11, OS id=19268 
+Tue Sep 01 09:19:04 2020
+DBW2 started with pid=12, OS id=19292 
+Tue Sep 01 09:19:04 2020
+DBW3 started with pid=13, OS id=19288 
+Tue Sep 01 09:19:04 2020
+LGWR started with pid=14, OS id=19300 
+Tue Sep 01 09:19:04 2020
+CKPT started with pid=15, OS id=19296 
+Tue Sep 01 09:19:04 2020
+SMON started with pid=16, OS id=19304 
+Tue Sep 01 09:19:04 2020
+RECO started with pid=17, OS id=19272 
+Tue Sep 01 09:19:04 2020
+MMON started with pid=18, OS id=19208 
+Tue Sep 01 09:19:04 2020
+MMNL started with pid=19, OS id=19032 
+starting up 1 dispatcher(s) for network address '(ADDRESS=(PARTIAL=YES)(PROTOCOL=TCP))'...
+starting up 1 shared server(s) ...
+ORACLE_BASE from environment = C:\oracle
+Tue Sep 01 09:19:04 2020
+ALTER DATABASE   MOUNT
+Successful mount of redo thread 1, with mount id 1818254664
+Database mounted in Exclusive Mode
+Lost write protection disabled
+Completed: ALTER DATABASE   MOUNT
+Tue Sep 01 09:34:07 2020
+db_recovery_file_dest_size of 49073 MB is 0.30% used. This is a
+user-specified limit on the amount of space that will be used by this
+database for recovery-related files, and does not reflect the amount of
+space available in the underlying filesystem or ASM diskgroup.
