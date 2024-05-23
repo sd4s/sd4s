@@ -1,0 +1,7 @@
+directory=MST_DIR
+dumpfile=metadata_unilab_20210601.dmp 
+logfile=metadata_unilab_20210601.log
+sqlfile=metadata_unilab_20210601_ddl.sql
+schemas=unilab
+content=METADATA_ONLY
+

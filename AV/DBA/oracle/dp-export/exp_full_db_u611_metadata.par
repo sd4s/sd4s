@@ -1,0 +1,39 @@
+##conn sys / as sysdba
+##A full export does not export system schemas that contain Oracle-managed data and metadata. 
+##Examples of system schemas that are not exported include SYS, ORDSYS, and MDSYS.
+##Grants on objects owned by the SYS schema are never exported
+##
+##The object_type specifies the type of object to be excluded. To see a list of valid values 
+##for object_type, query the following views: 
+##1)DATABASE_EXPORT_OBJECTS for full mode, 
+##2)SCHEMA_EXPORT_OBJECTS for schema mode, 
+##3)and TABLE_EXPORT_OBJECTS for table and tablespace mode. 
+##The values listed in the OBJECT_PATH column are the valid object types.
+##
+##ESTIMATE_ONLY=YES, alleen bij table-export, om ruimte te calculeren
+##DATA_OPTIONS=XML_CLOBS, xml wordt als CLOB in dmp geexporteerd. (hoeveel tabellen met CLOBS hebben we eigenlijk?)
+##
+##VB: expdp hr FULL=YES DUMPFILE=dpump_dir1:full1%U.dmp, dpump_dir2:full2%U.dmp FILESIZE=2G PARALLEL=3 LOGFILE=dpump_dir1:expfull.log JOB_NAME=expfull
+##
+##create directory orcl_full as 'D:\export_full_db';
+##grant read,write on directory orcl_full to schepens;
+##grant datapump_exp_full_database, DATAPUMP_IMP_FULL_DATABASE to schepens;
+##
+##full=yes, exporteert all metadata + data uit db
+##compression=none, geen compressie voor data/metadata
+##CONTENT=metadata_only, ALL, of DATA_ONLY. 
+##status: geeft om de #sec de status weer van de export
+
+directory=EXPORT_DIR
+dumpfile=orclfullU611meta.dmp 
+logfile=orclfullU611meta.log 
+full=yes 
+compression=none
+CONTENT=METADATA_ONLY
+###EXCLUDE=VIEW, PACKAGE, FUNCTION
+###EXCLUDE=TABLE:"(IN 'adm.adm_err_log', 'adm.adm_bug_log')"
+###INCLUDE=TABLE:"IN ('EMPLOYEES', 'DEPARTMENTS')"
+PARALLEL=1
+STATUS=300
+JOB_NAME=expfullu611meta_20210601
+
