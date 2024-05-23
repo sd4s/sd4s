@@ -1,0 +1,11 @@
+
+Fri Jul 31 12:40:14 2020
+C:\Oracle\product\11.2.0\dbhome_1\bin\oradim.exe -new -sid IS61 -pfile C:\Oracle\product\11.2.0\dbhome_1\database\INITis61.ORA -log oradimIS61.log 
+Fri Jul 31 12:40:15 2020
+Instance created.
+
+Fri Jul 31 15:01:04 2020
+C:\Oracle\product\11.2.0\dbhome_1\bin\oradim.exe -shutdown -sid SI61 -usrpwd * -shutmode immediate -log oradimIS61.log 
+Fri Jul 31 15:01:05 2020
+ORA-12560: TNS:protocol adapter error
+

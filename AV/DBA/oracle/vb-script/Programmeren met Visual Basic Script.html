@@ -1,0 +1,3494 @@
+
+<!-- saved from url=(0055)https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm -->
+<html xmlns="http://www.w3.org/1999/xhtml" lang="nl"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style type="text/css" data-fbcssmodules="css:fb.css.base css:fb.css.dialog css:fb.css.iframewidget css:fb.css.customer_chat_plugin_iframe">.fb_hidden{position:absolute;top:-10000px;z-index:10001}.fb_reposition{overflow:hidden;position:relative}.fb_invisible{display:none}.fb_reset{background:none;border:0;border-spacing:0;color:#000;cursor:auto;direction:ltr;font-family:"lucida grande", tahoma, verdana, arial, sans-serif;font-size:11px;font-style:normal;font-variant:normal;font-weight:normal;letter-spacing:normal;line-height:1;margin:0;overflow:visible;padding:0;text-align:left;text-decoration:none;text-indent:0;text-shadow:none;text-transform:none;visibility:visible;white-space:normal;word-spacing:normal}.fb_reset>div{overflow:hidden}@keyframes fb_transform{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}.fb_animate{animation:fb_transform .3s forwards}
+.fb_dialog{background:rgba(82, 82, 82, .7);position:absolute;top:-10000px;z-index:10001}.fb_dialog_advanced{border-radius:8px;padding:10px}.fb_dialog_content{background:#fff;color:#373737}.fb_dialog_close_icon{background:url(https://static.xx.fbcdn.net/rsrc.php/v3/yq/r/IE9JII6Z1Ys.png) no-repeat scroll 0 0 transparent;cursor:pointer;display:block;height:15px;position:absolute;right:18px;top:17px;width:15px}.fb_dialog_mobile .fb_dialog_close_icon{left:5px;right:auto;top:5px}.fb_dialog_padding{background-color:transparent;position:absolute;width:1px;z-index:-1}.fb_dialog_close_icon:hover{background:url(https://static.xx.fbcdn.net/rsrc.php/v3/yq/r/IE9JII6Z1Ys.png) no-repeat scroll 0 -15px transparent}.fb_dialog_close_icon:active{background:url(https://static.xx.fbcdn.net/rsrc.php/v3/yq/r/IE9JII6Z1Ys.png) no-repeat scroll 0 -30px transparent}.fb_dialog_iframe{line-height:0}.fb_dialog_content .dialog_title{background:#6d84b4;border:1px solid #365899;color:#fff;font-size:14px;font-weight:bold;margin:0}.fb_dialog_content .dialog_title>span{background:url(https://static.xx.fbcdn.net/rsrc.php/v3/yd/r/Cou7n-nqK52.gif) no-repeat 5px 50%;float:left;padding:5px 0 7px 26px}body.fb_hidden{height:100%;left:0;margin:0;overflow:visible;position:absolute;top:-10000px;transform:none;width:100%}.fb_dialog.fb_dialog_mobile.loading{background:url(https://static.xx.fbcdn.net/rsrc.php/v3/ya/r/3rhSv5V8j3o.gif) white no-repeat 50% 50%;min-height:100%;min-width:100%;overflow:hidden;position:absolute;top:0;z-index:10001}.fb_dialog.fb_dialog_mobile.loading.centered{background:none;height:auto;min-height:initial;min-width:initial;width:auto}.fb_dialog.fb_dialog_mobile.loading.centered #fb_dialog_loader_spinner{width:100%}.fb_dialog.fb_dialog_mobile.loading.centered .fb_dialog_content{background:none}.loading.centered #fb_dialog_loader_close{clear:both;color:#fff;display:block;font-size:18px;padding-top:20px}#fb-root #fb_dialog_ipad_overlay{background:rgba(0, 0, 0, .4);bottom:0;left:0;min-height:100%;position:absolute;right:0;top:0;width:100%;z-index:10000}#fb-root #fb_dialog_ipad_overlay.hidden{display:none}.fb_dialog.fb_dialog_mobile.loading iframe{visibility:hidden}.fb_dialog_mobile .fb_dialog_iframe{position:sticky;top:0}.fb_dialog_content .dialog_header{background:linear-gradient(from(#738aba), to(#2c4987));border-bottom:1px solid;border-color:#043b87;box-shadow:white 0 1px 1px -1px inset;color:#fff;font:bold 14px Helvetica, sans-serif;text-overflow:ellipsis;text-shadow:rgba(0, 30, 84, .296875) 0 -1px 0;vertical-align:middle;white-space:nowrap}.fb_dialog_content .dialog_header table{height:43px;width:100%}.fb_dialog_content .dialog_header td.header_left{font-size:12px;padding-left:5px;vertical-align:middle;width:60px}.fb_dialog_content .dialog_header td.header_right{font-size:12px;padding-right:5px;vertical-align:middle;width:60px}.fb_dialog_content .touchable_button{background:linear-gradient(from(#4267B2), to(#2a4887));background-clip:padding-box;border:1px solid #29487d;border-radius:3px;display:inline-block;line-height:18px;margin-top:3px;max-width:85px;padding:4px 12px;position:relative}.fb_dialog_content .dialog_header .touchable_button input{background:none;border:none;color:#fff;font:bold 12px Helvetica, sans-serif;margin:2px -12px;padding:2px 6px 3px 6px;text-shadow:rgba(0, 30, 84, .296875) 0 -1px 0}.fb_dialog_content .dialog_header .header_center{color:#fff;font-size:16px;font-weight:bold;line-height:18px;text-align:center;vertical-align:middle}.fb_dialog_content .dialog_content{background:url(https://static.xx.fbcdn.net/rsrc.php/v3/y9/r/jKEcVPZFk-2.gif) no-repeat 50% 50%;border:1px solid #4a4a4a;border-bottom:0;border-top:0;height:150px}.fb_dialog_content .dialog_footer{background:#f5f6f7;border:1px solid #4a4a4a;border-top-color:#ccc;height:40px}#fb_dialog_loader_close{float:left}.fb_dialog.fb_dialog_mobile .fb_dialog_close_icon{visibility:hidden}#fb_dialog_loader_spinner{animation:rotateSpinner 1.2s linear infinite;background-color:transparent;background-image:url(https://static.xx.fbcdn.net/rsrc.php/v3/yD/r/t-wz8gw1xG1.png);background-position:50% 50%;background-repeat:no-repeat;height:24px;width:24px}@keyframes rotateSpinner{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.fb_iframe_widget{display:inline-block;position:relative}.fb_iframe_widget span{display:inline-block;position:relative;text-align:justify}.fb_iframe_widget iframe{position:absolute}.fb_iframe_widget_fluid_desktop,.fb_iframe_widget_fluid_desktop span,.fb_iframe_widget_fluid_desktop iframe{max-width:100%}.fb_iframe_widget_fluid_desktop iframe{min-width:220px;position:relative}.fb_iframe_widget_lift{z-index:1}.fb_iframe_widget_fluid{display:inline}.fb_iframe_widget_fluid span{width:100%}
+.fb_mpn_mobile_landing_page_slide_out{animation-duration:200ms;animation-name:fb_mpn_landing_page_slide_out;transition-timing-function:ease-in}.fb_mpn_mobile_landing_page_slide_out_from_left{animation-duration:200ms;animation-name:fb_mpn_landing_page_slide_out_from_left;transition-timing-function:ease-in}.fb_mpn_mobile_landing_page_slide_up{animation-duration:500ms;animation-name:fb_mpn_landing_page_slide_up;transition-timing-function:ease-in}.fb_mpn_mobile_bounce_in{animation-duration:300ms;animation-name:fb_mpn_bounce_in;transition-timing-function:ease-in}.fb_mpn_mobile_bounce_out{animation-duration:300ms;animation-name:fb_mpn_bounce_out;transition-timing-function:ease-in}.fb_mpn_mobile_bounce_out_v2{animation-duration:300ms;animation-name:fb_mpn_fade_out;transition-timing-function:ease-in}.fb_customer_chat_bounce_in_v2{animation-duration:300ms;animation-name:fb_bounce_in_v2;transition-timing-function:ease-in}.fb_customer_chat_bounce_in_from_left{animation-duration:300ms;animation-name:fb_bounce_in_from_left;transition-timing-function:ease-in}.fb_customer_chat_bounce_out_v2{animation-duration:300ms;animation-name:fb_bounce_out_v2;transition-timing-function:ease-in}.fb_customer_chat_bounce_out_from_left{animation-duration:300ms;animation-name:fb_bounce_out_from_left;transition-timing-function:ease-in}.fb_invisible_flow{display:inherit;height:0;overflow-x:hidden;width:0}@keyframes fb_mpn_landing_page_slide_out{0%{margin:0 12px;width:100% - 24px}60%{border-radius:18px}100%{border-radius:50%;margin:0 24px;width:60px}}@keyframes fb_mpn_landing_page_slide_out_from_left{0%{left:12px;width:100% - 24px}60%{border-radius:18px}100%{border-radius:50%;left:12px;width:60px}}@keyframes fb_mpn_landing_page_slide_up{0%{bottom:0;opacity:0}100%{bottom:24px;opacity:1}}@keyframes fb_mpn_bounce_in{0%{opacity:.5;top:100%}100%{opacity:1;top:0}}@keyframes fb_mpn_fade_out{0%{bottom:30px;opacity:1}100%{bottom:0;opacity:0}}@keyframes fb_mpn_bounce_out{0%{opacity:1;top:0}100%{opacity:.5;top:100%}}@keyframes fb_bounce_in_v2{0%{opacity:0;transform:scale(0, 0);transform-origin:bottom right}50%{transform:scale(1.03, 1.03);transform-origin:bottom right}100%{opacity:1;transform:scale(1, 1);transform-origin:bottom right}}@keyframes fb_bounce_in_from_left{0%{opacity:0;transform:scale(0, 0);transform-origin:bottom left}50%{transform:scale(1.03, 1.03);transform-origin:bottom left}100%{opacity:1;transform:scale(1, 1);transform-origin:bottom left}}@keyframes fb_bounce_out_v2{0%{opacity:1;transform:scale(1, 1);transform-origin:bottom right}100%{opacity:0;transform:scale(0, 0);transform-origin:bottom right}}@keyframes fb_bounce_out_from_left{0%{opacity:1;transform:scale(1, 1);transform-origin:bottom left}100%{opacity:0;transform:scale(0, 0);transform-origin:bottom left}}@keyframes slideInFromBottom{0%{opacity:.1;transform:translateY(100%)}100%{opacity:1;transform:translateY(0)}}@keyframes slideInFromBottomDelay{0%{opacity:0;transform:translateY(100%)}97%{opacity:0;transform:translateY(100%)}100%{opacity:1;transform:translateY(0)}}</style><script charset="utf-8" src="./Programmeren met Visual Basic Script_files/button.aa5c8b3b99b08ae2f6493ea7d8cc8590.js.download"></script></head><body><b><b></b></b>
+
+
+<title>Programmeren met Visual Basic Script</title>
+
+<link rel="stylesheet" type="text/css" href="./Programmeren met Visual Basic Script_files/Computer.css">
+<meta name="author" content="Henk Dalmolen">
+<meta name="keywords" content="">
+<meta name="Programmeren met Visual Basic Script.">
+<script src="./Programmeren met Visual Basic Script_files/cb=gapi.loaded_1" async=""></script><script src="./Programmeren met Visual Basic Script_files/cb=gapi.loaded_0" async=""></script><script src="./Programmeren met Visual Basic Script_files/all.js.download" async="" crossorigin="anonymous"></script><script type="text/javascript" async="" src="./Programmeren met Visual Basic Script_files/plusone.js.download" gapi_processed="true"></script><script id="twitter-wjs" src="./Programmeren met Visual Basic Script_files/widgets.js.download"></script><script id="facebook-jssdk" src="./Programmeren met Visual Basic Script_files/all.js(1).download"></script><script type="text/javascript" async="" src="./Programmeren met Visual Basic Script_files/ga.js.download"></script><script type="text/javascript">
+ 
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-25188774-1']);
+  _gaq.push(['_trackPageview']);
+ 
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+ 
+</script>
+
+           
+<div id="fb-root" class=" fb_reset"><div style="position: absolute; top: -10000px; width: 0px; height: 0px;"><div></div></div></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+<ul id="menulist">
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Home.htm">Gebruik en opzet van deze site</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/New.htm">Recent toegevoegd</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Sitemap.htm">Site overzicht</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Search.htm">Zoeken binnen de site</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Computer.htm">Pagina beschrijvingen</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Tool-index.htm">Index op tools</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Misc-tools.htm">Diverse tools</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Action-index.htm">Hoe doe je ...?</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Basics.htm">Basis-acties</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Problem-index.htm">Probleem-index</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Problems.htm">Problemen (en oplossingen)</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Messages.htm">(Fout)meldingen</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Device-management.htm">Apparaatbeheer</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Disks.htm">Schijven (en USB sticks)</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Video.htm">Video</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Burning.htm">DVD's branden</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Networking.htm">Netwerken</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/System-restore.htm">Systeemherstel</a></li> 
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Memory.htm">Intern geheugen</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Drivers.htm">Stuurprogramma's</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/File-management">Bestandsbeheer</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/File-types.htm">Bestandstypes</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/File-analysis.htm">Programma-analyse</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Troubleshooting.htm">Problemen oplossen</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Boot-problems.htm">Boot problemen</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Boot.htm">Beschrijving start-proces</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Data-protection.htm">Dataverlies tegengaan</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Data-recovery.htm">Dataherstel</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Malware.htm">Virussen e.d.</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Install-programs.htm">(De)installeren</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Running-old-programs.htm">Verouderde programma's</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Diagnostics.htm">Diagnostische PC-info</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Event-viewer.htm">Logboeken (gebeurtenissen)</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Performance.htm">Snellere PC</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/PC-maintenance.htm">Onderhoud van de PC</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Remote-control">Besturing op afstand</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Start-run-commands.htm">Programma's direct aanroepen</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Services.htm">Services</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/USB.htm">USB-apparaten</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Registry.htm">Register</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Sound.htm">Geluid</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Audio.htm">Audio</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Pictures.htm">Plaatjes</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Browsers.htm">Internet-browsers</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Mail-programs.htm">Mail-programma's</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Printing.htm">Afdrukken</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Windows-update.htm">Windows Update</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Virtual-machines.htm">Virtuele machines</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Install-Windows.htm">In-place upgrade</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Privileges.htm">(Toegangs)rechten</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Cryptography.htm">Versleuteling</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Security.htm">Wachtwoorden, wissen, e.d.</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Dump-analysis.htm">Dump analyse</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Windows-logs.htm">Betekenis logfiles</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Efficient-cmd-usage">Command line trucs</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Events.htm">Beschrijvingen events</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Event-tracing.htm">Event tracing</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Migrate-PC.htm">Ga over naar nieuwe PC</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Prepare-new-PC.htm">Acties nieuwe PC</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Hardware.htm">Hardware</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Task-scheduler.htm">Taakplanner (automatisch starten)</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Shortcuts.htm">Snelkoppelingen en -toetsen</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Def.htm">Computer-terminologie</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Bluetooth.htm">Bluetooth</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Wireless.htm">Draadloze netwerken</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/File-systems.htm">Bestandssystemen</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Power.htm">Stroom besparen, standby, etc.</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Programming.htm">Programmeren</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm">VBScript</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/VB-cookbook.htm">VBScript kookboek</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/VB-errors.htm">VBScript foutcodes</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Perl.htm">Perl</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Perl-cookbook.htm">Perl kookboek</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/PowerShell.htm">PowerShell</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Social-media.htm">Sociale media</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/Text-processing.htm">Tekstverwerking</a></li>
+ <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/BIOS.htm">BIOS</a></li>
+ <li>Backups maken (later)</li>
+</ul>
+
+<div id="content">
+<div class="crumb">
+<a href="https://home.hccnet.nl/h.dalmolen/index.html">KB</a> »
+<a href="https://home.hccnet.nl/h.dalmolen/Computer/Computer.htm">Computer</a> »
+Programmeren met Visual Basic Script
+</div>
+<h1 id="top">Programmeren met Visual Basic Script</h1>
+
+<fb:like href="http://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm" send="false" layout="button_count" width="200" show_faces="false" class=" fb_iframe_widget" fb-xfbml-state="rendered" fb-iframe-plugin-query="app_id=&amp;container_width=0&amp;href=http%3A%2F%2Fhome.hccnet.nl%2Fh.dalmolen%2FComputer%2FVBScript.htm&amp;layout=button_count&amp;locale=en_US&amp;sdk=joey&amp;send=false&amp;show_faces=false&amp;width=200"><span style="vertical-align: top; width: 0px; height: 0px; overflow: hidden;"><iframe name="f1cd510da972d1" width="200px" height="1000px" data-testid="fb:like Facebook Social Plugin" title="fb:like Facebook Social Plugin" frameborder="0" allowtransparency="true" allowfullscreen="true" scrolling="no" allow="encrypted-media" src="./Programmeren met Visual Basic Script_files/like.html" style="border: none; visibility: visible; width: 0px; height: 0px;"></iframe></span></fb:like>
+
+<span>&nbsp;&nbsp;&nbsp;</span>
+
+<iframe id="twitter-widget-0" scrolling="no" frameborder="0" allowtransparency="true" allowfullscreen="true" class="twitter-share-button twitter-share-button-rendered twitter-tweet-button" style="position: static; visibility: visible; width: 86px; height: 20px;" title="Twitter Tweet Button" src="./Programmeren met Visual Basic Script_files/tweet_button.67506ef287a81e691ccccf99870d175e.nl.html"></iframe>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+
+<!-- Place this tag where you want the +1 button to render. -->
+<div id="___plusone_0" style="position: absolute; width: 450px; left: -10000px;"><iframe ng-non-bindable="" frameborder="0" hspace="0" marginheight="0" marginwidth="0" scrolling="no" style="position:absolute;top:-10000px;width:450px;margin:0px;border-style:none" tabindex="0" vspace="0" width="100%" id="I0_1649337978801" name="I0_1649337978801" src="./Programmeren met Visual Basic Script_files/fastbutton.html" data-gapiattached="true"></iframe></div><div class="g-plusone" data-annotation="inline" data-width="300" data-gapiscan="true" data-onload="true" data-gapistub="true"></div>
+
+<ul id="pageindex">
+  <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#intro">Introductie</a></li>
+  <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#exec">Scripts uitvoeren</a></li>
+  <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#output">Uitvoer produceren</a></li>
+  <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#input">Invoeren van gegevens</a></li>
+  <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#var">Variabelen en constanten</a></li>
+  <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#object">Objecten, classes, properties en methods</a></li>
+  <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#loops">Loops (in relatie tot arrays en collections)</a></li>
+  <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#if">Het if-statement</a></li>
+  <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#case">Het case-select-statement</a></li>
+  <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#sub">Subroutines, functions en bibliotheekbestanden</a></li>
+  <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#functions">Standaardfuncties</a></li>
+  <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#dict">Dictionaries (woordenboeken)</a></li>
+  <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#run">Programma's starten vanuit een script</a></li>
+  <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#files">Tekstbestanden</a></li>
+  <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#ff">Bestanden en mappen</a></li>
+  <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#ff-wmi">Bestanden en mappen via WMI</a></li>
+  <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#registry">Register</a></li>
+  <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#wmi">Gebruik maken van voorgedefinieerde informatie (zoals WMI)
+</a></li>
+  <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#errors">Foutzoeken en fouten voorkomen</a></li>
+  <li><a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#links">Links</a></li>
+</ul>
+
+<script type="text/javascript"><!--
+google_ad_client = "pub-5818157813794931";
+/* Basics 728x90, gemaakt 7-11-09 */
+google_ad_slot = "2212783822";
+google_ad_width = 728;
+google_ad_height = 90;
+//-->
+</script>
+<script type="text/javascript" src="./Programmeren met Visual Basic Script_files/f.txt">
+</script>
+
+<hr>
+
+<h2 id="intro">Introductie</h2>
+<p>
+Deze pagina is niet bedoeld als programmeercursus, maar meer als handige 
+referentie voor wat wel kan, wat niet kan, welke technieken je kan gebruiken, 
+waar je op moet letten, tegen welke problemen je aan kan lopen, etc.
+</p>
+
+<p>
+Ik ga echter (voorlopig in elk geval) niet uitleggen wat variabelen en 
+constanten zijn, en waarom je in het ene geval beter een constante kan 
+gebruiken en in het andere niet.
+</p>
+
+<hr>
+<h2 id="exec">Scripts uitvoeren</h2>
+<p>
+Zet je script in een bestand met extensie <code class="ext">.VBS</code>
+</p>
+
+<p id="gui">
+Voer het script uit vanuit de 
+grafische interface (bv. <code class="prg">Verkenner (Explorer)</code>) 
+door er bv. op te dubbelklikken, of vanaf 
+de <a href="https://home.hccnet.nl/h.dalmolen/Computer/Basics.htm#cmdline">commandoregel</a>.
+</p>
+
+<p id="cmd">
+Dat laatste doe je via het commando <br>
+cscript <i>scriptnaam</i>.vbs
+</p>
+
+<p id="input-par">
+Je kan ook parameters meegeven aan je script, en die vanuit het script 
+benaderen. 
+</p>
+
+<p>
+Als je het script bv. aanroept met <br>
+<code class="cmd">cscript dinner.vbs 2</code> <br>
+dan kan je in het script met <br>
+<code class="stmt">Choice = Wscript.Arguments.Item(0)</code> <br>
+de waarde van de 1e parameter (2) in de variabele 
+<code class="var">Choice</code> krijgen.
+</p>
+
+<h3>Script hosts</h3>
+<p>
+<code class="prg">cscript</code> is een zgn. script host.
+Het kan scripts interpreteren en uitvoeren. 
+</p>
+
+<p>
+In de Windows Script Host (WSH) omgeving is er ook nog een andere script host:
+<code class="prg">Wscript</code>
+</p>
+
+<p>
+De <code class="ext">.VBS</code>-extensie is standaard gekoppeld aan 
+<code class="prg">Wscript</code>, en als je dus in <code class="prg">Verkenner
+</code> op zo'n bestand dubbelklikt wordt automatisch 
+<code class="prg">Wscript</code> uitgevoerd.
+</p>
+
+<p>
+Datzelfde gebeurt als je op de commandoregel 'cscript' zou weglaten, en 
+bv. alleen <code class="cmd">test.vbs</code> intikt.
+Ook dan wordt <code class="prg">Wscript</code> ingeschakeld.
+</p>
+
+<p>
+Je kan de standaard script host veranderen met <br>
+<code class="cmd">cscript //H:cscript</code> of <br>
+<code class="cmd">wscript //H:wscript</code>
+</p>
+
+<h3>Verschil tussen Cscript en Wscript</h3>
+<p>
+In principe zijn de verschillen niet groot, behalve dat <code class="prg">
+Cscript</code> de commandoregel-versie is, en <code class="prg">Wscript</code>
+de grafische. 
+</p>
+
+<p>
+Maar dat maakt alleen verschil als je het <code class="cmd">Wscript.Echo</code>
+commando gebruikt. 
+Als <code class="prg">Cscript</code> dan je standaard script host is, en je
+voert het script vanuit <code class="prg">Verkenner</code> uit, dan gaat je
+uitvoer naar het commandoregel venster, dat na afloop van het script ook weer
+verdwenen is. 
+</p>
+
+<p>
+Als je het <code class="cmd">MsgBox</code>-commando gebruikt voor uitvoer,
+dan maakt het niet uit welke script host je gebruikt.
+</p>
+
+<h3>Opties en help-informatie</h3>
+<p>
+Met de commando's <code class="cmd">cscript /?</code> en 
+<code class="cmd">wscript /?</code> krijg je help-informatie.
+</p>
+
+<h4>//NOLOGO</h4>
+<p>
+Normaal gesproken krijg je aan het begin van het script informatie over de
+versie van WSH e.d. (kortom, een soort logo).
+</p>
+
+<p>
+Als je dat niet wilt kan je het commando als volgt geven:
+<code class="cmd">C:\&gt; cscript test.vbs //nologo</code>
+</p>
+
+<h4>//B</h4>
+<p>
+De B staat voor Batch mode. 
+</p>
+
+<p>
+Het gevolg is dat je geen enkele uitvoer meer krijgt: geen logo, geen normale
+uitvoer en geen foutinformatie.
+</p>
+
+<p>
+Er zijn situaties waarin dat handig kan zijn (bv. als je scripts maakt voor
+leken, en je wilt niet dat ze rare dingen voorbij zien komen). 
+</p>
+
+<h4 id="topt">//T</h4>
+<p>
+Soms schrijf je wel eens scripts die in een eindeloze loop terecht komen. 
+</p>
+
+<p>
+Om dat te vermijden geef je een commando als 
+<code class="cmd">cscript test.vbs //T:5</code>
+</p>
+
+<p>
+Het script houdt dan na 5 seconden gegarandeerd op.
+</p>
+
+<h3>Scripts stoppen</h3>
+<p>
+Naast de manier met de <a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#topt">//T</a>-optie kan je een script dat
+gestart is met <code class="prg">cscript</code> ook makkelijk stoppen met
+<code class="key">Ctrl+C</code>
+</p>
+
+<p>
+Scripts die gestart zijn met <code class="prg">Wscript</code> kan je alleen
+stoppen met bv. <a href="https://home.hccnet.nl/h.dalmolen/Computer/File-analysis.htm#taskman"><code class="prg">Task 
+Manager</code></a>
+</p>
+
+<p>
+En er is ook een commando om een script van binnenuit te stoppen: <br>
+<code class="cmd">Wscript.Quit</code>
+</p>
+
+<hr>
+<h2 id="output">Uitvoer</h2>
+<p>
+Met het commando <code class="com">WScript.Echo</code> kan je uitvoer
+produceren.
+</p>
+
+<p>
+Dingen die je tussen dubbele quotes zet worden ongewijzigd afgedrukt,
+op getallen wordt de geëigende bewerking losgelaten, en je kan zelfs 
+functies (zoals <code class="proc">Now</code>) meegeven. 
+In dat laatste geval wordt de datum afgedrukt.
+</p>
+
+<p>
+Uitvoer verschijnt in een dialoogvenster als je een script vanuit de 
+<a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#gui">grafische interface</a> uitvoert (met 
+<code class="prg">WScript</code>).
+</p>
+
+<p>
+Het nadeel daarvan kan zijn dat je voor elke regel uitvoer op 
+<code class="button">OK</code> moet klikken voor het script verder gaat.
+</p>
+
+<p>
+Vanaf de <a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#cmd">commandoregel</a> komt alle uitvoer gewoon achter 
+elkaar te staan (als je <code class="prg">cscript</code> gebruikt).
+</p>
+
+<p>
+Het volgende script
+</p>
+<code class="code">
+Wscript.Echo "Line One"
+Wscript.Echo 100
+Wscript.Echo 100 + 100
+Wscript.Echo "100 + 100"
+Wscript.Echo Now
+Wscript.Echo "Now"
+</code>
+
+<p>
+produceert de volgende output:
+</p>
+<code class="code">
+Line One
+100
+200
+100 + 100
+28-5-2013 23:44:33
+Now
+</code>
+
+<h3 id="msgbox">Meer mogelijkheden voor een message box</h3>
+<p>
+Naast het <code class="cmd">Echo</code>-commando is er ook een functie
+<code class="sub">Msgbox</code>
+</p>
+
+<p>
+Daarmee kan je bv. ook de titel van je dialoogvenster veranderen, en 
+verschillende knoppen (<code class="button">OK</code>, 
+<code class="button">Cancel</code>, etc.) toevoegen.  
+Voorbeeld:
+</p>
+<code class="code">
+strMessage = "Here is my message."
+Msgbox strMessage, 0, "This is my message box"
+</code>
+
+<p>
+De 1e parameter is de boodschap die in het venster vertoond wordt,
+met de 2e kan je de knoppen opgeven (afhankelijk van het getal wat er staat)
+en met de 3e verander je de titel van het dialoogvenster. 
+</p>
+
+<hr>
+<h2 id="input">Invoeren van gegevens</h2>
+<h3 id="inputbox">InputBox</h3>
+<p>
+Een eenvoudige manier om 1 regel tekst in te voeren is de functie
+<code class="func">InputBox</code>
+</p>
+
+<p>
+Voorbeeld: <code class="cmd">strMessage = InputBox("Voer tekst in: ")</code>
+</p>
+
+<p>
+Nadat de gebruiker iets heeft ingevoerd, en op <code class="key">Enter</code>
+heeft gedrukt, zit de tekst in <code class="var">StrMessage</code>
+</p>
+
+<hr>
+<h2 id="var">Variabelen en constanten</h2>
+<h3 id="vars">Variabelen</h3>
+<p>
+Variabelen hoef je niet te declareren. 
+</p>
+
+<p>
+Je kan dus gewoon zeggen:
+</p>
+<code class="code">
+i = 1
+name = "Henk"
+j = 3 + 5
+</code>
+
+<h4>Naamgeving</h4>
+<p>
+Het is wel handig om variabelen duidelijke (Hongaarse) namen te geven, d.w.z.
+dat het type vooraf gaat aan de eigenlijke naam.
+</p>
+
+<p>
+Voorbeelden: 
+</p>
+<code class="code">
+strName = "Henk"
+intNumber = 3
+arrArray(5) = "Mei"
+dtToday 
+objOS         ' obj = object
+colDrives     ' col = collection
+</code>
+
+<h4>Lokale en globale variabelen</h4>
+<p>
+Met het <code class="cmd">DIM</code>-statement maak je een variabele geldig
+op dat niveau. 
+</p>
+
+<p>
+Dat betekent dat als je <code class="cmd">DIM</code> gebruikt om een variabele
+op het hoogste niveau te declareren, maar daarna dezelfde naam ook declareert
+binnen een subroutine, de waarde van binnen de subroutine weer verdwenen is
+als hij is afgelopen.
+</p>
+
+<p>
+Het volgende script levert 13 op:
+</p>
+<code class="code">
+Dim a
+a = 4
+b = 9
+
+ChangeA
+Wscript.Echo a + b
+
+Sub ChangeA
+    Dim a
+    a = 10
+End Sub
+</code>
+
+<p>
+Variabelen die alleen in een subroutine gebruikt worden (met of zonder
+<code class="cmd">DIM</code>) bestaan niet meer als de subroutine is afgelopen.
+</p>
+
+<p>
+Het volgende script levert dus 9 op:
+</p>
+<code class="code">
+b = 9
+
+ChangeA
+Wscript.Echo a + b
+
+Sub ChangeA
+    a = 10
+End Sub
+</code>
+
+<h3 id="const">Constanten</h3>
+<p>
+Constanten moet je wel declareren, en zijn daarna niet meer van waarde te 
+veranderen (redelijk logisch, gezien de naam).
+Dat doe je als volgt: 
+</p>
+<code class="code">
+Const i = 2 * 7
+</code>
+
+<h4>Predefined constanten</h4>
+<p>
+Een flink aantal constanten zijn al standaard door VBScript gedefiniëerd.
+Die beginnen allemaal met 'vb', dus bv. <code class="var">vbOKCancel</code>.
+</p>
+
+<hr>
+<h2 id="object">Objecten, classes, properties en methods</h2>
+<h3>Objecten aanmaken</h3>
+<p>
+Je hebt classes voor bv. processen of services.
+</p>
+
+<p>
+Voor elke class kan je nieuwe objecten aanmaken, en je hebt daarvoor het 
+<code class="cmd">Set</code>-statement nodig. 
+</p>
+
+<p>
+Het gebruik maken van een bestaande class, bv. in <code class="prg">WMI</code>,
+<code class="prg">Active Directory</code>, 
+of <code class="prg">ADO</code>, heet binding,
+connecting, of instantiation.
+Het object is een instance van de class. 
+</p>
+
+<h4>CreateObject</h4>
+<p>
+Als je een nieuw object wilt aanmaken gebruik je normaal gesproken 
+<code class="cmd">CreateObject</code>
+</p>
+
+<p>
+Voorbeeld: <br> 
+<code class="msg">Set objExcel = CreateObject("Excel.Application")</code>
+</p>
+
+<h4>GetObject</h4>
+<p>
+Je gebruikt <code class="cmd">GetObject</code> om een referentie te krijgen
+naar een object dat al bestaat. 
+</p>
+
+<p>
+Je gebruikt het dus bv. om <code class="prg">WMI</code> te benaderen.
+Het grote verschil is dat <code class="prg">Excel</code> normaal niet per 
+definitie draait, maar <code class="prg">WMI</code> wel.
+</p>
+
+<p>
+Dat betekent dat <code class="prg">WMI</code>-objecten altijd beschikbaar
+zijn als de computer aanstaat.
+</p>
+
+<p>
+En je gebruikt de volgende rare regel om die objecten te kunnen benaderen: <br>
+<code class="msg">Set objWMIService = GetObject("winmgmts:\\.\root\cimv2")
+</code> 
+</p>
+
+<p>
+'winmgmts' is een soort bijnaam voor het <code class="obj">SWbemServices</code>
+object. <br>
+De '.' staat voor de computer waarop je werkt. <br>
+En 'root\cimv2' is de namespace in WMI die je wilt gebruiken.
+</p>
+
+<p>
+Nu je een referentie naar de <code class="prg">WMI</code> service hebt, kan je
+methodes gebruiken om verdere objecten te benaderen: de method 
+<code class="meth">Get</code> of de method <code class="meth">ExecQuery</code>
+</p>
+
+<p>
+De 1e is meer om 1 specifiek object te krijgen, en de 2e om een verzameling
+objecten te krijgen, gebaseerd op allerlei criteria.
+</p>
+
+<h3>Een object opruimen</h3>
+<p>
+Je kan een object als volgt vrijgeven: <br>
+<code class="msg">Set objReference = Nothing</code>
+</p>
+
+<p>
+Maar doorgaans is het niet nodig, want het gebeurt automatisch aan het eind
+van het script.
+</p>
+
+<h3 id="methods">Methods</h3>
+<p>
+Een method is een soort functie/subroutine die deel uitmaakt van een class.
+</p>
+
+<p>
+Als je een method aanroept zonder het resultaat op te vragen kan je geen
+haakjes om de parameters zetten.
+</p>
+
+<hr>
+<h2 id="loops">Loops (in relatie tot arrays en collections)</h2>
+<h3 id="col">Collections</h3>
+<p>
+Collections zijn verzamelingen van 0, 1 of meer dingen van hetzelfde type.
+</p>
+
+<p>
+Je kan collections geen waarde geven, alleen de inhoud ervan opvragen.
+</p>
+
+<p id="coldrives">
+Voorbeeld:
+</p>
+<code class="code">
+Set objFSO = CreateObject("Scripting.FileSystemObject")
+Set colDrives = objFSO.Drives
+</code>
+
+<p>
+De verzameling <code class="var">colDrives</code> is nu 
+een object met de namen van alle disks op je PC.
+</p>
+
+<h3 id="array">Arrays</h3>
+<p>
+Je kan arrays op 2 manieren vullen: door waarden aan de elementen toe te kennen,
+alsof elk element een variabele is, of 
+<a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#array-method">door de <code class="method">Array</code></a>-method
+te gebruiken.
+</p>
+
+<p>
+In het 1e geval moet je arrays declareren als volgt:
+</p>
+<code class="code">
+Dim arrArray(<i>aantal</i>)
+</code>
+
+<p>
+In dit geval heb je een array gekregen van <i>aantal</i>+1 elementen, omdat
+het 1e element index 0 heeft.
+</p>
+
+<p>
+De reden voor het declareren met Dim is dat VBScript dan weet dat het om een
+array gaat. 
+Methods worden nl. ook aangeroepen met ronde haakjes om de parameters. 
+</p>
+
+<p>
+Als je op het moment van declaratie van de array nog niet weet hoeveel elementen
+er in zullen komen geef je gewoon geen aantal op.
+Zodra je het wel weet gebruik je een <br>
+<code class="cmd">ReDim</code> <br>
+statement.
+</p>
+
+<h4 id="array-method">Array method</h4>
+<p>
+In dit geval heb je geen <code class="cmd">Dim</code>-statement nodig, 
+omdat VBScript nu automatisch weet dat het om een array gaat.
+Voorbeeld (compleet script):
+</p>
+<code class="code">
+arrArray = Array("H","e","n","k")
+
+Wscript.Echo arrArray(0) &amp; arrArray(1) &amp; arrArray(2) &amp; arrArray(3) 
+</code>
+
+<h3 id="loops">Loops</h3>
+<p>
+Er komen 2 soort loops aan de orde: <code class="com">For Each ... Next</code>
+en <code class="com">For Next</code> <br>
+Verder een manier om <a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#exitfor">loops voortijdig te beëindigen</a>.
+</p>
+
+<h4 id="foreach">For Each ... Next</h4>
+<p>
+We willen nu iets doen met elke disk op onze PC.
+<a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#coldrives">We hadden al een verzameling met alle disks.</a>
+</p>
+
+<code class="code">
+For Each objDrive in colDrives
+    ' do something
+Next
+</code>
+
+<p>
+De naam <code class="var">objDrive</code> is een vrije keuze.
+</p>
+
+<p>
+Een compleet voorbeeld (probeer maar op je PC):
+</p>
+<code class="code">
+Set objFSO = CreateObject("Scripting.FileSystemObject")
+Set colDrives = objFSO.Drives
+
+For Each objDrive in colDrives
+    Wscript.Echo "Drive letter: " &amp; objDrive.DriveLetter
+Next
+
+Wscript.Echo "Done"
+</code>
+
+<p>
+In mijn geval is de uitvoer (de laatste 2 zijn resp. de DVD-speler en een 
+USB-stick):
+</p>
+<code class="code">
+Drive letter: C
+Drive letter: D
+Drive letter: E
+Drive letter: G
+Done
+</code>
+
+<h4 id="fornext">For Next</h4>
+<p>
+Deze vorm wordt meer gebruikt voor arrays (maar je kan 
+<a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#foreach"><code class="cmd">For Each</code></a> ook gebruiken voor
+arrays).
+Een voorbeeld (ook dit is een compleet script):
+</p>
+<code class="code">
+Dim arrCount()
+
+size = 3
+ReDim arrCount(size)
+
+For i = 0 to size
+    arrCount(i) = i
+    Wscript.Echo arrCount(i)
+Next
+
+Wscript.Echo "Done "
+</code>
+
+<p>
+<code class="var">i</code> is een door jezelf te kiezen variabele, en de
+begin- en eindwaarde (in dit geval <code class="val">0</code> en 
+<code class="val">size</code> kan je ook zelf kiezen).
+Ze moeten natuurlijk wel binnen de grenzen van de array vallen.
+</p>
+
+<p>
+De uitvoer is dan:
+</p>
+<code class="code">
+0
+1
+2
+3
+Done
+</code>
+
+<p>
+In dit script ging je met stappen van 1 omhoog (dus alle elementen bij langs).
+Je kan met een kleine toevoeging ook grotere stappen vooruit of zelfs achteruit
+maken (zoals in onderstaand voorbeeld):
+</p>
+<code class="code">
+Dim arrCount()
+
+size = 3
+ReDim arrCount(size)
+
+For i = size to 0 Step -1
+    arrCount(i) = i
+    Wscript.Echo arrCount(i)
+Next
+
+Wscript.Echo "Done "
+</code>
+
+<h4 id="exitfor">Voortijdig de loop verlaten</h4>
+<p>
+Dat doe je met het statement <br>
+<code class="com">Exit For</code>
+</p>
+
+<hr>
+<h2 id="if">Het IF-statement</h2>
+<p>
+Om te beginnen een voorbeeld, omdat dat de zaken al aardig duidelijk maakt:  
+</p>
+<code class="code">
+A = 5
+B = 10
+
+If A &gt; B Then
+    Wscript.Echo "A is greater than B"
+ElseIf A = B Then
+    Wscript.Echo "A is equal to B"
+Else
+    Wscript.Echo "A is less than B"
+End If
+</code>
+
+<p>
+De <code class="stmt">ElseIf</code>- en <code class="stmt">Else</code>-takken
+zijn (vanzelfsprekend) niet verplicht. 
+</p>
+
+<p>
+Verder kan je in elk van de 3 situaties meer dan 1 commando geven.
+</p>
+
+<hr>
+<h2 id="case">Het case-select-statement</h2>
+<p>
+Een voorbeeldscript: 
+</p>
+<code class="code">
+Choice = 1
+
+Select Case Choice
+    Case 2
+        Wscript.Echo "Eten bestellen"
+    Case 3
+        Wscript.Echo "Koken"
+    Case 1
+        Wscript.Echo "Buitenshuis eten"
+    Case Else
+        Wscript.Echo "Niet eten"
+End Select
+</code>
+
+<p>
+Je hebt een variabele met een bepaalde waarde (in dit geval 
+<code class="var">Choice</code>), en vervolgens ga je in een aantal takken
+testen wat voor waarde die variabele heeft. 
+Bij verschillende waardes kan je verschillende acties ondernemen.
+</p>
+
+<p>
+De <code class="stmt">Case Else</code>-tak moet altijd als laatste staan.
+De acties die erachter staan worden uitgevoerd als de variabele geen van de 
+andere waardes heeft. 
+Je mag deze tak ook helemaal weglaten.
+Dan gebeurt er gewoon niets als de variabele een andere waarde heeft.
+</p>
+
+<hr>
+<h2 id="sub">Subroutines, functions en bibliotheekbestanden</h2>
+<h3>Subroutines</h3>
+<p>
+Parameters worden in VBScript default by reference (<code class="key">
+ByRef</code>) doorgegeven.
+Als je ze by value wilt doorgeven moet je <code class="key">ByVal</code>
+gebruiken.
+</p>
+
+<p>
+Een voorbeeldscript van by reference:
+</p>
+<code class="code">
+x = 7
+Wscript.Echo "Before subroutine call x = " &amp; x
+
+TestSub x
+Wscript.Echo "After subroutine call x = " &amp; x
+
+Sub TestSub(a)
+    Wscript.Echo "In subroutine, original value of a = " &amp; a
+    a = 10
+    Wscript.Echo "In subroutine, changed value of a = " &amp; a
+End Sub
+</code>
+
+<p>
+De uitvoer van dit script is:
+</p>
+<code class="code">
+Before subroutine call x = 7
+In subroutine, original value of a = 7
+In subroutine, changed value of a = 10
+After subroutine call x = 10
+</code>
+
+<p>
+Als je de 1e regel van de subroutine verandert in <br> 
+<code class="msg">Sub TestSub(ByVal a)</code> <br>
+krijg je de volgende uitvoer:
+</p>
+<code class="code">
+Before subroutine call x = 7
+In subroutine, original value of a = 7
+In subroutine, changed value of a = 10
+After subroutine call x = 7
+</code>
+
+<h3>Functions</h3>
+<p>
+Het idee is hetzelfde als subroutines, alleen heeft een functie een resultaat.
+In de functie geef je een waarde aan dat resultaat door hem toe te kennen aan
+de naam van de functie (alsof het een variabele was):
+</p>
+<code class="code">
+x = 4
+
+y = TestFunc(x)
+Wscript.Echo y
+
+Function TestFunc(a)
+    Wscript.Echo a
+    TestFunc = a + 2
+End Function
+</code>
+
+<p>
+Uitvoer is:
+</p>
+<code class="code">
+4
+6
+</code>
+
+<h3 id="lib">Bibliotheekbestanden</h3>
+<p>
+We willen procedures en functies graag kunnen delen tussen verschillende 
+scripts, en dat kan op de volgende manier:
+</p>
+<code class="code">
+Const ForReading = 1
+
+Set objFSO = CreateObject("Scripting.FileSystemObject")
+Set objFile = objFSO.OpenTextFile("procedures.txt", ForReading)
+Execute objFile.ReadAll()
+</code>
+
+<p>
+De naam <code class="file">procedures.txt</code> is willekeurig (extensie maakt
+ook niet uit), en bevat een verzameling subroutines en functions.
+</p>
+
+<p>
+Het <code class="cmd">Execute</code>-statement leest het bestand, zet alles
+in het geheugen, en daarna kunnen de subroutines e.d. door andere scripts 
+worden aangeroepen.
+</p>
+
+<p>
+Onderstaand een beetje een ingewikkeld voorbeeld van een script dat van een
+subroutine in zo'n bibliotheek gebruik maakt:
+</p>
+<code class="code">
+strComputer = "."
+Set objWMIService = GetObject("winmgmts:\\" &amp; strComputer &amp; "\root\cimv2")
+
+Set colFiles = objWMIService.ExecQuery _
+    ("ASSOCIATORS OF {Win32_Directory.Name='C:\Scripts'} Where " _
+        &amp; "ResultClass = CIM_DataFile")
+
+For Each objFile in colFiles
+    If objFile.Extension = "txt" Then
+        Wscript.Echo objFile.Name
+
+        strText = strText &amp; ReadFile(objFile) &amp; vbCrLf
+
+    End If
+Next
+Wscript.Echo strText
+</code>
+
+<p>
+En dit is de bijbehorende bibliotheek-file:
+</p>
+<code class="code">
+Function ReadFile(oFile)
+    Const ForReading = 1
+
+    Set objFSO = CreateObject("Scripting.FileSystemObject")
+    Set objTextFile = objFSO.OpenTextFile _
+        (oFile.Name, ForReading)
+
+    ReadFile = objTextFile.ReadLine
+    objTextFile.Close
+End Function
+</code>
+
+<hr>
+<h2 id="functions">Standaardfuncties</h2>
+<h3 id="numbers">Getallen</h3>
+<h4>IsNumeric</h4>
+<p>
+Soms is het belangrijk om te weten of een variabele een getal bevat:
+</p>
+<code class="code">
+a = 5
+b = "A"
+If IsNumeric(a) And IsNumeric(b) Then
+    c = a + b
+    Wscript.Echo c
+Else
+    Wscript.Echo "Beide waardes moeten numeriek zijn. a = " &amp; a &amp; " and b = " &amp; b
+End If
+</code>
+
+<h4>FormatNumber</h4>
+<p>
+Deze functie heeft 5 parameters:
+</p>
+<ol>
+ <li>Number <br>
+Het getal dat je wilt formatteren.
+</li>
+ <li>NumberOfDigits <br>
+Het aantal cijfers dat er achter de komma moet komen.
+</li>
+ <li>LeadingZeroes <br>
+Als deze parameter -1 is, dan betekent het dat er een 0 voor de komma komt te
+staan.
+Het getal zou dus bv. 0,13 zijn en niet ,13. <br>
+Een waarde van 0 betekent dat er geen 0 voor de komma komt. <br>
+Een waarde van -2 tenslotte betekent dat de instellingen op de computer leidend
+zijn.
+</li>
+ <li>NegativesInParens <br>
+Als deze parameter -1 is, dan betekent het dat bv. -4 wordt weergegeven als (4).
+<br>
+Een waarde van 0 betekent dat er geen haakjes worden gebruikt. <br>
+Een waarde van -2 tenslotte betekent dat de instellingen op de computer leidend
+zijn.
+</li>
+ <li>GroupDigits <br>
+Als deze parameter -1 is, dan betekent het dat duizendtallen worden gegroepeerd
+m.b.v. de waarde die op je computer is gedefinieerd.
+5000000 zou dus kunnen worden weergegeven als 5.000.000 of als 5,000,000
+(laatste is meer Amerikaans).
+<br>
+Een waarde van 0 betekent dat je geen groepering wilt. <br>
+Een waarde van -2 tenslotte betekent dat de instellingen op de computer leidend
+zijn.
+</li>
+</ol>
+
+<p>
+Alleen de 1e parameter is verplicht.
+Als je de andere weglaat worden de instellingen van de computer gebruikt.
+</p>
+
+<p>
+Een voorbeeld:
+</p>
+<code class="code">
+a = 2.5793
+b = "400"
+
+c = FormatNumber(a, 2)
+d = FormatNumber(b, 4)
+
+Wscript.Echo c
+Wscript.Echo d
+</code>
+
+<p>
+Dit zou de volgende uitvoer opleveren: <br>
+2.58 <br>
+400.0000
+</p>
+
+<h4>Int</h4>
+<p>
+Deze functie levert je het gedeelte van het getal voor de komma, dus 
+bv. <code class="stmt">Int(6,3)</code> levert de waarde 6 op.
+</p>
+
+<h4>Rnd en Randomize</h4>
+<p>
+<code class="cmd">Rnd</code> produceert een random getal tussen 0 en 1.
+</p>
+
+<p>
+Voordat je <code class="cmd">Rnd</code> gebruikt moet je altijd eerst een 
+keer <code class="cmd">Randomize</code> aanroepen.
+De systeemtijd wordt dan gebruikt als basis voor een willekeurige waarde. 
+</p>
+
+<p>
+Dus, als je een random getal tussen 1 en 100 wilt produceren, doe je:
+</p>
+<code class="code">
+upper = 100
+lower = 1
+
+Randomize
+For i = 1 to 5
+    a = Int((upper - lower + 1) * Rnd + lower)
+    Wscript.Echo a
+Next
+</code>
+
+<h3 id="conv-subs">Conversie</h3>
+<h4 id="cint">CInt</h4>
+<p>
+Doet hetzelfde als <code class="cmd">Int</code>, maar rond ook af naar de 
+dichtstbijzijnde gehele waarde. 
+</p>
+
+<p>
+<code class="stmt">CInt(5,7)</code> levert dus 6 op.
+</p>
+
+<h4 id="hex">Hex</h4>
+<p>
+Zet een getal om in een hexadecimaal getal.
+</p>
+
+<p>
+Je kan aan VBScript aangeven dat een getal hexadecimaal is door er '&amp;H' voor
+te zetten. 
+Dus 25 = &amp;H19
+</p>
+
+<h4 id="asc">Asc</h4>
+<p>
+Geeft je de numerieke waarde van een ASCII-teken. 
+</p>
+
+<code class="code">
+letter = "B"
+Wscript.Echo Asc(letter)
+</code>
+
+<p>
+geeft als uitvoer 66
+</p>
+
+<h4 id="cdate">CDate</h4>
+<p>
+Deze method zet een datum in string-formaat om in een echt datum-formaat. 
+</p>
+
+<h3 id="strings">Strings</h3>
+<p>
+Je hebt een aantal handige functies die met strings kunnen werken.
+</p>
+
+<h4>Right</h4>
+<p>
+De 1e is <code class="func">string Right(string, integer)</code>
+</p>
+
+<p>
+Voorbeeld:
+</p>
+<code class="code">
+str = "voetbal"
+intCharacters = 3
+
+strNew = Right(str, intCharacters)
+Wscript.Echo strNew
+</code>
+
+<p>
+Als het goed is zal er "bal" afgedrukt worden, omdat de teller begint bij 1.
+</p>
+
+<p>
+Je had ook in 1 keer het volgende kunnen doen, met hetzelfde resultaat: <br>
+<code class="msg">Wscript.Echo Right("voetbal", 3)</code>
+</p>
+
+<h4>Left</h4>
+<p>
+Het principe is hetzelfde.
+De volgende code
+</p>
+<code class="code">
+str = "voetbal"
+intCharacters = 4
+
+strNew = Left(str, intCharacters)
+Wscript.Echo strNew
+</code>
+
+<p>
+levert "voet" op.
+</p>
+
+<h4>Mid</h4>
+<p>
+De definitie van deze functie is 
+<code class="func">string Mid(string, integer [, integer])</code>
+</p>
+
+<p>
+De 2e parameter is nu de beginpositie, en de 3e het aantal tekens dat je 
+wilt hebben. 
+</p>
+
+<p>
+De volgende functie-aanroep <br> 
+<code class="msg">Wscript.Echo Mid("voetbal", 3, 4)</code> <br>
+levert "etba" op.
+</p>
+
+<p>
+Als je de laatste parameter weglaat krijg je alles vanaf de beginpositie.
+In het bovenstaande voorbeeld zou dat "etbal" zijn.
+</p>
+
+<h4>Voorbeeld met Left, Right en Mid</h4>
+<p>
+Het volgende script pakt een datum in het formaat 'mmddyyyy', en zet hem 
+in het formaat 'mm/dd/yyyy':
+</p>
+<code class="code">
+strDate = "08112006"
+intDayMonthCharacters = 2
+intYearCharacters = 4
+intStart = 3
+
+strNew = Left(strDate, intDayMonthCharacters)
+strNew = strNew &amp; "/"
+strNew = strNew &amp; Mid(strDate, intStart, intDayMonthCharacters)
+strNew = strNew &amp; "/"
+strNew = strNew &amp; Right(strDate, intYearCharacters)
+
+Wscript.Echo strNew
+</code>
+
+<h4 id="len">Lengte van een string</h4>
+<p>
+Met de functie <code class="func">integer Len(string)</code> <br>
+kom je de lengte van een string te weten.
+</p>
+
+<h4 id="ucase">String naar uppercase omzetten</h4>
+<p>
+Met de functie <code class="func">UCase</code> kan je een string naar 
+uppercase omzetten.
+Dus bv.: <br>
+Wscript.Echo UCase(strMessage) <br>
+drukt de string in <code class="var">strMessage</code> in uppercase af.
+</p>
+
+<h3 id="dates">Datums en tijden</h3>
+<h4>Date en Now</h4>
+<p>
+De method <code class="meth">Date</code> geeft je de datum, in het formaat
+zoals dat in je regionale instellingen staat.
+</p>
+
+<p>
+De method <code class="meth">Now</code> geeft datum en tijd.
+</p>
+
+<h4 id="dateadd">DateAdd</h4>
+<p>
+Met de method <code class="meth">DateAdd</code> kan je vooruit of achteruit
+gaan in de tijd, door bv. het aantal jaren te verhogen, het aantal maanden
+te verlagen, etc. 
+Een voorbeeld: 
+</p>
+<code class="code">
+dt = DateAdd("m", 2, today)
+Wscript.Echo "Twee maanden na vandaag: " &amp; dt
+</code>
+
+<p>
+'m' staat voor maand (month), en staat tussen dubbele quotes omdat het anders
+zou worden opgevat als een variabele.
+</p>
+
+<p>
+I.p.v. 'm' kan je ook gebruik maken van bv. 'yyyy' (jaar), 'q' (kwartaal),
+'h' (uur), 'n' (minuten) en 's' (seconden). 
+</p>
+
+<h4 id="datediff">DateDiff</h4>
+<p>
+Net als bij <a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#dateadd"><code class="meth">DateAdd</code></a>
+is de 1e parameter de tijdseenheid, zoals dagen of maanden. <br>
+De 2e parameter is de 1e datum, en 3e parameter de 2e datum.
+</p>
+
+<p>
+Het verschil in tijd tussen beide tijden wordt berekend. 
+</p>
+
+<p>
+Een voorbeeld: <br>
+<code class="stmt">
+Wscript.Echo "Days left in the year: " &amp; DateDiff("d", today, #1/1/2014#)</code>
+</p>
+
+<p>
+Er van uitgaande dat het nu 2013 is, berekent deze method het resterende aantal
+dagen van dit jaar, nl. tussen vandaag (<code class="val">today</code>) en
+1-1-2014.
+</p>
+
+<p>
+Om aan te geven dat de 3e parameter een echte datum is, moet je hem tussen 
+hekjes zetten.
+</p>
+
+<h4 id="dym">Day, Year en Month</h4>
+<p>
+Deze 3 methods doen wat je van ze verwacht: ze geven de dag (nummer), het jaar
+en de maand (nummer) van een datum weer.
+</p>
+
+<p>
+Het is vandaag 27-8-2013, dus <code class="cmd">Month(today)</code> zou als 
+uitkomst 8 hebben.
+</p>
+
+<h4 id="wd">Weekday en WeekdayName</h4>
+<p>
+Deze method levert het nummer van de dag in de week, waarbij de nummering 
+begint bij zondag, met 1. 
+</p>
+
+<p>
+Dus als vandaag vrijdag is, en je voert 
+<code class="stmt">Weekday(today)</code> uit, dan is het resultaat 6.
+</p>
+
+<p>
+Als je de dag van de week wilt weten in letters, dan gebruik je 
+<code class="meth">WeekdayName</code>.
+Zie bv. het volgende script:
+</p>
+<code class="code">
+dy = Weekday(today)
+Wscript.Echo "Day of the week, readable: " &amp; WeekdayName(dy)
+</code>
+
+<h3 id="wmidate">WMI datums</h3>
+<h4 id="utcdate">UTC datumformaat</h4>
+<p>
+WMI slaat de datums in UTC formaat op. 
+Dus als je bv. de datum wilt weten waarop het OS geinstalleerd is zou je 
+als resultaat <br>
+20130731185109.000000+120 <br>
+kunnen krijgen.
+</p>
+
+<p>
+Eerst zie je jaar, maand, dag, dan de tijd (de 6 tekens voor en na de punt) en
+tenslotte de offset t.o.v. GMT. 
+</p>
+
+<p>
+Er bestaan <a href="https://home.hccnet.nl/h.dalmolen/Computer/VB-cookbook.htm#utc-readable">kant-en-klare functies</a>
+om dit rare formaat om te zetten naar een normale datum en tijd.
+</p>
+
+<hr>
+
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-5818157813794931";
+/* Midden op computerpagina&#39;s */
+google_ad_slot = "9733971772";
+google_ad_width = 728;
+google_ad_height = 90;
+//-->
+</script>
+<script type="text/javascript" src="./Programmeren met Visual Basic Script_files/f.txt">
+</script>
+
+<hr>
+<h2 id="dict">Dictionaries (woordenboeken)</h2>
+<h3>Index en item</h3>
+<p>
+Arrays bestaan uit series van gelijksoortige dingen, die je kan benaderen met 
+een index (getal).
+</p>
+
+<p>
+Bij dictionaries heb je ook een index, alleen kan dat van alles zijn (bv. 
+namen van personen).
+De index noem je de key, de waarde die erbij hoort het item.
+De index moet uniek zijn, en is case-sensitive (d.w.z. "Henk" is niet hetzelfde
+als "HENK"). 
+</p>
+
+<h3>Het dictionary object</h3>
+<p>
+Om überhaupt iets met dictionaries te kunnen doen moet je een dictionary
+object aanmaken, m.b.v. een regel als deze (de naam voor het '='-teken is vrij):
+<br>
+<code class="stmt">Set objDictionary = CreateObject("Scripting.Dictionary")
+</code> 
+</p>
+
+<h3>Wijzigingen aanbrengen in de dictionary</h3>
+<p>
+M.b.v. de method <code class="method">Add</code> kan je key-item paren aan
+de dictionary toevoegen. 
+</p>
+
+<h3>Voorbeeld</h3>
+<p>
+Hieronder een goed voorbeeld van hoe je een dictionary kunt gebruiken, bv.
+om alle gestopte services op het systeem af te drukken.
+</p>
+<code class="code">
+strComputer = "."
+Set objWMIService = GetObject("winmgmts:" _
+    &amp; "{impersonationLevel=impersonate}!\\" &amp; strComputer &amp; "\root\cimv2")
+Set colServices = objWMIService.ExecQuery _
+    ("Select * from Win32_Service")
+
+Set objDictionary = CreateObject("Scripting.Dictionary")
+
+For Each objService in colServices
+    objDictionary.Add objService.Name, objService.State
+Next
+
+colKeys = objDictionary.Keys
+For Each strKey in colKeys
+    If objDictionary.Item(strKey) = "Stopped" Then
+        Wscript.Echo strKey
+    End If
+Next
+</code>
+
+<p>
+Eerst maak je een verzameling services (<code class="coll">colServices</code>),
+dan voeg je de <code class="prop">Name</code> en <code class="prop">State</code>
+als keys en items aan de dictionary toe.
+</p>
+
+<p>
+Tenslotte zet je alle keys in de verzameling <code class="col">colKeys</code>,
+en druk je alleen de servicenamen af van de services die gestopt zijn.
+</p>
+
+<h3>Testen of een key al bestaat</h3>
+<p>
+Als je niet-unieke keys toevoegt krijg je een foutmelding en crasht je script.
+Je kan met de method <code class="method">Exists</code> ook van tevoren testen:
+</p>
+<code class="code">
+Set objDictionary = CreateObject("Scripting.Dictionary")
+
+objDictionary.Add "Key1", "Item"
+objDictionary.Add "Key2", "Item"
+
+If objDictionary.Exists("Key1") Then
+    Wscript.Echo "Key1 exists"
+Else
+    Wscript.Echo "Adding Key1"
+    objDictionary.Add "Key1", "Item"
+End If
+</code>
+
+<p>
+Dit script geeft keurig een melding, omdat <code class="key">Key1</code>
+al bestond.
+</p>
+
+<h3>Case sensitive</h3>
+<p>
+Een dictionary object heeft een property <code class="prop">CompareMode</code>
+</p>
+
+<p>
+De waarde 1 is bedoeld voor texts (case insensitive), de waarde 0 voor binaire
+vergelijkingen (case sensitive).
+</p>
+
+<hr>
+<h2 id="run">Programma's starten vanuit een script</h2>
+<h3>Met objShell.Run</h3>
+<p>
+Gewone grafische programma's kan je starten met een script als het volgende:
+</p>
+<code class="code">
+Set objShell = CreateObject("WScript.Shell")
+objShell.Run "Calc.exe"
+</code>
+
+<p id="comspec">
+Om een <a href="https://home.hccnet.nl/h.dalmolen/Computer/Basics.htm#cmdline">commandoregel</a> programma uit te voeren
+moet je een andere truc uithalen:
+</p>
+<code class="code">
+Set objShell = CreateObject("WScript.Shell")
+objShell.Run "%COMSPEC% /k ping 127.0.0.1"
+</code>
+
+<p>
+Als je als 2e regel alleen dit zou doen: <br>
+objShell.Run "ping 127.0.0.1" <br>           
+zou het commando wel uitgevoerd worden, maar buiten de commandoregel om.
+(En je zou geen uitvoer te zien krijgen.) 
+</p>
+
+<p>
+(Terzijde: Soms krijg je trouwens een foutmelding als je op bovenstaande
+manier een commando, bv. het <code class="cmd">dir</code>-commando uitvoert: 
+<br>
+<code class="msg">I:\test.vbs(2, 1) (null): The system cannot find the file 
+specified.</code> <br>
+De verklaring is dat commando's als <code class="cmd">dir</code> zitten
+ingebakken in de commandoregel-verwerker, tegenwoordig meestal het programma
+<code class="prg">CMD.EXE</code> <br>
+Er bestaat dus werkelijk geen bestand <code class="file">DIR.EXE</code> op
+het systeem.) 
+</p>
+
+<p>
+Vandaar de omgevingsvariabele <code class="var">%COMSPEC%</code>, die een
+commandoregel-venster opent (door op de meeste systemen 
+<code class="prg">C:\Windows\system32\cmd.exe</code> aan te roepen).  
+</p>
+
+<p>
+Maar dat zou nog niet voldoende zijn, omdat het commandoregel venster standaard
+ook na afloop automatisch zou sluiten als het op deze manier wordt aangeroepen.
+Daarom geef je de <code class="opt">K</code>-optie mee.
+</p>
+
+<p>
+Het zou kunnen zijn dat dit script niet werkt onder Windows 7 als je bv. 
+<code class="prg">ipconfig</code> wil starten, waarschijnlijk omdat je dan meer
+privileges nodig hebt.  
+Maar vanaf een elevated commandoregel draait het bij mij prima. 
+</p>
+
+<h4>Parameters van de Run method</h4>
+<p>
+De 2e parameter van de Run method heeft betrekking op het type venster dat
+geopend wordt (bv. gemaximaliseerd).
+</p>
+
+<p>
+De 3e parameter is standaard <code class="val">False</code>, en betekent dat
+het script onmiddellijk doorgaat met het volgende commando. 
+Als je dus wilt dat het ene commando wacht op het volgende, moet je zoiets doen:
+</p>
+<code class="code">
+Set objShell = CreateObject("WScript.Shell")
+objShell.Run "%COMSPEC% /k ping 127.0.0.1",,True
+objShell.Run "%COMSPEC% /k nslookup 127.0.0.1"
+</code>
+
+<p>
+Je krijgt een venster met de uitvoer van het 
+<code class="prg">ping</code>-commando, en daarna gebeurt er niets meer.
+Want de commandoregel die erbij hoort is nog steeds actief.
+Zodra je die beëindigt wordt een nieuw commandoregel-venster met  
+<code class="prg">nslookup</code> gestart.
+</p>
+
+<h4>Resultaat van de Run method</h4>
+<p>
+Deze method geeft een status code terug, en die kan je opvragen.
+Je moet dan wel de parameters tussen haakjes zetten.
+Dus: 
+</p>
+<code class="code">
+Set objShell = CreateObject("WScript.Shell")
+iErrorCode = objShell.Run("ping 127.0.0.1",,True)
+WScript.Echo iErrorCode
+</code>
+
+<h3>Met objShell.Exec</h3>
+<p>
+Deze method is handig voor commandoregel programma's, zoals 
+<code class="prg">ipconfig</code>. 
+</p>
+
+<p>
+Het resultaat van <code class="meth">objShell.Exec</code> is nl. een 
+<code class="obj">WshScriptExec</code>-object, dat status- en foutinformatie
+bevat.  
+</p>
+
+<p>
+Maar via het object kan je ook toegang krijgen tot 
+<code class="data">STDOUT</code>, de "stream" waar de uitvoer van het 
+programma heengeschreven wordt. 
+</p>
+
+<p>
+Het werkt als volgt: 
+</p>
+<code class="code">
+Set objShell = CreateObject("Wscript.Shell")
+Set objWshScriptExec = objShell.Exec("ipconfig.exe")
+WScript.Echo objWshScriptExec.StdOut.ReadAll
+</code>
+
+<p>
+Afhankelijke van de scripting host die je gebruikt komt de uitvoer op het
+scherm of in een dialoogvenster.
+</p>
+
+<h4>Het gebruik van speciale tekens in het commando</h4>
+<p>
+Het volgende script levert een fout:
+</p>
+<code class="code">
+Set objShell = CreateObject("Wscript.Shell")
+objShell.Run "notepad.exe "c:\my scripts\logfile.txt""
+</code>
+
+<p>
+Na de 2e dubbele quote denkt WSH dat het commando is afgelopen. 
+</p>
+
+<p>
+In Windows 7 kan je de binnenste dubbele quotes vervangen door dubbele dubbele
+quotes, dus:
+</p>
+<code class="code">
+Set objShell = CreateObject("Wscript.Shell")
+objShell.Run "notepad.exe ""c:\my scripts\logfile.txt"""
+</code>
+
+<p>
+Maar er is nog een truc.
+Met de standdaardfunctie <code class="sub">Chr</code> kan je een code omzetten
+in een speciaal teken.
+Op die manier wordt bovenstaand script: 
+</p>
+<code class="code">
+strArgument = "notepad.exe " &amp; chr(34) &amp; _
+    "c:\my scripts\logfile.txt" &amp; chr(34)
+Wscript.Echo strArgument
+</code>
+
+<p>
+<code class="cmd">chr(34)</code> is gelijk aan de dubbele quote, en met de
+<code class="key">&amp;</code> worden de strings aan elkaar geknoopt.
+</p>
+
+<h3>Programma's op andere machines starten</h3>
+<p>
+Dat kan met het <code class="obj">WshController</code>-object, maar het 
+werkt nogal moeizaam. 
+Je kan beter <a href="https://home.hccnet.nl/h.dalmolen/Computer/Def.htm#wmidef" class="def">WMI</a> gebruiken.
+</p>
+
+<h4>WMI Create</h4>
+<p>
+De <code class="prg">WMI</code>-klasse <code class="class">Win32_Process</code>
+heeft een method <code class="meth">Create</code>, waarmee je programma's 
+(grafisch en commandoregel) lokaal en remote kunt uitvoeren, en die als 
+resultaat het proces ID(entificatie) teruggeeft.
+</p>
+
+<p>
+Voorbeeeld: 
+</p>
+<code class="code">
+strCommand = "notepad.exe" 
+Set objProcess = GetObject("winmgmts:root\cimv2:Win32_Process")
+intReturn = objProcess.Create _
+ (strCommand, Null, Null, intProcessID)
+</code>
+
+<p>
+De <code class="meth">Create</code>-method heeft 4 parameters:
+</p>
+<ul>
+  <li>Een string met het programma dat je wilt uitvoeren en de bijbehorende
+parameters;  
+</li>
+  <li>Het pad voor het proces dat gestart moet worden;
+</li>
+  <li>Een object van het type <code class="obj">Win32_ProcessStartup </code>,
+dat de start-configuratie voor het proces bevat;
+</li>
+  <li>Het process ID van het proces dat gestart wordt. 
+Dit is de enige parameter die je niet zelf invoert, maar die je als resultaat
+terugkrijgt.   
+</li>
+</ul>
+
+<p>
+Om een proces op een remote computer te starten gebruik je bv. de volgende code:
+</p>
+<code class="code">
+strComputer = "server1"
+strCommand = "notepad.exe"
+Set objProcess = GetObject("winmgmts:\\" &amp; strComputer &amp; _
+ "\root\cimv2:Win32_Process")
+intReturn = objProcess.Create _
+ (strCommand, Null, Null, intProcessID)
+</code>
+
+<h5>Win32_ProcessStartup</h5>
+<p>
+De class Win32_ProcessStartup heeft 14 properties, bv. de prioriteit waarop
+het proces moet lopen en het type venster. 
+</p>
+
+<p>
+Om redenen die ik nog niet helemaal doorgrond moet je na het aanmaken van 
+een object van deze class nog een object aanmaken (in deze regel:
+<code class="cmd">Set objConfig = objStartup.SpawnInstance_</code>), en pas
+daarna kan je er de eigenschappen aan toekennen.  
+</p>
+
+<p>
+In dit geval willen we <code class="prg">kladblok (notepad)</code> starten
+in een normaal venster (<code class="val">NORMAL_WINDOW</code>) en aan het 
+eind ook nog het resultaat (<code class="var">intReturn</code>) testen.
+Als alles goed is gegaan is de waarde 0.
+</p>
+
+<code class="code">
+Const NORMAL_WINDOW = 1
+strComputer = "."
+strCommand = "notepad.exe"
+Set objWMIService = GetObject("winmgmts:" _
+ &amp; "{impersonationLevel=impersonate}!\\" &amp; strComputer &amp; "\root\cimv2")
+Set objStartup = objWMIService.Get("Win32_ProcessStartup")
+Set objConfig = objStartup.SpawnInstance_
+objConfig.ShowWindow = NORMAL_WINDOW
+Set objProcess = objWMIService.Get("Win32_Process")
+intReturn = objProcess.Create _
+ (strCommand, Null, objConfig, intProcessID)
+If intReturn = 0 Then
+  Wscript.Echo "Process Created." &amp; _
+   vbCrLf &amp; "Command line: " &amp; strCommand &amp; _
+   vbCrLf &amp; "Process ID: " &amp; intProcessID
+Else
+  Wscript.Echo "Process could not be created." &amp; _
+   vbCrLf &amp; "Command line: " &amp; strCommand &amp; _
+   vbCrLf &amp; "Return value: " &amp; intReturn
+End If
+</code>
+
+<p>
+Je kan er ook een loop van maken, als volgt:
+</p>
+<code class="code">
+strComputer = "."
+Set objWMIService = GetObject("winmgmts:\\" &amp; strComputer &amp; "\root\cimv2")
+Set colMonitorProcess = objWMIService.ExecNotificationQuery _
+ ("SELECT * FROM __InstanceOperationEvent " _ 
+ &amp; " Within 1 WHERE TargetInstance ISA 'Win32_Process'")
+WScript.Echo "Waiting for process to start or stop ..."
+Do
+  Set objLatestEvent = colMonitorProcess.NextEvent
+  WScript.Echo VbCrLf &amp; objLatestEvent.Path_.Class
+  Wscript.Echo "Process Name: " &amp; objLatestEvent.TargetInstance.Name
+  Wscript.Echo "Process ID: " &amp; objLatestEvent.TargetInstance.ProcessId
+  WScript.Echo "Time: " &amp; Now
+Loop
+</code>
+
+<p>
+Dan krijg je dit soort output (en het gaat eindeloos door tot je 
+<code class="key">Ctrl+C</code> indrukt):
+</p>
+<code class="outp">
+__InstanceModificationEvent
+Process Name: csrss.exe
+Process ID: 624
+Time: 3-12-2013 15:08:23
+
+__InstanceModificationEvent
+Process Name: iexplore.exe
+Process ID: 7280
+Time: 3-12-2013 15:08:23
+
+__InstanceModificationEvent
+Process Name: FlashPlayerPlugin_11_9_900_117.exe
+Process ID: 7376
+Time: 3-12-2013 15:08:23
+
+__InstanceModificationEvent
+Process Name: plugin-container.exe
+Process ID: 7456
+Time: 3-12-2013 15:08:23
+
+__InstanceModificationEvent
+Process Name: svchost.exe
+Process ID: 752
+Time: 3-12-2013 15:08:23
+</code>
+
+<p>
+Als je alleen wilt selecteren op het starten en stoppen van processen doe je:
+</p>
+<code class="code">
+  If objLatestEvent.Path_.Class = "__InstanceCreationEvent" _
+   Or objLatestEvent.Path_.Class = "__InstanceDeletionEvent" Then
+    WScript.Echo VbCrLf &amp; objLatestEvent.Path_.Class
+    Wscript.Echo "Process Name: " &amp; objLatestEvent.TargetInstance.Name
+    Wscript.Echo "Process ID: " &amp; _
+     objLatestEvent.TargetInstance.ProcessId
+    WScript.Echo "Time: " &amp; Now
+  End If
+</code>
+
+<p>
+WMI heeft nog 3 classes die te maken hebben met proces events: 
+<code class="class">Win32_ProcessTrace</code>, 
+<code class="class">Win32_ProcessStartTrace</code> en
+<code class="class">Win32_ProcessStopTrace</code>
+</p>
+
+<p>
+Voorbeeldscript:
+</p>
+<code class="code">
+On Error Resume Next
+strComputer = "."
+Set objWMIService = GetObject("winmgmts:" _
+ &amp; "{impersonationLevel=impersonate}!\\" &amp; strComputer &amp; "\root\cimv2")
+Set colProcessStopTrace = objWMIService.ExecNotificationQuery _
+ ("SELECT * FROM Win32_ProcessStopTrace")
+WScript.Echo "Waiting for process to stop ..."
+Do
+  Set objLatestEvent = colProcessStopTrace.NextEvent
+  WScript.Echo
+  Wscript.Echo "Process Name: " &amp; objLatestEvent.ProcessName
+  Wscript.Echo "Process ID: " &amp; objLatestEvent.ProcessId
+  Wscript.Echo "Time: " &amp; objLatestEvent.TIME_CREATED
+'Property exists only on Windows Server 2003.
+  Wscript.Echo "Exit Code: " &amp; objLatestEvent.ExitStatus
+Loop
+</code>
+
+<p>
+De tijd die je terugkrijgt is van het type <code class="type">uint64</code> en
+de inhoud is het aantal 100 nano-seconde-intervallen sinds 1 januari 1601.
+Niet zo handig, dus. 
+</p>
+
+<p>
+Sinds Server 2003 levert de WMI scripting API een nieuw object, 
+<code class="obj">SWbemDateTime</code>, dat functionaliteit heeft om met 3
+datum/tijd-formaten om te gaan: <code class="type">DATETIME</code> (de 
+bovenstaande uitvoer), <code class="type">FILETIME</code>, en een 
+voor mensen iets aangenamer formaat, <code class="type">VT_DATE</code>
+</p>
+
+
+
+<hr>
+<h2 id="files">Tekstbestanden</h2>
+<p>
+Om met files te kunnen werken maak je gebruik van het voorgedefinieerde
+<code class="obj">FileSystemObject</code>
+</p>
+
+<h3>Een (nieuw) bestand aanmaken</h3>
+<p>
+Zo maak je bv. een bestand aan: 
+</p>
+<code class="code">
+Set objFSO = CreateObject("Scripting.FileSystemObject")
+Set objFile = objFSO.CreateTextFile("C:\Scripts\FreeSpace.log")
+</code>
+
+<p>
+De extensie van het bestand maakt niet uit, maar het wordt als een tekstbestand
+behandeld. <br>
+<code class="meth">CreateTextFile</code> is 1 van de methods van het file
+system object.
+</p>
+
+<p>
+Als je niet wilt dat een al bestaande file wordt overschreven, moet je 
+het statement als volgt veranderen: <br>
+<code class="msg">
+Set objFile = objFSO.CreateTextFile("C:\Scripts\FreeSpace.log", False)</code>
+</p>
+
+<p>
+Je kan ook (bv.) elke dag een nieuwe file aanmaken, en de datum in de filenaam
+opnemen:
+</p>
+<code class="code">
+dt = Date
+dt = Replace(dt,"/","-")
+strFileName = "C:\Scripts\" &amp; dt &amp; "-FreeSpace.log"
+
+Set objFSO = CreateObject("Scripting.FileSystemObject")
+Set objFile = objFSO.CreateTextFile(strFileName)
+</code>
+
+<p>
+In de 2e regel gebruik je de <code class="meth">Replace</code> method om 
+voor de zekerheid (hangt af van je regionale instellingen) evt. '/' in de
+datum te vervangen door hyphens ('-').
+</p>
+
+<h3>Een bestand sluiten</h3>
+<p>
+Eenvoudiger is bijna niet mogelijk: 
+<code class="stmt">objFile.Close</code>
+</p>
+
+<h3>Schrijven naar een bestand</h3>
+<p>
+Dat doe je met het statement:
+<code class="stmt">objFile.WriteLine (<i>wat_je_wilt_schrijven</i>)</code>
+</p>
+
+<p>
+Een voorbeeldscript, waarin je de vrije ruimte en de totale ruimte op disk 
+<code class="drive">C</code> opvraagt en naar een bestand schrijft: 
+</p>
+<code class="code">
+strComputer = "."
+
+dt = Replace(Date,"/","-")
+strFileName = "C:\Scripts\" &amp; dt &amp; "-FreeSpace.log"
+
+Set objFSO = CreateObject("Scripting.FileSystemObject")
+Set objFile = objFSO.CreateTextFile(strFileName)
+
+Set objWMIService = GetObject("winmgmts:" _
+    &amp; "{impersonationLevel=impersonate}!\\" &amp; strComputer &amp; "\root\cimv2")
+Set colDisks = objWMIService.ExecQuery _
+    ("Select * from Win32_LogicalDisk Where DeviceID = 'C:'")
+
+For Each objDisk in colDisks
+    objFile.WriteLine ("Free space (in bytes): " &amp; objDisk.FreeSpace)
+    objFile.WriteLine ("Total space (in bytes): " &amp; objDisk.Size)
+Next
+
+objFile.Close
+</code>
+
+<h3>Een file openen</h3>
+<p>
+Je kan een tekstbestand openen met de method
+<code class="meth">OpenTextFile</code>
+</p>
+
+<p>
+Naast de bestandsnaam moet je echter een extra parameter meegeven, nl. of je
+alleen maar wilt lezen (<code class="par">ForReading</code>), of je wilt 
+schrijven (<code class="par">ForWriting</code>) of dat je tekst aan het eind
+van het bestand wilt toevoegen (<code class="par">ForAppending</code>). <br>
+Deze 3 parameters hebben resp. de waardes 1, 2 en 8.  
+</p>
+
+<p>
+Dus om een file te openen voor lezen:
+</p>
+<code class="code">
+Const ForReading = 1
+Set objFile = objFSO.OpenTextFile(strFileName, ForReading)
+</code>
+
+<p>
+Je kan <code class="meth">OpenTextFile</code> ook gebruiken om een nog niet
+bestaande file onmiddellijk te openen voor schrijven (dit is dus identiek
+aan <code class="meth">CreateTextFile</code>): <br>
+<code class="stmt">
+Set objFile = objFSO.OpenTextFile(strFileName, ForWriting, True)</code>
+</p>
+
+<h3>Lezen uit een file</h3>
+<p>
+In het volgende script lees je 1 voor 1 de regels uit het bestand 
+<code class="file">Servers.txt</code> tot je aan het einde van de file bent,
+en je drukt ze af (op het scherm). <br>
+De eigenschap <code class="prop">AtEndOfStream</code> heeft de waarde
+<code class="val">True</code> als je het einde van de file hebt bereikt.
+</p>
+<code class="code">
+Const ForReading = 1
+
+Set objFSO = CreateObject("Scripting.FileSystemObject")
+Set objFile = objFSO.OpenTextFile("C:\Scripts\Servers.txt", ForReading)
+
+Do Until objFile.AtEndOfStream
+    strLine = objFile.ReadLine
+    Wscript.Echo strLine
+Loop
+
+objFile.Close
+</code>
+
+<p>
+<code class="meth">ReadLine</code> leest regel voor regel uit een bestand.
+Als je het hele bestand in 1 keer wil lezen gebruik je 
+<code class="meth">ReadAll</code>
+</p>
+
+<h3>Lezen en schrijven naar dezelfde file</h3>
+<p>
+Het volgende script leest een bestand, controleert of een regel bestaat 
+uit het woord 'Apple', en verandert het dan door 'Samsung':
+</p>
+<code class="code">
+Const ForReading = 1
+Const ForWriting = 2
+
+Set objFSO = CreateObject("Scripting.FileSystemObject")
+Set objFile = objFSO.OpenTextFile("C:\Scripts\Companies.txt", ForReading)
+
+Do Until objFile.AtEndOfStream
+    strLine = objFile.ReadLine
+    If strLine = "Apple" Then
+        strLine = "Samsung"
+    End If
+    strContents = strContents &amp; strLine &amp; vbCrLf
+Loop
+
+objFile.Close
+
+Set objFile = objFSO.OpenTextFile("C:\scripts\Companies.txt", ForWriting)
+objFile.Write(strContents)
+objFile.Close
+</code>
+
+<p>
+De truc is dat het bestand eerst alleen voor lezen wordt geopend, en dat de
+veranderde tekst in een string (<code class="val">strContents</code>) wordt
+opgeslagen. 
+</p>
+
+<p>
+Daarna wordt het bestand gesloten en onmiddellijk weer geopend, maar nu voor
+schrijven. 
+En de hele opgebouwde string wordt er met de 
+<code class="meth">Write</code> method naartoe geschreven.
+</p>
+
+<p>
+Je hebt in dit geval geen <code class="meth">WriteLine</code> nodig, omdat
+er bij het opbouwen van de string aan het eind al steeds een Carriage Return
+(Cr) en LineFeed (Lf) zijn toegevoegd.
+De string is dus al onderverdeeld in aparte regels.
+</p>
+
+<hr>
+<h2 id="ff">Bestanden en mappen</h2>
+<p>
+Je kan op 2 manieren met files en folders werken, via het 
+<code class="obj">FileSystemObject</code> object, en via 
+<a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#ff-wmi"><code class="prg">WMI</code></a>.
+</p>
+
+<p>
+Het voordeel van <a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#wmi"><code class="prg">WMI</code></a> is dat het
+ook gebruikt kan worden voor remote computers. <br>
+Het voordeel van <code class="obj">FileSystemObject</code> is dat het wat
+makkelijker is om mee te werken, i.h.b. als het om datums gaat. 
+</p>
+
+<h3 id="exist">FileExists en FolderExists</h3>
+<p>
+Deze 2 methods controleren of een bestand of map bestaat. 
+</p>
+
+<p>
+Bv. als volgt voor een bestand: <br>
+<code class="stmt">If objFSO.FileExists("C:\scripts\test.txt") Then ...</code>
+</p>
+
+<h3 id="getfile">GetFile</h3>
+<p>
+Deze method dient om een object te krijgen dat naar de file verwijst, als je
+weet dat hij bestaat. 
+</p>
+
+<p>
+Voorbeeld: <br>
+<code class="stmt">Set objFile = objFSO.GetFile("C:\scripts\test.txt")</code>
+</p>
+
+<h3 id="copy">Copy</h3>
+<h4 id="cpfile">Bestanden</h4>
+<p>
+Met deze method kan je een bestand copiëren, waarbij de standaard is dat
+het doelbestand, als het al bestaat, wordt overschreven.
+Door een 2e parameter, <code class="par">False</code>, op te geven kan je dat
+verhinderen.
+</p>
+
+<p>
+Dus met het volgende statement wordt de file alleen gecopiëerd als hij 
+nog niet bestaat: <br>
+<code class="stmt">objFile.Copy "C:\scripts\temp\", False</code>
+</p>
+
+<p>
+De backslash aan het eind is wel belangrijk, omdat je wilt dat de file in de
+map <code class="folder">temp</code> terecht komt.
+</p>
+
+<h3>CopyFile en CopyFolder</h3>
+<p>
+Je kan <code class="meth">GetFile</code> of <code class="meth">GetFolder</code>
+en <code class="meth">Copy</code> ook combineren tot de method's uit de titel: 
+</p>
+<code class="code">
+Set objFSO = CreateObject("Scripting.FileSystemObject")
+objFSO.CopyFile "C:\scripts\test.txt","C:\scripts\temp\"
+objFSO.CopyFolder "C:\scripts","C:\scriptstest"
+</code>
+
+<p>
+Deze 2 methods kennen ook een extra (in dit geval 3e) parameter, die aangeeft
+of evt. bestaande files en folders overschreven moeten worden.
+</p>
+
+<p>
+Maar ze kunnen ook iets wat de normale <code class="meth">Copy</code> niet kan,
+nl. meerdere bestanden of mappen copiëren.
+Je moet dan met wildcards werken.
+</p>
+
+<code class="code">
+Set objFSO = CreateObject("Scripting.FileSystemObject")
+objFSO.CopyFile "C:\scripts\*.txt","C:\scripts\temp\"
+</code>
+
+<p>
+Bovenstaand script copiëert alle bestanden met extensie 
+<code class="ext">txt</code> naar de doelmap. 
+</p>
+
+<p>
+In geval van mappen is het even oppassen geblazen. 
+De regel <br>
+<code class="stmt">objFSO.CopyFolder "C:\s*","C:\temp"</code> <br>
+copiëert alle mappen die beginnen met 's' in zijn geheel *binnen* de map
+<code class="folder">c:\temp</code>
+</p>
+
+<p>
+Dus in dit geval wordt niet de inhoud van de mappen die met 's' beginnen 
+gecopiëerd, maar de map als geheel. 
+Anders zou het binnen de doelmap een ongeorganiseerde chaos worden.
+</p>
+
+<h4 id="cpfolder">Mappen</h4>
+<p>
+Met mappen werkt het vrijwel hetzelfde als met bestanden, alleen moet je nu
+geen backslash aan het einde van het doel zetten.
+</p>
+
+<p>
+Verder is het belangrijk om te beseffen dat ook de inhoud van submappen e.d.
+wordt meegenomen.
+</p>
+
+<p>
+Een voorbeeldscript: 
+</p>
+<code class="code">
+Set objFSO = CreateObject("Scripting.FileSystemObject")
+Set objFolder = objFSO.GetFolder("C:\scripts")
+
+objFolder.Copy "C:\temp"
+</code>
+
+<h3 id="move">Move, MoveFile en MoveFolder</h3>
+<p>
+Alles werkt vrijwel identiek aan de copiëer-operaties die hierboven
+beschreven zijn, met 1 verschil.
+</p>
+
+<p>
+De standaard is in dit geval dat een bestand niet overschreven wordt, en je
+kan ook geen extra parameter meegeven om dat wel te bewerkstelligen.
+</p>
+
+<h3 id="delete">Delete, DeleteFile en DeleteFolder</h3>
+<p>
+Alles werkt weer gelijk aan de <code class="meth">Copy</code>-methods, 
+met opnieuw 1 belangrijk verschil.
+</p>
+
+<p>
+In dit geval is er wel een extra parameter.
+Die heeft als standaardwaarde <code class="val">False</code>, en dat betekent
+dat files die read-only zijn niet worden weggegooid. 
+</p>
+
+<p>
+Om dus een hele map gegarandeerd kwijt te raken moet je het volgende statement
+uitvoeren: <br>
+<code class="stmt">objFolder.Delete True</code>
+</p>
+
+<h3 id="copybydate">Copiëren op basis van datum</h3>
+<p>
+Stel je hebt een file object, en je wilt afdrukken op welke datum het bestand
+aangemaakt is. 
+Dat kan als volgt: <br>
+<code class="stmt">Wscript.Echo objFile.DateCreated</code>
+</p>
+
+<p>
+Je hebt ook nog 2 andere eigenschappen van een file object, 
+<code class="prop">DateLastAccessed</code> (wanneer is de file voor het laatst
+benaderd), en <code class="prop">DateLastModified</code> (wanneer is de file
+voor het laatst gewijzigd).
+</p>
+
+<p>
+De bovenstaande 3 eigenschappen van het file object zie je ook als je 
+met rechts klikt op een bestand in <code class="prg">Verkenner</code> en dan op
+<code class="menu">Eigenschappen (Properties)</code> 
+</p>
+
+<p>
+Door nu gebruik te maken van de datum-functies
+kan je bv. alle files copiëren die meer dan een maand geleden zijn 
+aangemaakt:
+</p>
+<code class="code">
+Set objFSO = CreateObject("Scripting.FileSystemObject")
+Set objFolder = objFSO.GetFolder("C:\scripts")
+
+Set colFiles = objFolder.Files
+
+dtmMonthAgo = DateAdd("m", -1, Now)
+ 
+For Each objFile in colFiles
+    If objFile.DateCreated &lt; dtmMonthAgo Then
+        objFSO.CopyFile objFile.Path, "C:\scripts\old\"
+    End If
+Next
+</code>
+
+<p>
+In de 6e regel bepaal je het tijdstip dat een maand voor het huidige ligt.
+En daarna ga je gewoon alle files bij langs om te kijken of 
+<code class="prop">DateCreated</code> voor dat tijdstip ligt. 
+</p>
+
+<hr>
+<h2 id="ff-wmi">Bestanden en mappen via WMI</h2>
+<p>
+Misschien moet je eerst de introductie over <a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#wmi">WMI</a> lezen.
+</p>
+
+<p>
+Het verschil met werken met het <code class="obj">FileSystemObject</code>
+is dat je nu met 2 classes te maken hebt, 1 voor files 
+(<code class="obj">CIM_DataFile</code>) en 1 voor mappen
+(<code class="obj">Win32_Directory</code>). 
+</p>
+
+<h3 id="wmi-exists">Kijken of een file of map bestaat</h3>
+<h4>Map</h4>
+<p>
+Gebruik het volgende script:
+</p>
+<code class="code">
+strComputer = "."
+
+Set objWMIService = GetObject("winmgmts:" _
+    &amp; "{impersonationLevel=impersonate}!\\" &amp; strComputer &amp; "\root\cimv2")
+
+Set colFolders = _
+    objWMIService.ExecQuery("Select * From Win32_Directory Where Name = 'C:\\Scripts'")
+
+If colFolders.Count &lt; 1 Then
+    Wscript.Echo "Folder does not exist"
+Else
+    Wscript.Echo "Folder does exist"
+End If
+</code>
+
+<p>
+Met het <code class="cmd">Select</code>-statement haal je alle bestanden uit
+de map <code class="folder">C:\Scripts</code> <br>
+De reden voor de 2 backslashes is dat de '\' een zgn. escape-character is (om
+aan te geven dat het volgende teken anders geinterpreteerd moet worden dan
+normaal).
+</p>
+
+<p>
+De eigenschap <code class="prop">Count</code> geeft aan hoeveel objecten
+(folders in dit geval) aan de voorwaarde voldoen, en omdat we om een specifieke
+map gevraagd hebben zijn er maar 2 mogelijkheden: 0 of 1.
+</p>
+
+<h4>File</h4>
+<p>
+Voor bestanden werkt het eigenlijk net als met mappen, behalve, zoals ik in het
+begin al zei, dat je nu een andere class gebruikt: <br>
+<code class="stmt">
+Set colFiles = _
+    objWMIService.ExecQuery("Select * From CIM_DataFile Where Name = 'C:\\Scripts\\Test.txt'")
+</code>
+</p>
+
+<h3 id="wmi-copy">Copy</h3>
+<h4>Folder</h4>
+<p>
+Stel dat je de folder <code class="folder">C:\Scripts</code> naar 
+<code class="folder">C:\Temp</code> wilt copiëren.
+</p>
+
+<p>
+Het script verandert niet veel t.o.v. dat in de vorige sectie (ik heb de
+1e 5 regels weggelaten):
+</p>
+<code class="code">
+Set colFolders = _
+    objWMIService.ExecQuery("Select * From Win32_Directory Where Name = 'C:\\Scripts'")
+
+For Each objFolder in colFolders
+    objFolder.Copy("C:\Temp")
+Next
+</code>
+
+<p>
+Belangrijk hier is dat als de map waar je naartoe copiëert al bestaat,
+er niets gebeurt, maar je ook geen foutmelding krijgt. 
+</p>
+
+<p>
+Je kan wel controleren op een foutmelding door het resultaat van de method
+op te vragen: <br>
+<code class="stmt">errResult = objFolder.Copy("C:\Temp")</code> <br>
+Foutcodes staan in de beschrijvingen van de 
+<a href="https://home.hccnet.nl/h.dalmolen/Computer/Programming.htm#wmi-classes">WMI classes</a> (per method).  
+</p>
+
+<p>
+Verder heeft de <code class="meth">Copy</code> method maar 1 parameter,
+en worden eventuele submappen niet meegecopiëerd.
+Als je dat wel wilt moet je de method <code class="meth">CopyEx</code>
+gebruiken.
+</p>
+
+<h4>File</h4>
+<p>
+Als je een file wilt copiëren: 
+</p>
+<code class="code">
+Set colFiles = _
+    objWMIService.ExecQuery("Select * From CIM_DataFile Where Name = 'C:\\Scripts\\Test.txt'")
+
+For Each objFile in colFiles
+    objFile.Copy ("C:\Temp\NewTest.txt")
+Next
+</code>
+
+<p>
+Wat als je meerdere bestanden wilt copiëren?
+Dan gebruik je een volgend soort syntax:
+</p>
+<code class="code">
+Set colFiles = _
+    objWMIService.ExecQuery("Select * From CIM_DataFile Where Path = '\\Scripts\\' and Extension = 'txt'")
+
+For Each objFile in colFiles
+    strNewFile = "C:\Temp\" &amp; objFile.FileName &amp; ".txt"
+    objFile.Copy strNewFile
+Next
+</code>
+
+<p>
+Als je zoekt op een andere schijf dan de huidige, moet je ook de 
+<code class="prop">Drive</code>-property gebruiken: <br>
+<code class="stmt">
+Where Drive = 'C:' and Path = '\\Test\\' and Extension = 'txt'</code>
+</p>
+
+<p>
+Verder is het goed om te beseffen dat de 
+<code class="prop">FileName</code>-property niet de extensie bevat. 
+</p>
+
+<h4 id="wmi-move">Bestanden verhuizen (Move)</h4>
+<p>
+Er is geen <code class="meth">Move</code> method in WMI. 
+</p>
+
+<p>
+Als je mappen of bestanden wilt verhuizen zal je ze eerst moeten copiëren
+en dan verwijderen van de plek waar ze vandaan komen. 
+</p>
+
+<h3 id="wmi-del">Delete</h3>
+<h4>Mappen</h4>
+<p>
+Voorbeeld:
+</p>
+<code class="code">
+Set colFolders = _
+    objWMIService.ExecQuery("Select * From Win32_Directory Where Name = 'C:\\Scripts'")
+
+For Each objFolder in colFolders
+'    objFolder.Delete
+Next
+</code>
+
+<p>
+Read-only files in de map worden ook weggegooid!!
+</p>
+
+<p>
+Het echte <code class="stmt">Delete</code>-statement is 
+uitgecommentariëerd, om te voorkomen dat je per ongeluk dit script uitvoert
+en echt een map weggooit.
+</p>
+
+<h4>Bestanden</h4>
+<p>
+Voorbeeld:
+</p>
+<code class="code">
+Set colFiles = _
+    objWMIService.ExecQuery("Select * From CIM_DataFile Where Name = 'C:\\Scripts\\Test.txt'")
+
+For Each objFile in colFiles
+    objFile.Delete
+Next</code>
+
+<p>
+Het weggooien van alle bestanden met extensie <code class="ext">TXT</code>
+in een map:
+</p>
+<code class="code">
+Set colFiles = _
+    objWMIService.ExecQuery("Select * From CIM_DataFile Where Path = '\\Scripts\\' and Extension = 'txt'")
+
+For Each objFile in colFiles
+    objFile.Delete
+Next
+</code>
+
+<p>
+Bestanden met deze extensie in submappen worden niet weggegooid.
+</p>
+
+<h3>Copiëren op basis van datum</h3>
+<p>
+Dit is een beetje ingewikkelder dan met het 
+<code class="obj">FileSystemObject</code>-object.
+Dat komt doordat WMI werkt met datums in <a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#utcdate">UTC</a>-formaat. 
+</p>
+
+<p>
+Je moet de datum in UTC-formaat dus eerst naar een "normaal" formaat omzetten: 
+</p>
+<code class="code">
+Set colFiles = _
+    objWMIService.ExecQuery("Select * From CIM_DataFile Where Path = '\\Scripts\\' and Extension = 'txt'")
+
+dtMonthAgo = DateAdd("m", -1, Now)
+
+For Each objFile in colFiles
+    dtCreationDate = WMIDateStringToDate(objFile.CreationDate)
+    If dtCreationDate &lt; dtMonthAgo then
+        strNewFile = "C:\Scripts\old\" &amp; objFile.FileName &amp; ".txt"
+        objFile.Copy strNewFile
+    End If
+Next
+
+Function WMIDateStringToDate(dtmInstallDate)
+    WMIDateStringToDate = CDate(Mid(dtmInstallDate, 5, 2) &amp; "/" &amp; _
+        Mid(dtmInstallDate, 7, 2) &amp; "/" &amp; Left(dtmInstallDate, 4) _
+            &amp; " " &amp; Mid (dtmInstallDate, 9, 2) &amp; ":" &amp; _
+                Mid(dtmInstallDate, 11, 2) &amp; ":" &amp; Mid(dtmInstallDate, _
+                    13, 2))
+End Function
+</code>
+
+<hr>
+<h2 id="registry">Register</h2>
+<p>
+Je kan zonder WMI werken (zie het vervolg) of <a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#wmi-reg">met</a>.
+</p>
+
+<p>
+De Windows Scripting Host levert een class, <code class="class">WshShell</code>,
+die je lokale toegang geeft tot het register.  
+</p>
+
+<p>
+Je maakt als volgt een object van de class aan: <br>
+<code class="stmt">Set objShell = WScript.CreateObject("WScript.Shell")</code>
+</p>
+
+<p>
+Je begint elke script (dat met het register werkt) met dit statement, dus die
+noem ik vanaf hier niet meer.
+</p>
+
+<p>
+De class heeft 3 methods, <code class="meth">RegRead</code>, 
+<code class="meth">RegWrite</code> en <code class="meth">RegDelete</code>
+</p>
+
+<h3 id="regread">Lezen uit het register</h3>
+<p>
+Simpel voorbeeld: 
+</p>
+<code class="code">
+iWordWrap = objShell.RegRead _
+    ("HKCU\Software\Microsoft\Notepad\fWrap")
+If iWordWrap = 0 Then
+    Wscript.Echo "Word wrap is turned off"
+Else
+    Wscript.Echo "Word wrap is turned on"
+End If</code>
+
+<p>
+Van de 5 hoofdkeys in het register moet je alleen 
+<code class="key">HKEY_USERS</code> en 
+<code class="key">HKEY_CURRENT_CONFIG</code> voluit schrijven, de andere 3
+kan je afkorten tot 4 letters. 
+</p>
+
+<h3 id="regwrite">Schrijven naar het register</h3>
+<p>
+Het volgende script schrijft naar dezelfde waarde die ook al bij het 
+<a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#regread">leescommando</a> werd gebruikt: <br>
+<code class="stmt">objShell.RegWrite "HKCU\Software\Microsoft\Notepad\fWrap", 1, 
+"REG_DWORD"</code>
+</p>
+
+<p>
+Het meest opvallende hier is dat je als 3e parameter het data-type moet opgeven.
+De meest belangrijke types staan op mijn 
+<a href="https://home.hccnet.nl/h.dalmolen/Computer/Registry.htm#data-types">pagina over het register</a>.
+</p>
+
+<p>
+Om het schrijf-statement wat overzichtelijker te maken kan je het pad in het
+register ook van tevoren in een variabele zetten.
+Onderstaand script draait de waarde van de wrap-instelling in 
+<code class="prg">Kladblok (Notepad)</code> om:
+</p>
+<code class="code">
+strPath = "HKCU\Software\Microsoft\Notepad\fWrap"
+
+Set objShell = WScript.CreateObject("WScript.Shell")
+iWordWrap = objShell.RegRead(strPath)
+If iWordWrap = 0 Then
+    objShell.RegWrite strPath, 1, "REG_DWORD"
+Else
+    objShell.RegWrite strPath, 0, "REG_DWORD"
+End If
+</code>
+
+<p>
+Stel dat je een compleet nieuwe waarde binnen een key wilt aanmaken, dan 
+zou je de volgende regel kunnen uitvoeren: <br>
+<code class="stmt">
+objShell.RegWrite "HKCU\Software\Microsoft\Notepad\NewValue", 1, "REG_DWORD"
+</code>
+</p>
+
+<h3 id="regdelete">Verwijderen uit het register</h3>
+<p>
+Met onderstaande statement verwijder je de nieuwe waarde weer die we hierboven
+aangemaakt hebben: <br>
+<code class="stmt">
+objShell.RegDelete "HKCU\Software\Microsoft\Notepad\NewValue"</code>
+</p>
+
+<h3 id="wmi-reg">Registerbewerkingen m.b.v. WMI</h3>
+<h4>Lezen</h4>
+<p>
+Het volgende script leest dezelfde waarde uit het register die we al in deze
+hele sectie (over het register) gebruiken:
+</p>
+<code class="code">
+Const HKEY_CURRENT_USER = &amp;H80000001
+
+strComputer = "."
+
+strKeyPath = "Software\Microsoft\Notepad"
+strEntryName = "fWrap"
+
+Set objReg=GetObject("winmgmts:{impersonationLevel=impersonate}!\\" &amp; _
+    strComputer &amp; "\root\default:StdRegProv")
+
+objReg.GetDWordValue HKEY_CURRENT_USER, strKeyPath, strEntryName, strValue
+Wscript.Echo strValue
+</code>
+
+<p>
+In de 1e regel wordt 1 van de 5 keys in het register in een constante gezet.
+Je kan hier niet de afkortingen van de keys gebruiken, zoals 
+<code class="key">HKCU</code>, maar moet een hexadecimale representatie ervan
+gebruiken (<code class="key">HKLM</code> = &amp;H80000002 en 
+<code class="key">HKCR</code> = &amp;H80000000). 
+</p>
+
+<p>
+Als je de punt in de 3e regel vervangt door de naam van een remote computer,
+kan je (alleen met WMI) ook op die computer werken. 
+</p>
+
+<p>
+Op bijna deze hele pagina (waar het over WMI gaat) wordt vrijwel steeds gebruik
+gemaakt van de <code class="ns">\root\cimv2</code> namespace.
+Hier is het <code class="ns">\root\default</code> 
+</p>
+
+<p>
+Met WMI moet je een verschillende method gebruiken, afhankelijk van het 
+data-type dat je gaat lezen:
+</p>
+<ul>
+ <li>GetBinaryValue</li>
+ <li>GetDWordValue</li>
+ <li>GetExpandedStringValue</li>
+ <li>GetMultiStringValue</li>
+ <li>GetStringValue</li>
+</ul>
+
+<h4>Schrijven</h4>
+<p>
+Dat is nauwelijks anders dan lezen, alleen moet je nu natuurlijk opgeven 
+welke waarde je gaat schrijven. 
+De enige 2 regels die dus anders zijn, zijn:
+</p>
+<code class="code">
+strValue = 1
+
+...
+
+objReg.SetDWordValue HKEY_CURRENT_USER, strKeyPath, strEntryName, strValue
+</code>
+
+<h4>Verwijderen</h4>
+<p>
+Een nog niet bestaande waarde aanmaken, en die vervolgens verwijderen, is ook
+a piece of cake als het voorgaande duidelijk is:
+</p>
+<code class="code">
+Const HKEY_CURRENT_USER = &amp;H80000001
+
+strComputer = "."
+
+strKeyPath = "Software\Microsoft\Notepad"
+strEntryName = "NewKey"
+strValue = 10
+
+Set objReg=GetObject("winmgmts:{impersonationLevel=impersonate}!\\" &amp; _
+    strComputer &amp; "\root\default:StdRegProv")
+
+objReg.SetDWordValue HKEY_CURRENT_USER, strKeyPath, strEntryName, strValue
+objReg.DeleteValue HKEY_CURRENT_USER, strKeyPath, strEntryName
+</code>
+
+
+<hr>
+<h2 id="wmi">Gebruik maken van voorgedefinieerde informatie (zoals WMI)</h2>
+<h3>Aanroep</h3>
+<p>
+Om van <code class="prg">WMI</code> gebruik te kunnen maken moet een regel 
+als de volgende in je script hebben staan: <br>
+<code class="msg">
+Set objWMIService = GetObject("winmgmts:\\" &amp; strComputer &amp; "\root\cimv2")
+</code>
+</p>
+
+<p>
+Maar het kan ook ingewikkelder: <br>
+<code class="cmd">
+Set objReg=GetObject("winmgmts:{impersonationLevel=impersonate}!\\" &amp; _
+</code>
+<code class="cmd">
+    strComputer &amp; "\root\default:StdRegProv")
+</code>
+</p>
+
+<p>
+En het kan simpeler als je met de lokale computer werkt: <br>
+Set objProcess = GetObject("winmgmts:root\cimv2:Win32_Process")
+</p>
+
+<p>
+Het object dat je terugkrijgt als je werkt met de naam 
+<code class="val">winmgmts</code> is van het type 
+<code class="obj">SWbemServices</code>
+</p>
+
+<p>
+Meestal gebruik je de method <code class="meth">ExecQuery</code> van dit
+object, omdat je een bepaalde collectie gegevens wilt verzamelen (query). 
+</p>
+
+<p>
+Maar als je met <a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#events">events</a> wilt werken gaat het anders.
+</p>
+
+<h3>Voorbeeld</h3>
+<p>
+Als je van bv. <code class="prg">Verkenner</code> (het bijbehorende bestand
+heet <code class="file">explorer.exe</code>) zou willen zien wanneer hij 
+gestart is, zou je het volgende (complete) script kunnen uitvoeren:
+</p>
+<code class="code">
+strComputer = "."
+Set objWMIService = GetObject("winmgmts:\\" &amp; strComputer &amp; "\root\cimv2")
+
+Set colProcessList = objWMIService.ExecQuery _
+    ("Select * from Win32_Process Where Name = 'explorer.exe'")
+
+For Each objProcess in colProcessList
+    Wscript.Echo objProcess.CreationDate
+Next
+</code>
+
+<p>
+In mijn geval was de uitvoer (op 31 mei):
+<code class="msg">20130524165937.110020+120</code>
+</p>
+
+<p>
+Blijkbaar draaide mijn PC dus als sinds 24 mei onafgebroken.
+</p>
+
+<h3>Hoe vind je informatie over wat er in WMI beschikbaar is?</h3>
+<p>
+Je gebruikt hier de <code class="val">Win32_Process</code>-class en de property
+<code class="val">Name</code>
+</p>
+
+<p>
+Hoe weet je dat die er zijn?
+Via de WMI Reference.
+Links daarnaar heb ik op mijn pagina over 
+<a href="https://home.hccnet.nl/h.dalmolen/Computer/Programming.htm#links">programmeren</a> staan.
+</p>
+
+<p>
+De bovengenoemde class ziet er als volgt uit (ik heb een groot stuk er uit 
+gesloopt, maar je ziet de properties <code class="val">Name</code> en 
+<code class="val">CreationDate</code>):
+</p>
+<code class="code">
+class Win32_Process : CIM_Process
+{
+  datetime CreationDate;
+  string   CSCreationClassName;
+  string   CSName;
+  string   Description;
+  string   ExecutablePath;
+  uint16   ExecutionState;
+  uint32   MaximumWorkingSetSize;
+  uint32   MinimumWorkingSetSize;
+  string   Name;
+  string   OSCreationClassName;
+  string   OSName;
+};
+</code>
+
+<p>
+Hier een script (compleet) om de service 
+<code class="prg">SCardSvr</code> te starten (kan geen kwaad om uit te voeren),
+en als uitvoer de statuscode af te drukken (0 = goed):
+</p>
+<code class="code">
+strComputer = "."
+Set objWMIService = GetObject("winmgmts:" _
+    &amp; "{impersonationLevel=impersonate}!\\" &amp; strComputer &amp; "\root\cimv2")
+
+Set colServiceList = objWMIService.ExecQuery _
+    ("Select * from Win32_Service where Name='SCardSvr'")
+
+For Each objService in colServiceList
+    errReturn = objService.StartService()
+    Wscript.Echo errReturn
+Next
+</code>
+
+<h3 id="events">Events</h3>
+<p>
+Om WMI events te kunnen ontvangen gebruik je niet de method 
+<code class="meth">ExecQuery</code> van het object 
+<code class="obj">SWbemServices</code>, maar de method
+<code class="meth">ExecNotificationQuery</code>
+</p>
+
+<p>
+Dus bv.:
+</p>
+<code class="code">
+Set colMonitorProcess = objWMIService.ExecNotificationQuery _
+ ("SELECT * FROM __InstanceOperationEvent " &amp; _ 
+ "WITHIN 1 WHERE TargetInstance ISA 'Win32_Process'")
+</code>
+
+<p>
+Het getal achter 'within' (in dit geval 1) is het aantal seconden tussen 
+de momenten dat er gekeken wordt naar nieuwe events (het 'polling interval').
+</p>
+
+<p>
+De class <code class="class">__InstanceOperationEvent</code> is een ingebouwde
+WMI event class, die elke wijziging, verwijdering of aanmaak van een object
+van een WMI class registreert.  
+</p>
+
+<p>
+Er zijn 3 classes afgeleid van bovenstaande, nl. 
+<code class="class">__InstanceCreationEvent</code>,
+<code class="class">__InstanceModificationEvent</code> en
+<code class="class">__InstanceDeletionEvent</code>
+</p>
+
+<p>
+Als je, zoals in bovenstaande query, zoekt op de class
+<code class="class">__InstanceOperationEvent</code>, dan krijg je ze alle 3.
+</p>
+
+<p>
+Wanneer je een query als bovenstaande uitvoert krijg je als resultaat
+een <code class="obj">SWbemEventSource</code>-object.
+</p>
+
+<p>
+Het object <code class="obj">SWbemEventSource</code> heeft een method
+<code class="meth">NextEvent</code>, die informatie ophaalt over het 
+eerstvolgende event dat voldoet aan de query.  
+</p>
+
+<p>
+Het resultaat is een object, met de naam van de event class die opgetreden is
+in de property <code class="prop">Path_.Class</code> van dat object.
+</p>
+
+<p>
+En als je een query doet die met processen te maken heeft (en dus de 
+class <code class="class">Win32_Process</code>), dan bevatten de eigenschappen
+<code class="prop">TargetInstance.Name</code> en
+<code class="prop">TargetInstance.ProcessId</code> van het object uit de vorige
+paragraaf de naam en het proces ID van het proces.
+</p>
+
+<p>
+Het volgende stukje code:
+</p>
+<code class="code">
+strComputer ="."
+
+Set objWMIService = GetObject("winmgmts:\\" &amp; strComputer &amp; "\root\cimv2")
+Set colMonitorProcess = objWMIService.ExecNotificationQuery _
+ ("SELECT * FROM __InstanceOperationEvent " _ 
+ &amp; " WITHIN 1 WHERE TargetInstance ISA 'Win32_Process'")
+
+WScript.Echo "Waiting for process change event ..."
+Set objLatestEvent = colMonitorProcess.NextEvent
+WScript.Echo VbCrLf &amp; objLatestEvent.Path_.Class
+Wscript.Echo "Process Name: " &amp; objLatestEvent.TargetInstance.Name
+Wscript.Echo "Process ID: " &amp; objLatestEvent.TargetInstance.ProcessId
+WScript.Echo "Time: " &amp; Now
+</code>
+
+<p>
+zou dus de volgende uitvoer op kunnen leveren:
+</p>
+<code class="code">
+Waiting for process change event ...
+
+__InstanceModificationEvent
+Process Name: System Idle Process
+Process ID: 0
+Time: 25-11-2013 22:15:22
+</code>
+
+<h3 id="wmiql">WMI Query Language</h3>
+<h4>Select statement</h4>
+<p>
+Je kan zeggen <br>
+<code class="msg">Select * from Win32_PnPEntity</code> <br>
+wat betekent dat je alle (daar staat de '*' voor) eigenschappen van het 
+object <code class="obj">Win32_PnPEntity</code> opvraagt.
+</p>
+
+<p>
+Je kan ook 1 specifieke eigenschap opvragen: <br>
+<code class="msg">Select Description from Win32_PnPEntity</code>
+</p>
+
+<p>
+Of meerdere eigenschappen: <br>
+<code class="msg">Select Description, Manufacturer from Win32_PnPEntity</code>
+</p>
+
+<p>
+En als je wilt dat je de waarde van je eigenschap aan een bepaalde voorwaarde
+voldoet, gebruik je de <code class="cmd">where</code>-clause: <br>
+<code class="msg">Select * from Win32_PnPEntity Where Manufacturer = 'Microsoft'
+</code>
+</p>
+
+<p>
+Maar je kan natuurlijk ook meer voorwaarden opgeven: <br>
+<code class="msg">
+Where Manufacturer = 'Microsoft' and Name = 'wan miniport (ip)'</code>
+</p>
+
+<p>
+En tenslotte kan je ook in de <code class="cmd">where</code>-clause
+een wildcard-teken opgeven, de '%': <br>
+<code class="msg">Select * from Win32_PnPEntity Where Manufacturer = 'Microsoft' 
+and Name Like 'wan miniport%'</code> <br>
+betekent dus dat als de waarde van eigenschap <code class="prop">Name</code>
+begint met <code class="val">wan miniport</code>, hij voldoet aan de voorwaarde.  
+</p>
+
+<p>
+In plaats van <code class="keyw">and</code> kan je ook <code class="keyw">or
+</code> gebruiken om 2 voorwaarden met elkaar te verbinden.
+</p>
+
+<hr>
+<h2 id="errors">Foutzoeken en fouten voorkomen</h2>
+<h3>Waar kan je fouten verwachten?</h3>
+<p>
+Veel voorkomende plekken waar fouten optreden:
+</p>
+<ul>
+  <li>Als een script contact probeert te maken met een API (Application
+Programming Interface), zoals <a href="https://home.hccnet.nl/h.dalmolen/Computer/Def.htm#wmidef" class="def">WMI</a>,
+ADSI of een andere COM-bibliotheek. <br>
+Dat kan bv. met een commando als <br> 
+<code class="cmd">
+Set oReg=GetObject("winmgmts:\\" &amp; strComputer &amp; "\root\cimV2:StdRegProv")                   
+</code> <br>
+<a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#wmi-err">Hier</a> meer over WMI-fouten.
+</li>
+  <li>Bij invoer en uitvoer naar een apparaat of bestand.
+</li>
+  <li>Bij het benaderen van randapparatuur (zoals printers) die niet beschikbaar
+zijn.
+</li>
+  <li>Bij het aanmaken van een object van een klasse die niet op dat systeem
+aanwezig is (kan variëren tussen Windows-versies).  
+</li>
+  <li>Bij het opvragen van eigenschappen (properties) of aanroepen van methods
+die niet op dat systeem aanwezig zijn (ook weer verschillen tussen 
+Windows-versies).
+</li>
+</ul>
+
+<h3>Option explicit</h3>
+<p>
+Omdat VBScript loosely typed is, worden tikfouten in namen van variabelen niet
+gemerkt.
+Dat kan leiden tot moeilijk oplosbare fouten.
+Zie bv. het volgende script:
+</p>
+<code class="code">
+FirstNumber = 4
+SecondNumber = 9
+Wscript.Echo FirstNumber + SeconNumber
+</code>
+
+<p>
+Het script drukt 4 af als antwoord, omdat er een 'd' mist in 
+<code class="var">SeconNumber</code>, en je krijgt geen foutmelding (een 
+niet gedeclareerde variabele krijgt standaard als waarde 0).
+</p>
+
+<p>
+Als je aan het begin van het script <br>
+<code class="msg">Option Explicit</code> <br>
+zet, zou dit script wel een foutmelding geven.
+</p>
+
+<p>
+Je moet de variabelen dan wel van tevoren declareren:
+</p>
+<code class="code">
+Option Explicit
+Dim FirstNumber
+Dim SecondNumber
+
+FirstNumber = 4
+SecondNumber = 9
+Wscript.Echo FirstNumber + SeconNumber
+</code>
+
+<h3>Controleren op syntax-fouten</h3>
+<p>
+Een syntax-fout is wanneer je bv. een spelfout maakt in een keyword, zoals
+<code class="cmd">Else</code>
+</p>
+
+<p>
+VBScript controleert de syntax van het hele script voordat het het uitvoert.
+</p>
+
+<p>
+Een slimme manier om dus zelf te controleren of de syntax OK is, is het script
+(tijdelijk) te laten beginnen met <code class="cmd">Wscript.Quit</code>
+</p>
+
+<p>
+Vooral als je script gevaarlijke dingen zou kunnen doen is dit een manier om 
+er voor te zorgen dat je script niets kan beschadigen, want het stop per 
+definitie na de 1e regel. 
+</p>
+
+<h3>On Error Resume Next</h3>
+<p>
+Je kan alles over dit commando 
+<a href="http://msdn.microsoft.com/en-us/library/53f3k80h%28VS.85%29.aspx" target="_blank">op de site van Microsoft</a> vinden.
+</p>
+
+<p>
+Met dit commando in je script doet het alsof fouten niet bestaan.
+Als een statement een fout oplevert slaat het dat statement gewoon over, en
+gaat verder met het volgende.
+En je zult het nooit te weten komen. 
+</p>
+
+<p>
+Tenzij je dit statement op zijn minst tijdelijk uitschakelt.
+En dat is dus ook wat je moet doen als je onverwachte resultaten krijgt.
+</p>
+
+<p>
+Ook al staat dit commando in je hoofdscript, dan nog werkt het niet in functies
+of subroutines. 
+Binnen elke functie of subroutine moet je het opnieuw uitvoeren. 
+</p>
+
+<p>
+Je kan het commando uitschakelen met 
+<code class="cmd">On Error GoTo 0</code>
+</p>
+
+<h3 id="err-obj">Err object</h3>
+<p>
+Je kan alles over dit object 
+<a href="http://msdn.microsoft.com/en-us/library/sbf5ze0e%28VS.85%29.aspx" target="_blank">op de site van Microsoft</a> vinden.
+</p>
+
+<h4>Number property</h4>
+<p>
+VBScript bevat standaard het object <code class="obj">Err</code>, met de 
+property <code class="prop">Number</code>
+</p>
+
+<p>
+Elke VBScript method zet een resultaat in deze property.
+En dat resultaat kan je bv. als volgt opvragen en er iets mee doen:
+</p>
+<code class="code">
+If Err.Number Then
+  ...
+  Err.Clear
+End If
+</code>
+
+<h4>Andere properties</h4>
+<p>
+<code class="obj">Err</code> heeft ook nog de properties
+<code class="prop">Source</code> (bron) en 
+<code class="prop">Description</code> (beschrijving), beide strings.
+</p>
+
+<p>
+De properties <code class="prop">HelpFile</code> en
+<code class="prop">HelpContext</code> zijn alleen van belang als de applicatie
+eigen foutcodes heeft gedefiniëerd, en die aan helpbestanden heeft
+gekoppeld.
+</p>
+
+<h4>Methods</h4>
+<h5>Clear</h5>
+<p>
+<code class="meth">Clear</code> is een zeer belangrijke method.
+</p>
+
+<p>
+Als je waarde van bv. <code class="prop">Err.Number</code> hebt gecontroleerd
+moet je <code class="meth">Err.Clear</code> uitvoeren.
+</p>
+
+<p>
+Als je de waarde nl. later weer een keer controleert, en de commando's tot 
+dan toe hebben geen fout opgeleverd, dan zal toch nog steeds de oude waarde
+er in zitten.  
+</p>
+
+<h5>Raise</h5>
+<p>
+De andere method is 
+<code class="meth">Raise(lngNumber, strSource, strDescription)</code>
+</p>
+
+<p>
+Hiermee kan je zelf een fout produceren als VBScript het niet doet.
+</p>
+
+<p>
+Alleen de 1e parameter, een getal tussen 0 en 65536, is verplicht.
+</p>
+
+<h3>IsObject en Is Nothing</h3>
+<p>
+Deze 2 tests kan je gebruiken na een commando waarin je met objecten werkt,
+zoals <code style="cmd">GetObject</code> en 
+<code class="cmd">CreateObject</code>
+</p>
+
+<p>
+Ze leveren geen specifieke foutinformatie op, alleen of je een geldig object
+hebt gekregen of niet.
+</p>
+
+<h4>Is Nothing</h4>
+<p>
+<code class="val">Nothing</code> staat gelijk aan <code class="val">Null</code>,
+m.a.w. een pointer naar niets (en in elk geval geen object).
+</p>
+
+<p>
+Je kan dus bv. het volgende script gebruiken om te testen of je een geldige
+referentie naar de <a href="https://home.hccnet.nl/h.dalmolen/Computer/Def.htm#wmidef" class="def">WMI</a>-provider
+hebt gekregen:
+</p>
+<code class="code">
+On Error Resume Next
+strComputer = "fictional"
+Set objWMIService = GetObject("winmgmts:\\" &amp; strComputer &amp; "\root\cimv2")
+If objWMIService Is Nothing Then
+    WScript.Echo "Unable to bind to WMI on " &amp; strComputer
+Else
+    WScript.Echo "Successfully bound to WMI on " &amp; strComputer
+End If
+</code>
+
+<h4>IsObject</h4>
+<p>
+Deze functie doet eigenlijk het omgekeerde van de vergelijking 
+<code class="cmd">Is Nothing</code>
+</p>
+
+<p>
+Als je een geldige referentie naar een object (maakt niet uit wat voor) aan
+<code class="func">IsObject</code> geeft krijg je de waarde true terug, anders
+false. 
+</p>
+
+<p>
+Het volgende script test of je succesvol een (printer) object hebt aangemaakt:
+</p>
+<code class="code">
+On Error Resume Next
+strPrinter = "TestPrinter"
+Set objPrinter = GetObject _
+ ("winmgmts:root\cimv2:Win32_Printer.Name='" &amp; strPrinter &amp; "'")
+If IsObject(objPrinter) Then
+    WScript.Echo "Connected to printer " &amp; strPrinter
+Else
+    WScript.Echo "Unable to connect to printer " &amp; strPrinter
+End If
+</code>
+
+<h3>Resultaten van methods</h3>
+<p>
+Methods geven altijd een code 0 terug als het goed is gegaan. 
+</p>
+
+<p>
+Als er iets mis gaat komt er een geheel positief getal terug, maar de waardes
+daarvan variëren per method. 
+</p>
+
+<p>
+Je zou bv. een functie kunnen schrijven die als parameter een object van het
+type <code class="obj">Win32_Process</code> meekrijgt, en vervolgens probeert
+dat proces te beëindigen. 
+</p>
+
+<p>
+Afhankelijk van de code die het oplevert (in variable 
+<code class="var">intReturn</code>) kan de functie een andere actie ondernemen
+(de onderstaande functie drukt steeds alleen maar de status af).
+</p>
+<code class="code">
+Function TerminateProcess(objProcess)
+
+    On Error Resume Next
+    intReturn = objProcess.Terminate
+    Select Case intReturn
+        Case 0 Wscript.Echo "Return code " &amp; intReturn &amp; " - Terminated"
+        Case 2 Wscript.Echo "Return code " &amp; intReturn &amp; " - Access denied"
+        Case 3 Wscript.Echo "Return code " &amp; intReturn &amp; " - Insufficient privilege"
+        Case 8 Wscript.Echo "Return code " &amp; intReturn &amp; " - Unknown failure"
+        Case 9 Wscript.Echo "Return code " &amp; intReturn &amp; " - Path not found"
+        Case 21 Wscript.Echo "Return code " &amp; intReturn &amp; " - Invalid parameter"
+        Case Else Wscript.Echo "Return code " &amp; intReturn &amp; _
+          " - Unable to terminate for undetermined reason"
+    End Select
+    TerminateProcess = intReturn
+
+End Function
+</code>
+
+<h3 id="wmi-err">WMI-fouten</h3>
+<h4>WbemErrorEnum</h4>
+<p>
+In geval van een WMI-fout komt er informatie terug in 
+<code class="obj">WbemErrorEnum</code>
+</p>
+
+<p>
+Je moet echter waardes verwachten als 
+<code class="val">wbemErrInvalidFlavor</code>, en deze zelfde informatie zit
+ook in de property <code class="prop">Description</code> van het 
+<a href="https://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm#err-obj"><code class="obj">Err</code></a>-object.
+</p>
+
+<p>
+Bovendien is de waarde in <code class="obj">WbemErrorEnum</code> moeilijk
+te benaderen. 
+</p>
+
+<h4>SWbemLastError</h4>
+<p>
+Door het object <code class="obj">SWbemLastError</code> te creëren kunnen
+we ook meer informatie over de laatste fout krijgen. 
+</p>
+
+<p>
+Dat doe je met het volgende commando: <br>
+<code class="cmd">Set WMI_Error = CreateObject("WbemScripting.SwbemLastError")
+</code>
+</p>
+
+<p>
+<code class="obj">SWbemLastError</code> heeft een aantal parameters die 
+interessant zouden kunnen zijn in troubleshooting: 
+<code class="prop">Operation</code>, <code class="prop">ParameterInfo</code> en
+<code class="prop">ProviderName</code>
+</p>
+
+<p>
+Je moet het object pas aanmaken na het punt in het script waar een fout zou 
+kunnen optreden.
+</p>
+
+<p>
+De benodigde subroutine en een voorbeeld kan je 
+<a href="https://home.hccnet.nl/h.dalmolen/Computer/VB-cookbook.htm#wmi-err-info">hier</a> vinden. 
+</p>
+
+<h4>Fouten bij werken met het register</h4>
+<p>
+De klasse <code class="class">StdRegProv</code> die je nodig hebt om met het
+register te werken, bevat alleen methods.
+Deze kunnen een waarde 0 (succes) of iets anders teruggeven. 
+</p>
+
+<p>
+Aangezien dat 'iets anders' niet (goed) gedocumenteerd is, is het het beste
+gewoon te controleren op succes of niet. 
+</p>
+
+<p>
+In onderstaande code wordt eerst verbinding gemaakt met de registerklasse
+op de lokale computer, en dan wordt de waarde van een niet bestaande 
+sleutel (<code class="key">hnetmonh</code>) in het register opgehaald. 
+</p>
+<code class="code">
+On Error Resume Next
+strComputer = "." 'Change to non-existent host to create binding error.
+Const HKLM = &amp;H80000002
+strSubKeyName = "SOFTWARE\Microsoft\NetSh"
+strEntryName = "hnetmonh"
+
+'Connect to WMI and StdRegProv class.
+Set objReg = GetObject("winmgmts:\\" &amp; strComputer &amp; _
+ "\root\default:StdRegProv")
+If Err = 0 Then
+  WScript.Echo vbCrLf &amp; "Bind success"
+  WScript.Echo vbCrLf &amp; "Computer: " &amp; strComputer
+Else
+  WScript.Echo "ERROR: Unable to bind to WMI provider on " &amp; strComputer &amp; "."
+  WScript.Quit
+End If
+
+'Get string value from entry and check return value.
+intRet = objReg.GetStringValue(HKLM, strSubKeyName, strEntryName, strValue)
+If intRet = 0 Then
+  WScript.Echo vbCrLf &amp; "Registry success"
+  WScript.Echo "Registry Path: HKLM\" &amp; strSubKeyName &amp; "\" &amp; strEntryName
+  WScript.Echo "Entry Value: " &amp; strValue
+Else
+  WScript.Echo vbCrLf &amp; "ERROR: Unable to retrieve value of registry " &amp; _
+   "entry HKLM\" &amp; strSubKeyName &amp; "\" &amp; strEntryName &amp; vbCrLf &amp; _
+   "Return value: " &amp; intRet
+End If
+</code>
+
+<p>
+Gek genoeg, wanneer je de <a href="https://home.hccnet.nl/h.dalmolen/Computer/VB-cookbook.htm#wmi-err-sub">subroutine</a>
+gebruikt waarmee je foutinformatie kunt weergeven, dan geeft bovenstaand 
+script geen fout, omdat <code class="obj">Err</code> kennelijk de waarde 0 
+heeft. 
+</p>
+
+<p>
+Maar wanneer je de waardes van <code class="par">strSubKeyName</code> en
+<code class="par">strEntryName</code> uitcommentariëert, dan krijg je
+ineens wel een fout: 
+</p>
+<code class="out">
+ERROR: Unable to retrieve value of registry entry HKLM\\
+Return value:
+Number (dec) : -2147217400
+Number (hex) : &amp;H80041008
+Description  : Invalid parameter
+Source       : SWbemObjectEx
+Operation    : ExecMethod
+ParameterInfo: StdRegProv
+ProviderName : WinMgmt
+</code>
+
+<h3 id="adsi-err">ADSI-fouten</h3>
+<p>
+Deze sectie is voor de meeste thuisgebruikers niet van belang, want het gaat
+hier om Active Directory, en dat wordt bijna alleen in (grotere) bedrijven
+gebruikt.
+</p>
+
+<p>
+<a href="http://msdn.microsoft.com/en-us/library/aa772195%28VS.85%29.aspx" target="_blank">Op de site van Microsoft</a> is deze speciale pagina gewijd
+aan ADSI-fouten.
+</p>
+
+<h4>ADsGetLastError</h4>
+<p>
+Deze waarde, die vergelijkbaar is met <code class="obj">SWbemLastError</code>
+voor WMI, is voor scripting-talen niet toegankelijk, dus vanuit VBScript
+moet je andere methodes gebruiken.
+</p>
+
+<h4>4 soorten fouten</h4>
+<h5>Generic COM-fouten</h5>
+<p>
+5 van de 6 zien eruit als <code class="val">0xH8000400x</code>, 
+en de laatste is een soort doomsday-fout: 
+<code class="val">0xH8000FFFF</code> (catastophic failure).
+</p>
+
+<h5>Generic ADSI-fouten</h5>
+<p>
+3 zien eruit als <code class="val">0xH000050xx</code> en de andere 18 als
+<code class="val">0xH800050xx</code>
+</p>
+
+<h5>Win32-foutcodes</h5>
+<p>
+Volgt later.
+</p>
+
+<h5>LDAP-foutcodes</h5>
+<p>
+Volgt later.
+</p>
+
+<h3>Verdere informatie</h3>
+<p>
+<a href="http://technet.microsoft.com/en-US/library/ee692852.aspx" target="_blank">Op de site van Microsoft</a>
+een serie artikelen ("To Err is VBScript") over geavanceerde foutzoektechnieken.
+</p>
+
+<hr>
+<h2 id="links">Links</h2>
+<dl>
+<dt><a href="http://technet.microsoft.com/en-us/scriptcenter/dd772284" target="_blank">Learn Beginning Scripting</a>  
+</dt>
+<dd>Deze pagina bevat links naar een aantal columns, geschreven in de jaren
+2005-2007, om de beginner te leren programmeren in VBScript.
+De linkerkolom is voor de *absolute* beginner, de rechter voor de beginner+. 
+De artikelen zijn vaak heel humoristisch geschreven. 
+Zeer de moeite waard, hoewel VBScript meer en meer zal worden vervangen
+door <a href="https://home.hccnet.nl/h.dalmolen/Computer/PowerShell.htm">PowerShell</a>.
+</dd>
+<dt><a href="http://technet.microsoft.com/en-us/library/ee707302.aspx" target="_blank">Tales from the Script</a>
+</dt>
+<dd>Artikelen geschreven in de periode 2002-2005, bedoeld voor beginnende
+scripting gebruikers. 
+</dd>
+<dt><a href="http://blogs.technet.com/b/heyscriptingguy/default.aspx?PageIndex=124" target="_blank">
+Hey, Scripting Guy! Blog - Learn about Windows PowerShell</a>
+</dt>
+<dd>124 pagina's (mei 2013) met tientallen links naar blogs van de Scripting
+Guy waarin hij vragen van gebuikers beantwoordt. 
+Deze link is naar de oudste pagina (op dit moment), en daar gaan de blogs nog
+over VBScript. 
+Op de meest recente pagina's gaan de blogs over 
+<a href="https://home.hccnet.nl/h.dalmolen/Computer/PowerShell.htm">PowerShell</a>.
+</dd>
+<dt><a href="http://technet.microsoft.com/en-us/library/ee332542.aspx" target="_blank">Doctor Scripto's Script Shop</a>
+</dt>
+<dd>Vast en zeker interessante artikelen over scripting, maar ik heb er nog
+niet naar gekeken. 
+</dd>
+<dt><a href="http://msdn.microsoft.com/en-us/library/dd575521.aspx" target="_blank">Scripting Clinic</a>
+</dt>
+<dd>Ik denk dat dit een verzameling wat oudere artikelen is (maar daarom niet
+noodzakelijk minder interessant).
+</dd>
+<dt><a href="http://msdn.microsoft.com/en-us/library/d1wf56tt%28VS.85%29.aspx" target="_blank">VBScript Language Reference</a>
+</dt>
+<dd>Een complete beschrijving van de taal VBScript, onderverdeeld in secties
+als Constants, Functions, Keywords, enz.
+</dd>
+<dt><a href="http://msdn.microsoft.com/en-us/library/d1wf56tt%28VS.85%29.aspx" target="_blank">Functions (VBScript)</a>
+</dt>
+<dd>Een overzicht van alle functies in VBScript.
+</dd>
+<dt><a href="http://technet.microsoft.com/en-us/library/ee692823.aspx" target="_blank">Windows Script Components Have a COM-ing Effect</a>
+</dt>
+<dd>Een voorbeeld van het gebruik van Windows Script Components.
+</dd>
+<dt><a href="http://msdn.microsoft.com/en-us/library/ms950396.aspx" target="_blank">Scripting</a>
+</dt>
+<dd>Uitvoerige documentatie over scripting, i.h.b. over Windows Script
+Components.
+</dd>
+</dl>
+
+<hr>
+
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-5818157813794931";
+/* Onderaan computerpagina&#39;s */
+google_ad_slot = "5449195339";
+google_ad_width = 728;
+google_ad_height = 90;
+//-->
+</script>
+<script type="text/javascript" src="./Programmeren met Visual Basic Script_files/f.txt">
+</script>
+
+<hr>
+
+<fb:like href="http://home.hccnet.nl/h.dalmolen/Computer/VBScript.htm" send="false" layout="button_count" width="200" show_faces="false" class=" fb_iframe_widget" fb-xfbml-state="rendered" fb-iframe-plugin-query="app_id=&amp;container_width=0&amp;href=http%3A%2F%2Fhome.hccnet.nl%2Fh.dalmolen%2FComputer%2FVBScript.htm&amp;layout=button_count&amp;locale=en_US&amp;sdk=joey&amp;send=false&amp;show_faces=false&amp;width=200"><span style="vertical-align: top; width: 0px; height: 0px; overflow: hidden;"><iframe name="f1ea6608bb9b42c" width="200px" height="1000px" data-testid="fb:like Facebook Social Plugin" title="fb:like Facebook Social Plugin" frameborder="0" allowtransparency="true" allowfullscreen="true" scrolling="no" allow="encrypted-media" src="./Programmeren met Visual Basic Script_files/like(1).html" style="border: none; visibility: visible; width: 0px; height: 0px;"></iframe></span></fb:like>
+
+<span>&nbsp;&nbsp;&nbsp;</span>
+
+<iframe id="twitter-widget-1" scrolling="no" frameborder="0" allowtransparency="true" allowfullscreen="true" class="twitter-share-button twitter-share-button-rendered twitter-tweet-button" style="position: static; visibility: visible; width: 86px; height: 20px;" title="Twitter Tweet Button" src="./Programmeren met Visual Basic Script_files/tweet_button.67506ef287a81e691ccccf99870d175e.nl(1).html"></iframe>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+
+<!-- Place this tag where you want the +1 button to render. -->
+<div id="___plusone_1" style="position: absolute; width: 450px; left: -10000px;"><iframe ng-non-bindable="" frameborder="0" hspace="0" marginheight="0" marginwidth="0" scrolling="no" style="position:absolute;top:-10000px;width:450px;margin:0px;border-style:none" tabindex="0" vspace="0" width="100%" id="I1_1649337978812" name="I1_1649337978812" src="./Programmeren met Visual Basic Script_files/fastbutton(1).html" data-gapiattached="true"></iframe></div><div class="g-plusone" data-annotation="inline" data-width="300" data-gapiscan="true" data-onload="true" data-gapistub="true"></div>
+
+<!-- Place this tag after the last +1 button tag. -->
+<script type="text/javascript">
+  window.___gcfg = {lang: 'nl'};
+
+  (function() {
+    var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+    po.src = 'https://apis.google.com/js/plusone.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+  })();
+</script>
+
+<hr>
+
+<div id="footnote">
+© Henk Dalmolen<br>
+<a href="mailto:dalmolen@xs4all.nl">
+Reageer via E-mail (dalmolen@xs4all.nl)</a><br><br>
+Deze pagina is voor het laatst gewijzigd op:
+8-12-2014 23:43:53
+</div>
+</div>
+
+
+<iframe name="oauth2relay429136300" id="oauth2relay429136300" src="./Programmeren met Visual Basic Script_files/postmessageRelay.html" tabindex="-1" aria-hidden="true" style="width: 1px; height: 1px; position: absolute; top: -100px;"></iframe><iframe scrolling="no" frameborder="0" allowtransparency="true" src="./Programmeren met Visual Basic Script_files/widget_iframe.67506ef287a81e691ccccf99870d175e.html" title="Twitter settings iframe" style="display: none;"></iframe><iframe id="rufous-sandbox" scrolling="no" frameborder="0" allowtransparency="true" allowfullscreen="true" style="position: absolute; visibility: hidden; display: none; width: 0px; height: 0px; padding: 0px; border: none;" title="Twitter analytics iframe" src="./Programmeren met Visual Basic Script_files/saved_resource.html"></iframe></body></html>

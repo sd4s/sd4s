@@ -1,0 +1,81 @@
+is61: init.ora.121201411338
+u611: init.ora.120201420589
+
+
+--aanmaken oracle services
+
+C:\oracle\admin\U611\pfile\init.ora.120201420589
+
+sqlplus /nolog
+
+set ORACLE_SID=IS61
+oradim -NEW -SID IS61 -STARTMODE manual -PFILE "C:\oracle\admin\IS61\pfile\init.ora.121201411338"
+NET STOP OracleServiceIS61
+ORADIM -DELETE -SID IS61
+
+set ORACLE_SID=U611
+oradim -NEW -SID u611 -STARTMODE manual -PFILE "C:\oracle\admin\U611\pfile\init.ora.120201420589"
+NET STOP OracleServiceU611
+ORADIM -DELETE -SID U611
+
+
+
+--create pfile
+
+--*****************************
+--IS61:
+--*****************************
+--ORACLEPROD_TEST:
+--*****************************
+sqlplus sys/moonflower@is61 as sysdba
+startup nomount
+create pfile='C:\oracle\admin\IS61\pfile\init_is61_20200901.ora' FROM SPFILE='C:\oracle\product\11.2.0\dbhome_1\database\SPFILEIS61.ORA';
+
+--*****************************
+--ORACLEPROD:
+sqlplus sys/moonflower@is61 as sysdba
+startup nomount
+create pfile='C:\oracle\admin\IS61\pfile\init_is61_20200901.ora' FROM SPFILE='C:\oracle\product\11.2.0\dbhome_1\database\SPFILEIS61.ORA';
+
+--*****************************
+--U611:
+--*****************************
+--ORACLEPROD_TEST:
+--*****************************
+sqlplus sys/moonflower@u611 as sysdba
+startup nomount
+create pfile='C:\oracle\admin\U611\pfile\init_u611_20200901.ora' FROM SPFILE='C:\oracle\product\11.2.0\dbhome_1\database\SPFILEU611.ORA';
+--*****************************
+--ORACLEPROD:
+sqlplus sys/moonflower@u611 as sysdba
+startup nomount
+create pfile='C:\oracle\admin\U611\pfile\init_u611_20200901.ora' FROM SPFILE='C:\oracle\product\11.2.0\dbhome_1\database\SPFILEU611.ORA';
+
+
+--*****************************
+--REPM:
+--*****************************
+--ORACLEPROD_TEST:
+--*****************************
+sqlplus sys/moonflower@repm as sysdba
+startup nomount
+create pfile='C:\oracle\product\11.2.0\dbhome_1\database\init_repm_20201231.ora' FROM SPFILE;
+--*****************************
+--ORACLEPROD:
+sqlplus sys/moonflower@repm as sysdba
+startup nomount
+create pfile='C:\oracle\admin\REPM\pfile\init_repm_20200901.ora' FROM SPFILE='C:\oracle\product\11.2.0\dbhome_1\database\SPFILEREPM.ORA';
+
+
+
+--open de database
+
+conn sys/moonflower as sysdba
+
+startup pfile=C:\oracle\admin\U611\pfile\init.ora.120201420589 mount;
+
+startup pfile=C:\oracle\product\11.2.0\dbhome_1\database\initREPM.ora mount;
+
+
+alter database open;
+

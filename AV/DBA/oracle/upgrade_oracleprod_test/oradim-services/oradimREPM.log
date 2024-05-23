@@ -1,0 +1,56 @@
+
+Fri Jul 31 11:43:03 2020
+C:\Oracle\product\11.2.0\dbhome_1\bin\oradim.exe -new -sid REPM -pfile C:\Oracle\product\11.2.0\dbhome_1\database\initREPM.ora -log oradimREPM.log 
+Fri Jul 31 11:43:03 2020
+Instance created.
+
+Fri Jul 31 14:54:09 2020
+C:\Oracle\product\11.2.0\dbhome_1\bin\oradim.exe -shutdown -sid REPM -usrpwd * -shutmode immediate -log oradimREPM.log 
+
+Fri Jul 31 14:56:22 2020
+C:\Oracle\product\11.2.0\dbhome_1\bin\oradim.exe -startup -sid REPM -usrpwd * -pfile C:\Oracle\product\11.2.0\dbhome_1\database\initREPM.ora -log oradimREPM.log -nocheck 0 
+Fri Jul 31 14:56:22 2020
+ORA-01078: failure in processing system parameters
+
+
+Fri Jul 31 15:01:07 2020
+C:\Oracle\product\11.2.0\dbhome_1\bin\oradim.exe -shutdown -sid REPM -usrpwd * -shutmode immediate -log oradimREPM.log 
+
+Fri Jul 31 15:43:32 2020
+C:\Oracle\product\11.2.0\dbhome_1\bin\oradim.exe -shutdown -sid REPM -shutmode I -log oradimREPM.log 
+Fri Jul 31 15:43:36 2020
+ORA-01017: invalid username/password; logon denied
+
+
+Fri Jul 31 15:45:23 2020
+C:\Oracle\product\11.2.0\dbhome_1\bin\oradim.exe -startup -sid REPM -usrpwd * -starttype SRVC,INST -pfile C:\Oracle\product\11.2.0\dbhome_1\database\initREPM.ora -log oradimREPM.log 
+Fri Jul 31 15:45:25 2020
+ORA-01078: failure in processing system parameters
+
+
+Fri Jul 31 15:48:35 2020
+C:\Oracle\product\11.2.0\dbhome_1\bin\oradim.exe -shutdown -sid REPM -usrpwd * -shutmode Immediate -log oradimREPM.log 
+
+Fri Jul 31 15:55:35 2020
+C:\Oracle\product\11.2.0\dbhome_1\bin\oradim.exe -startup -sid REPM -usrpwd * -starttype srvc,inst -pfile C:\Oracle\product\11.2.0\dbhome_1\database\initREPM.ora -log oradimREPM.log 
+Fri Jul 31 15:55:36 2020
+ORA-01078: failure in processing system parameters
+
+
+Fri Jul 31 15:57:10 2020
+C:\Oracle\product\11.2.0\dbhome_1\bin\oradim.exe -shutdown -sid REPM -usrpwd * -shuttype inst -shutmode Immediate -log oradimREPM.log 
+
+Fri Jul 31 15:58:31 2020
+C:\Oracle\product\11.2.0\dbhome_1\bin\oradim.exe -startup -sid REPM -usrpwd * -starttype inst -pfile C:\Oracle\product\11.2.0\dbhome_1\database\initREPM.ora -log oradimREPM.log 
+Fri Jul 31 15:58:32 2020
+ORA-12560: TNS:protocol adapter error
+
+
+Fri Jul 31 16:00:03 2020
+C:\Oracle\product\11.2.0\dbhome_1\bin\oradim.exe -startup -sid REPM -usrpwd * -starttype srvc,inst -pfile C:\Oracle\product\11.2.0\dbhome_1\database\initREPM.ora -log oradimREPM.log 
+Fri Jul 31 16:00:05 2020
+ORA-01078: failure in processing system parameters
+
+
+Fri Jul 31 16:01:01 2020
+C:\Oracle\product\11.2.0\dbhome_1\bin\oradim.exe -startup -sid REPM -usrpwd * -starttype srvc -pfile C:\Oracle\product\11.2.0\dbhome_1\database\initREPM.ora -log oradimREPM.log 
