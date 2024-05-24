@@ -1,0 +1,2122 @@
+PACKAGE BODY unapidc AS
+
+TYPE BOOLEAN_TABLE_TYPE IS TABLE OF BOOLEAN INDEX BY BINARY_INTEGER;
+L_SQLERRM         VARCHAR2(255);
+L_SQL_STRING      VARCHAR2(4000);
+L_WHERE_CLAUSE    VARCHAR2(3000);
+L_EVENT_TP        UTEV.EV_TP%TYPE;
+L_EV_DETAILS      VARCHAR2(255);
+L_RET_CODE        NUMBER;
+L_RESULT          NUMBER;
+L_FETCHED_ROWS    NUMBER;
+L_EV_SEQ_NR       NUMBER;
+STPERROR          EXCEPTION;
+
+
+P_DC_CURSOR            INTEGER;
+P_GETDC_CURSOR         INTEGER;
+P_SELECTDC_CURSOR      INTEGER;
+P_SELECTDCGK_CURSOR    INTEGER;
+P_SELECTDCPROP_CURSOR  INTEGER;
+
+FUNCTION GETVERSION
+   RETURN VARCHAR2
+IS
+BEGIN
+   RETURN('06.07.00.00_00.13');
+EXCEPTION
+   WHEN OTHERS THEN
+      RETURN (NULL);
+END GETVERSION;
+
+FUNCTION GETDOCUMENTLIST
+(A_DC                      OUT      UNAPIGEN.VC20_TABLE_TYPE, 
+ A_VERSION                 OUT      UNAPIGEN.VC20_TABLE_TYPE, 
+ A_DESCRIPTION             OUT      UNAPIGEN.VC80_TABLE_TYPE, 
+ A_SS                      OUT      UNAPIGEN.VC2_TABLE_TYPE,  
+ A_NR_OF_ROWS              IN OUT   NUMBER,                   
+ A_WHERE_CLAUSE            IN       VARCHAR2,                 
+ A_NEXT_ROWS               IN       NUMBER)                   
+RETURN NUMBER IS 
+
+L_DC                   VARCHAR2(20);
+L_VERSION              VARCHAR2(20);
+L_DESCRIPTION          VARCHAR2(80);
+L_SS                   VARCHAR2(2);
+
+BEGIN
+
+   IF NVL(A_NR_OF_ROWS,0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN (UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+
+   IF NVL(A_NEXT_ROWS, 0) NOT IN (-1, 0, 1) THEN
+      RETURN(UNAPIGEN.DBERR_NEXTROWS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = -1 THEN
+      IF P_DC_CURSOR IS NOT NULL THEN
+         DBMS_SQL.CLOSE_CURSOR(P_DC_CURSOR);
+         P_DC_CURSOR := NULL;
+      END IF;
+      RETURN (UNAPIGEN.DBERR_SUCCESS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = 1 THEN
+      IF P_DC_CURSOR IS NULL THEN
+         RETURN(UNAPIGEN.DBERR_NOCURSOR);
+      END IF;
+   END IF;
+
+   
+   IF NVL(A_NEXT_ROWS,0) = 0 THEN
+      IF P_DC_CURSOR IS NULL THEN
+         P_DC_CURSOR := DBMS_SQL.OPEN_CURSOR;
+      END IF;
+
+      IF NVL(A_WHERE_CLAUSE, ' ') = ' ' THEN
+         L_WHERE_CLAUSE := 'WHERE active = ''1'' ORDER BY dc, version'; 
+      ELSIF UPPER(SUBSTR(A_WHERE_CLAUSE,1,6)) <> 'WHERE ' THEN
+         L_WHERE_CLAUSE := 'WHERE version_is_current = ''1'' '||
+                           'AND dc = ''' || REPLACE(A_WHERE_CLAUSE, '''', '''''') || 
+                           ''' ORDER BY dc, version';
+      ELSE
+         L_WHERE_CLAUSE := A_WHERE_CLAUSE; 
+      END IF;
+
+      L_SQL_STRING := 'SELECT dc, version, description, ss FROM dd' ||
+                      UNAPIGEN.P_DD || '.uvdc ' || L_WHERE_CLAUSE;
+
+      DBMS_SQL.PARSE(P_DC_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+
+      DBMS_SQL.DEFINE_COLUMN(P_DC_CURSOR, 1, L_DC, 20);
+      DBMS_SQL.DEFINE_COLUMN(P_DC_CURSOR, 2, L_VERSION, 20);
+      DBMS_SQL.DEFINE_COLUMN(P_DC_CURSOR, 3, L_DESCRIPTION, 80);
+      DBMS_SQL.DEFINE_COLUMN(P_DC_CURSOR, 4, L_SS, 2);
+      L_RESULT := DBMS_SQL.EXECUTE(P_DC_CURSOR);
+   END IF;
+
+   L_RESULT := DBMS_SQL.FETCH_ROWS(P_DC_CURSOR);
+   L_FETCHED_ROWS := 0;
+
+   LOOP
+      EXIT WHEN L_RESULT = 0 OR L_FETCHED_ROWS >= A_NR_OF_ROWS;
+
+      DBMS_SQL.COLUMN_VALUE(P_DC_CURSOR, 1, L_DC);
+      DBMS_SQL.COLUMN_VALUE(P_DC_CURSOR, 2, L_VERSION);
+      DBMS_SQL.COLUMN_VALUE(P_DC_CURSOR, 3, L_DESCRIPTION);
+      DBMS_SQL.COLUMN_VALUE(P_DC_CURSOR, 4, L_SS);
+
+      L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+      A_DC(L_FETCHED_ROWS) := L_DC;
+      A_VERSION(L_FETCHED_ROWS) := L_VERSION;
+      A_DESCRIPTION(L_FETCHED_ROWS) := L_DESCRIPTION;
+      A_SS(L_FETCHED_ROWS) := L_SS;
+
+      IF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+         L_RESULT := DBMS_SQL.FETCH_ROWS(P_DC_CURSOR);
+      END IF;
+   END LOOP;
+
+   
+   IF (L_FETCHED_ROWS = 0) THEN
+       DBMS_SQL.CLOSE_CURSOR(P_DC_CURSOR);
+       P_DC_CURSOR := NULL;
+       RETURN(UNAPIGEN.DBERR_NORECORDS);
+   ELSIF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+      DBMS_SQL.CLOSE_CURSOR(P_DC_CURSOR);
+      P_DC_CURSOR := NULL;
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME,
+                          ERROR_MSG)
+      VALUES (UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+              'GetDocumentList', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      IF DBMS_SQL.IS_OPEN (P_DC_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR (P_DC_CURSOR);
+      END IF;
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END GETDOCUMENTLIST;
+
+FUNCTION GETDOCUMENT
+(A_DC                      IN   VARCHAR2,     
+ A_VERSION                 IN OUT  VARCHAR2,     
+ A_VERSION_IS_CURRENT      OUT  CHAR,         
+ A_EFFECTIVE_FROM          OUT  DATE,         
+ A_EFFECTIVE_TILL          OUT  DATE,         
+ A_DESCRIPTION             OUT  VARCHAR2,     
+ A_CREATION_DATE           OUT  DATE,         
+ A_CREATED_BY              OUT  VARCHAR2,     
+ A_TOOLTIP                 OUT  VARCHAR2,     
+ A_URL                     OUT  VARCHAR2,     
+ A_DATA                    OUT  BLOB,         
+ A_LAST_CHECKOUT_BY        OUT  VARCHAR2,     
+ A_LAST_CHECKOUT_URL       OUT  VARCHAR2,     
+ A_CHECKED_OUT             OUT  CHAR,         
+ A_DC_CLASS                OUT  VARCHAR2,     
+ A_LOG_HS                  OUT  CHAR,         
+ A_ALLOW_MODIFY            OUT  CHAR,         
+ A_ACTIVE                  OUT  CHAR,         
+ A_LC                      OUT  VARCHAR2,     
+ A_LC_VERSION              OUT  VARCHAR2,     
+ A_SS                      OUT  VARCHAR2)     
+RETURN NUMBER IS
+
+L_LC           CHAR(2);
+L_LC_VERSION   CHAR(20);
+L_SS           VARCHAR2(2);
+L_ALLOW_MODIFY CHAR(1);
+L_ACTIVE       CHAR(1);
+L_LOG_HS       CHAR(1);
+L_VERSION      VARCHAR2(20);
+
+CURSOR L_DC_HIGHEST_CURSOR(L_DC VARCHAR2) IS
+   SELECT MAX(VERSION) AS VERSION
+   FROM UVDC
+   WHERE DC=L_DC
+   GROUP BY DC;
+   
+CURSOR L_DC_HIGHEST_MINOR_CURSOR(L_DC VARCHAR2, L_MAJOR VARCHAR2) IS
+   SELECT MAX(VERSION) AS VERSION
+   FROM UVDC
+   WHERE DC=L_DC
+   AND VERSION LIKE L_DC||'.%'
+   GROUP BY DC;
+      
+CURSOR L_DC_CURRENT_CURSOR(L_DC VARCHAR2) IS
+   SELECT VERSION
+   FROM UVDC
+   WHERE DC=L_DC
+   AND VERSION_IS_CURRENT = '1';
+
+BEGIN
+
+   IF NVL(A_DC, ' ') = ' ' THEN
+      L_RET_CODE := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   L_VERSION := A_VERSION;
+   IF LOWER(L_VERSION) = '~current~' THEN
+      OPEN L_DC_CURRENT_CURSOR(A_DC);
+      FETCH L_DC_CURRENT_CURSOR
+      INTO L_VERSION;
+      IF L_DC_CURRENT_CURSOR%NOTFOUND THEN
+         L_VERSION := '~highest~';
+      END IF;
+      CLOSE L_DC_CURRENT_CURSOR;
+   END IF;
+   IF INSTR(L_VERSION, '.*') > 0 THEN 
+      OPEN L_DC_CURRENT_CURSOR(A_DC);
+      FETCH L_DC_CURRENT_CURSOR
+      INTO L_VERSION;
+      IF L_DC_CURRENT_CURSOR%NOTFOUND THEN
+         L_VERSION := '~highest~';
+      END IF;
+      CLOSE L_DC_CURRENT_CURSOR;
+      IF INSTR(L_VERSION, '.') > 0 THEN
+         IF SUBSTR(L_VERSION, 0 , INSTR(L_VERSION, '.') -1) <> SUBSTR(A_VERSION, 0 , INSTR(A_VERSION, '.') -1) THEN
+            OPEN L_DC_HIGHEST_MINOR_CURSOR(A_DC, SUBSTR(A_VERSION, 0 , INSTR(A_VERSION, '.') -1));
+            FETCH L_DC_HIGHEST_MINOR_CURSOR
+            INTO L_VERSION;
+            IF L_DC_HIGHEST_MINOR_CURSOR%NOTFOUND THEN
+               L_VERSION := '~highest~';
+            END IF;
+            CLOSE L_DC_HIGHEST_MINOR_CURSOR;
+         END IF;
+   ELSE
+         OPEN L_DC_HIGHEST_MINOR_CURSOR(A_DC, SUBSTR(A_VERSION, 0 , INSTR(A_VERSION, '.') -1));
+         FETCH L_DC_HIGHEST_MINOR_CURSOR
+         INTO L_VERSION;
+         IF L_DC_HIGHEST_MINOR_CURSOR%NOTFOUND THEN
+            L_VERSION := '~highest~';
+         END IF;
+         CLOSE L_DC_HIGHEST_MINOR_CURSOR;                
+      END IF;
+   END IF;
+   IF LOWER(NVL(L_VERSION, '~highest~')) = '~highest~' THEN
+      OPEN L_DC_HIGHEST_CURSOR(A_DC);
+      FETCH L_DC_HIGHEST_CURSOR
+      INTO L_VERSION;
+      IF L_DC_HIGHEST_CURSOR%NOTFOUND THEN
+         L_VERSION := ' ';
+      END IF;
+      CLOSE L_DC_HIGHEST_CURSOR;
+   END IF;
+      L_WHERE_CLAUSE := 'WHERE dc = '''||REPLACE(A_DC, '''', '''''')|| 
+                     ''' AND version = '''||REPLACE(L_VERSION, '''', '''''')|| 
+                        '''';
+   L_SQL_STRING := 'SELECT version, nvl(version_is_current,''0''), effective_from, '||
+                   'effective_till, description, creation_date, created_by, tooltip, url, '||
+                   'data, last_checkout_by, last_checkout_url, checked_out, dc_class, '||
+                   'log_hs, allow_modify, active, lc, lc_version, ss '||
+                   'FROM dd'||UNAPIGEN.P_DD||'.uvdc a '||L_WHERE_CLAUSE;
+               
+   BEGIN
+      EXECUTE IMMEDIATE L_SQL_STRING
+      INTO L_VERSION, A_VERSION_IS_CURRENT, A_EFFECTIVE_FROM, A_EFFECTIVE_TILL, A_DESCRIPTION,
+           A_CREATION_DATE, A_CREATED_BY, A_TOOLTIP, A_URL, A_DATA, A_LAST_CHECKOUT_BY,
+           A_LAST_CHECKOUT_URL, A_CHECKED_OUT, A_DC_CLASS, A_LOG_HS, A_ALLOW_MODIFY, A_ACTIVE,
+           A_LC, A_LC_VERSION, A_SS;
+   EXCEPTION
+   WHEN NO_DATA_FOUND THEN
+         L_RET_CODE := UNAPIGEN.DBERR_NORECORDS;
+      RAISE STPERROR;
+   END;
+
+   L_RET_CODE := UNAPIGEN.GETAUTHORISATION('dc', A_DC, L_VERSION, L_LC, L_LC_VERSION, L_SS,
+                                           L_ALLOW_MODIFY, L_ACTIVE, L_LOG_HS);
+   IF L_RET_CODE IN (UNAPIGEN.DBERR_NOTMODIFIABLE, UNAPIGEN.DBERR_TRANSITION,
+                     UNAPIGEN.DBERR_READONLY) THEN
+      
+      NULL;
+   ELSIF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+   
+   A_VERSION :=L_VERSION;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+EXCEPTION
+   WHEN OTHERS THEN
+      IF SQLCODE <> 1 THEN
+        UNAPIGEN.LOGERROR('GetDocument', SQLERRM);
+      END IF;
+      RETURN(L_RET_CODE);
+END GETDOCUMENT;
+
+
+FUNCTION GETDOCUMENT
+(A_DC                      OUT  UNAPIGEN.VC40_TABLE_TYPE,     
+ A_VERSION                 OUT  UNAPIGEN.VC20_TABLE_TYPE,     
+ A_VERSION_IS_CURRENT      OUT  UNAPIGEN.CHAR1_TABLE_TYPE,    
+ A_EFFECTIVE_FROM          OUT  UNAPIGEN.DATE_TABLE_TYPE,     
+ A_EFFECTIVE_TILL          OUT  UNAPIGEN.DATE_TABLE_TYPE,     
+ A_DESCRIPTION             OUT  UNAPIGEN.VC80_TABLE_TYPE,     
+ A_CREATION_DATE           OUT  UNAPIGEN.DATE_TABLE_TYPE,     
+ A_CREATED_BY              OUT  UNAPIGEN.VC20_TABLE_TYPE,     
+ A_TOOLTIP                 OUT  UNAPIGEN.VC255_TABLE_TYPE,    
+ A_URL                     OUT  UNAPIGEN.VC512_TABLE_TYPE,    
+ A_LAST_CHECKOUT_BY        OUT  UNAPIGEN.VC20_TABLE_TYPE,     
+ A_LAST_CHECKOUT_URL       OUT  UNAPIGEN.VC512_TABLE_TYPE,    
+ A_CHECKED_OUT             OUT  UNAPIGEN.CHAR1_TABLE_TYPE,    
+ A_DC_CLASS                OUT  UNAPIGEN.VC2_TABLE_TYPE,      
+ A_LOG_HS                  OUT  UNAPIGEN.CHAR1_TABLE_TYPE,    
+ A_ALLOW_MODIFY            OUT  UNAPIGEN.CHAR1_TABLE_TYPE,    
+ A_ACTIVE                  OUT  UNAPIGEN.CHAR1_TABLE_TYPE,    
+ A_LC                      OUT  UNAPIGEN.VC2_TABLE_TYPE,      
+ A_LC_VERSION              OUT  UNAPIGEN.VC20_TABLE_TYPE,     
+ A_SS                      OUT  UNAPIGEN.VC2_TABLE_TYPE,      
+ A_NR_OF_ROWS              IN OUT  NUMBER,                    
+ A_WHERE_CLAUSE            IN   VARCHAR2)                     
+RETURN NUMBER IS
+
+L_DC                 VARCHAR2(40);
+L_VERSION            VARCHAR2(20);
+L_VERSION_IS_CURRENT CHAR(1);
+L_EFFECTIVE_FROM     DATE;
+L_EFFECTIVE_TILL     DATE;
+L_DESCRIPTION        VARCHAR2(80);
+L_CREATION_DATE      DATE;
+L_CREATED_BY         VARCHAR2(20);
+L_TOOLTIP            VARCHAR2(255);
+L_URL                VARCHAR2(512);
+L_LAST_CHECKOUT_BY   VARCHAR2(20);
+L_LAST_CHECKOUT_URL  VARCHAR2(512);
+L_CHECKED_OUT        CHAR(1);
+L_DC_CLASS           VARCHAR2(2);
+L_LOG_HS             CHAR(1);
+L_ALLOW_MODIFY       CHAR(1);
+L_ACTIVE             CHAR(1);
+L_LC                 VARCHAR2(2);
+L_LC_VERSION         VARCHAR2(20);
+L_SS                 VARCHAR2(2);
+
+BEGIN
+
+   IF NVL(A_NR_OF_ROWS,0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      L_RET_CODE := UNAPIGEN.DBERR_NROFROWS;
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_WHERE_CLAUSE, ' ') = ' ' THEN
+      L_WHERE_CLAUSE := 'ORDER BY dc.dc, dc.version'; 
+   ELSIF UPPER(SUBSTR(A_WHERE_CLAUSE,1,6)) <> 'WHERE ' THEN
+      L_WHERE_CLAUSE := 'WHERE dc.version_is_current = ''1'' '||
+                        'AND dc.dc = ''' || REPLACE(A_WHERE_CLAUSE, '''', '''''') || 
+                        ''' ORDER BY dc.dc, dc.version';
+   ELSE
+      L_WHERE_CLAUSE := A_WHERE_CLAUSE; 
+   END IF;
+
+   IF NOT DBMS_SQL.IS_OPEN(P_GETDC_CURSOR) THEN
+      P_GETDC_CURSOR := DBMS_SQL.OPEN_CURSOR;
+
+      L_SQL_STRING := 'SELECT dc.dc, dc.version, nvl(dc.version_is_current,''0''), '||
+                      'dc.effective_from, dc.effective_till, dc.description, '||
+                      'dc.creation_date, dc.created_by, dc.tooltip, dc.url, '||
+                      'dc.last_checkout_by, dc.last_checkout_url, dc.checked_out, '||
+                      'dc.dc_class, dc.log_hs, dc.allow_modify, '||
+                      'dc.active, dc.lc, dc.lc_version, dc.ss ' ||
+                      'FROM dd' || UNAPIGEN.P_DD || '.uvdc dc ' || L_WHERE_CLAUSE;
+
+      DBMS_SQL.PARSE(P_GETDC_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+
+      DBMS_SQL.DEFINE_COLUMN(P_GETDC_CURSOR, 1, L_DC, 40);
+      DBMS_SQL.DEFINE_COLUMN(P_GETDC_CURSOR, 2, L_VERSION, 20);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_GETDC_CURSOR, 3, L_VERSION_IS_CURRENT, 1);
+      DBMS_SQL.DEFINE_COLUMN(P_GETDC_CURSOR, 4, L_EFFECTIVE_FROM);
+      DBMS_SQL.DEFINE_COLUMN(P_GETDC_CURSOR, 5, L_EFFECTIVE_TILL);
+      DBMS_SQL.DEFINE_COLUMN(P_GETDC_CURSOR, 6, L_DESCRIPTION, 80);
+      DBMS_SQL.DEFINE_COLUMN(P_GETDC_CURSOR, 7, L_CREATION_DATE);
+      DBMS_SQL.DEFINE_COLUMN(P_GETDC_CURSOR, 8, L_CREATED_BY, 20);
+      DBMS_SQL.DEFINE_COLUMN(P_GETDC_CURSOR, 9, L_TOOLTIP, 255);
+      DBMS_SQL.DEFINE_COLUMN(P_GETDC_CURSOR, 10, L_URL, 512);
+      DBMS_SQL.DEFINE_COLUMN(P_GETDC_CURSOR, 11, L_LAST_CHECKOUT_BY, 20);
+      DBMS_SQL.DEFINE_COLUMN(P_GETDC_CURSOR, 12, L_LAST_CHECKOUT_URL, 512);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_GETDC_CURSOR, 13, L_CHECKED_OUT, 1);
+      DBMS_SQL.DEFINE_COLUMN(P_GETDC_CURSOR, 14, L_DC_CLASS, 2);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_GETDC_CURSOR, 15, L_LOG_HS, 1);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_GETDC_CURSOR, 16, L_ALLOW_MODIFY, 1);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_GETDC_CURSOR, 17, L_ACTIVE, 1);
+      DBMS_SQL.DEFINE_COLUMN(P_GETDC_CURSOR, 18, L_LC, 2);
+      DBMS_SQL.DEFINE_COLUMN(P_GETDC_CURSOR, 19, L_LC_VERSION, 20);
+      DBMS_SQL.DEFINE_COLUMN(P_GETDC_CURSOR, 20, L_SS, 2);
+      L_RESULT := DBMS_SQL.EXECUTE(P_GETDC_CURSOR);
+   END IF;
+
+   L_RESULT := DBMS_SQL.FETCH_ROWS(P_GETDC_CURSOR);
+   L_FETCHED_ROWS := 0;
+
+   LOOP
+      EXIT WHEN L_RESULT = 0 OR L_FETCHED_ROWS >= A_NR_OF_ROWS;
+
+      DBMS_SQL.COLUMN_VALUE(P_GETDC_CURSOR, 1, L_DC);
+      DBMS_SQL.COLUMN_VALUE(P_GETDC_CURSOR, 2, L_VERSION);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_GETDC_CURSOR, 3, L_VERSION_IS_CURRENT);
+      DBMS_SQL.COLUMN_VALUE(P_GETDC_CURSOR, 4, L_EFFECTIVE_FROM);
+      DBMS_SQL.COLUMN_VALUE(P_GETDC_CURSOR, 5, L_EFFECTIVE_TILL);
+      DBMS_SQL.COLUMN_VALUE(P_GETDC_CURSOR, 6, L_DESCRIPTION);
+      DBMS_SQL.COLUMN_VALUE(P_GETDC_CURSOR, 7, L_CREATION_DATE);
+      DBMS_SQL.COLUMN_VALUE(P_GETDC_CURSOR, 8, L_CREATED_BY);
+      DBMS_SQL.COLUMN_VALUE(P_GETDC_CURSOR, 9, L_TOOLTIP);
+      DBMS_SQL.COLUMN_VALUE(P_GETDC_CURSOR, 10, L_URL);
+      DBMS_SQL.COLUMN_VALUE(P_GETDC_CURSOR, 11, L_LAST_CHECKOUT_BY);
+      DBMS_SQL.COLUMN_VALUE(P_GETDC_CURSOR, 12, L_LAST_CHECKOUT_URL);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_GETDC_CURSOR, 13, L_CHECKED_OUT);
+      DBMS_SQL.COLUMN_VALUE(P_GETDC_CURSOR, 14, L_DC_CLASS);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_GETDC_CURSOR, 15, L_LOG_HS);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_GETDC_CURSOR, 16, L_ALLOW_MODIFY);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_GETDC_CURSOR, 17, L_ACTIVE);
+      DBMS_SQL.COLUMN_VALUE(P_GETDC_CURSOR, 18, L_LC);
+      DBMS_SQL.COLUMN_VALUE(P_GETDC_CURSOR, 19, L_LC_VERSION);
+      DBMS_SQL.COLUMN_VALUE(P_GETDC_CURSOR, 20, L_SS);
+
+      L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+
+      A_DC(L_FETCHED_ROWS)                 := L_DC;
+      A_VERSION(L_FETCHED_ROWS)            := L_VERSION;
+      A_VERSION_IS_CURRENT(L_FETCHED_ROWS) := L_VERSION_IS_CURRENT;
+      A_EFFECTIVE_FROM(L_FETCHED_ROWS)     := L_EFFECTIVE_FROM;
+      A_EFFECTIVE_TILL(L_FETCHED_ROWS)     := L_EFFECTIVE_TILL;
+      A_DESCRIPTION(L_FETCHED_ROWS)        := L_DESCRIPTION;
+      A_CREATION_DATE(L_FETCHED_ROWS)      := L_CREATION_DATE;
+      A_CREATED_BY(L_FETCHED_ROWS)         := L_CREATED_BY;
+      A_TOOLTIP(L_FETCHED_ROWS)            := L_TOOLTIP;
+      A_URL(L_FETCHED_ROWS)                := L_URL;
+      A_LAST_CHECKOUT_BY(L_FETCHED_ROWS)   := L_LAST_CHECKOUT_BY;
+      A_LAST_CHECKOUT_URL(L_FETCHED_ROWS)  := L_LAST_CHECKOUT_URL;
+      A_CHECKED_OUT(L_FETCHED_ROWS)        := L_CHECKED_OUT;
+      A_DC_CLASS(L_FETCHED_ROWS)           := L_DC_CLASS;
+      A_LOG_HS(L_FETCHED_ROWS)             := L_LOG_HS;
+      A_ALLOW_MODIFY(L_FETCHED_ROWS)       := L_ALLOW_MODIFY;
+      A_ACTIVE(L_FETCHED_ROWS)             := L_ACTIVE;
+      A_LC(L_FETCHED_ROWS)                 := L_LC;
+      A_LC_VERSION(L_FETCHED_ROWS)         := L_LC_VERSION;
+      A_SS(L_FETCHED_ROWS)                 := L_SS;
+
+      IF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+         L_RESULT := DBMS_SQL.FETCH_ROWS(P_GETDC_CURSOR);
+      END IF;
+   END LOOP;
+
+   DBMS_SQL.CLOSE_CURSOR(P_GETDC_CURSOR);
+
+   IF L_FETCHED_ROWS = 0 THEN
+      L_RET_CODE := UNAPIGEN.DBERR_NORECORDS;
+      RAISE STPERROR;
+   END IF;
+
+   A_NR_OF_ROWS := L_FETCHED_ROWS;
+
+   FOR I IN 1..A_NR_OF_ROWS LOOP
+      L_RET_CODE := UNAPIGEN.GETAUTHORISATION('dc', A_DC(I), A_VERSION(I), L_LC, L_LC_VERSION, 
+                                              L_SS, L_ALLOW_MODIFY, L_ACTIVE, L_LOG_HS);
+      IF L_RET_CODE IN (UNAPIGEN.DBERR_NOTMODIFIABLE, UNAPIGEN.DBERR_TRANSITION, 
+                        UNAPIGEN.DBERR_READONLY) THEN
+         
+         NULL;
+      ELSIF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         RAISE STPERROR;
+      END IF;
+
+   END LOOP;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+EXCEPTION
+   WHEN OTHERS THEN
+      IF SQLCODE <> 1 THEN
+        UNAPIGEN.LOGERROR('GetDocument', SQLERRM);
+      END IF;
+      IF DBMS_SQL.IS_OPEN(P_GETDC_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR(P_GETDC_CURSOR);
+      END IF;
+      RETURN(L_RET_CODE);
+END GETDOCUMENT;
+
+FUNCTION SELECTDOCUMENT
+(A_COL_ID                  IN   UNAPIGEN.VC40_TABLE_TYPE,     
+ A_COL_TP                  IN   UNAPIGEN.VC40_TABLE_TYPE,     
+ A_COL_VALUE               IN   UNAPIGEN.VC40_TABLE_TYPE,     
+ A_COL_NR_OF_ROWS          IN      NUMBER,                    
+ A_DC                      OUT  UNAPIGEN.VC40_TABLE_TYPE,     
+ A_VERSION                 OUT  UNAPIGEN.VC20_TABLE_TYPE,     
+ A_VERSION_IS_CURRENT      OUT  UNAPIGEN.CHAR1_TABLE_TYPE,    
+ A_EFFECTIVE_FROM          OUT  UNAPIGEN.DATE_TABLE_TYPE,     
+ A_EFFECTIVE_TILL          OUT  UNAPIGEN.DATE_TABLE_TYPE,     
+ A_DESCRIPTION             OUT  UNAPIGEN.VC80_TABLE_TYPE,     
+ A_CREATION_DATE           OUT  UNAPIGEN.DATE_TABLE_TYPE,     
+ A_CREATED_BY              OUT  UNAPIGEN.VC20_TABLE_TYPE,     
+ A_TOOLTIP                 OUT  UNAPIGEN.VC255_TABLE_TYPE,    
+ A_URL                     OUT  UNAPIGEN.VC512_TABLE_TYPE,    
+ A_LAST_CHECKOUT_BY        OUT  UNAPIGEN.VC20_TABLE_TYPE,     
+ A_LAST_CHECKOUT_URL       OUT  UNAPIGEN.VC512_TABLE_TYPE,    
+ A_CHECKED_OUT             OUT  UNAPIGEN.CHAR1_TABLE_TYPE,    
+ A_DC_CLASS                OUT  UNAPIGEN.VC2_TABLE_TYPE,      
+ A_LOG_HS                  OUT  UNAPIGEN.CHAR1_TABLE_TYPE,    
+ A_ALLOW_MODIFY            OUT  UNAPIGEN.CHAR1_TABLE_TYPE,    
+ A_ACTIVE                  OUT  UNAPIGEN.CHAR1_TABLE_TYPE,    
+ A_LC                      OUT  UNAPIGEN.VC2_TABLE_TYPE,      
+ A_LC_VERSION              OUT  UNAPIGEN.VC20_TABLE_TYPE,     
+ A_SS                      OUT  UNAPIGEN.VC2_TABLE_TYPE,      
+ A_NR_OF_ROWS              IN OUT  NUMBER,                    
+ A_ORDER_BY_CLAUSE         IN   VARCHAR2,                     
+ A_NEXT_ROWS               IN   NUMBER)                       
+RETURN NUMBER IS
+
+L_COL_OPERATOR           UNAPIGEN.VC20_TABLE_TYPE;
+L_COL_ANDOR              UNAPIGEN.VC3_TABLE_TYPE;
+
+BEGIN
+
+   FOR L_X IN 1..A_COL_NR_OF_ROWS LOOP
+       L_COL_OPERATOR(L_X) := '=';
+       L_COL_ANDOR(L_X) := 'AND';
+   END LOOP;
+
+   RETURN(UNAPIDC.SELECTDOCUMENT(A_COL_ID,
+                                 A_COL_TP,
+                                 A_COL_VALUE,
+                                 L_COL_OPERATOR,
+                                 L_COL_ANDOR,
+                                 A_COL_NR_OF_ROWS,
+                                 A_DC,
+                                 A_VERSION,
+                                 A_VERSION_IS_CURRENT,
+                                 A_EFFECTIVE_FROM,
+                                 A_EFFECTIVE_TILL,
+                                 A_DESCRIPTION,
+                                 A_CREATION_DATE,
+                                 A_CREATED_BY,
+                                 A_TOOLTIP,
+                                 A_URL,
+                                 A_LAST_CHECKOUT_BY,
+                                 A_LAST_CHECKOUT_URL,
+                                 A_CHECKED_OUT,
+                                 A_DC_CLASS,
+                                 A_LOG_HS,
+                                 A_ALLOW_MODIFY,
+                                 A_ACTIVE,
+                                 A_LC,
+                                 A_LC_VERSION,
+                                 A_SS,
+                                 A_NR_OF_ROWS,
+                                 A_ORDER_BY_CLAUSE,
+                                 A_NEXT_ROWS));              
+END SELECTDOCUMENT;
+
+FUNCTION SELECTDOCUMENT
+(A_COL_ID                  IN   UNAPIGEN.VC40_TABLE_TYPE,     
+ A_COL_TP                  IN   UNAPIGEN.VC40_TABLE_TYPE,     
+ A_COL_VALUE               IN   UNAPIGEN.VC40_TABLE_TYPE,     
+ A_COL_OPERATOR            IN   UNAPIGEN.VC20_TABLE_TYPE,     
+ A_COL_ANDOR               IN   UNAPIGEN.VC3_TABLE_TYPE,      
+ A_COL_NR_OF_ROWS          IN      NUMBER,                    
+ A_DC                      OUT  UNAPIGEN.VC40_TABLE_TYPE,     
+ A_VERSION                 OUT  UNAPIGEN.VC20_TABLE_TYPE,     
+ A_VERSION_IS_CURRENT      OUT  UNAPIGEN.CHAR1_TABLE_TYPE,    
+ A_EFFECTIVE_FROM          OUT  UNAPIGEN.DATE_TABLE_TYPE,     
+ A_EFFECTIVE_TILL          OUT  UNAPIGEN.DATE_TABLE_TYPE,     
+ A_DESCRIPTION             OUT  UNAPIGEN.VC80_TABLE_TYPE,     
+ A_CREATION_DATE           OUT  UNAPIGEN.DATE_TABLE_TYPE,     
+ A_CREATED_BY              OUT  UNAPIGEN.VC20_TABLE_TYPE,     
+ A_TOOLTIP                 OUT  UNAPIGEN.VC255_TABLE_TYPE,    
+ A_URL                     OUT  UNAPIGEN.VC512_TABLE_TYPE,    
+ A_LAST_CHECKOUT_BY        OUT  UNAPIGEN.VC20_TABLE_TYPE,     
+ A_LAST_CHECKOUT_URL       OUT  UNAPIGEN.VC512_TABLE_TYPE,    
+ A_CHECKED_OUT             OUT  UNAPIGEN.CHAR1_TABLE_TYPE,    
+ A_DC_CLASS                OUT  UNAPIGEN.VC2_TABLE_TYPE,      
+ A_LOG_HS                  OUT  UNAPIGEN.CHAR1_TABLE_TYPE,    
+ A_ALLOW_MODIFY            OUT  UNAPIGEN.CHAR1_TABLE_TYPE,    
+ A_ACTIVE                  OUT  UNAPIGEN.CHAR1_TABLE_TYPE,    
+ A_LC                      OUT  UNAPIGEN.VC2_TABLE_TYPE,      
+ A_LC_VERSION              OUT  UNAPIGEN.VC20_TABLE_TYPE,     
+ A_SS                      OUT  UNAPIGEN.VC2_TABLE_TYPE,      
+ A_NR_OF_ROWS              IN OUT  NUMBER,                    
+ A_ORDER_BY_CLAUSE         IN   VARCHAR2,                     
+ A_NEXT_ROWS               IN   NUMBER)                       
+RETURN NUMBER IS
+
+L_DC                             VARCHAR2(40);
+L_VERSION                        VARCHAR2(20);
+L_VERSION_IS_CURRENT             CHAR(1);
+L_EFFECTIVE_FROM                 DATE;
+L_EFFECTIVE_TILL                 DATE;
+L_DESCRIPTION                    VARCHAR2(80);
+L_CREATION_DATE                  DATE;
+L_CREATED_BY                     VARCHAR2(20);
+L_TOOLTIP                        VARCHAR2(255);
+L_URL                            VARCHAR2(512);
+L_LAST_CHECKOUT_BY               VARCHAR2(20);
+L_LAST_CHECKOUT_URL              VARCHAR2(512);
+L_CHECKED_OUT                    CHAR(1);
+L_DC_CLASS                       VARCHAR2(2);
+L_LOG_HS                         CHAR(1);
+L_ALLOW_MODIFY                   CHAR(1);
+L_ACTIVE                         CHAR(1);
+L_LC                             VARCHAR2(2);
+L_LC_VERSION                     VARCHAR2(20);
+L_SS                             VARCHAR2(2);
+L_ORDER_BY_CLAUSE                VARCHAR2(255);
+L_FROM_CLAUSE                    VARCHAR2(255);
+L_NEXT_DCGK_JOIN                 VARCHAR2(4);
+L_NEXT_DC_JOIN                   VARCHAR2(4);
+L_LENGTH                         INTEGER;
+L_COLUMN_HANDLED                 BOOLEAN_TABLE_TYPE;
+L_ANYOR_PRESENT                  BOOLEAN;
+L_COL_ANDOR                      VARCHAR2(3);
+L_PREV_COL_TP                    VARCHAR2(40);
+L_PREV_COL_ID                    VARCHAR2(40);
+L_PREV_COL_INDEX                 INTEGER;
+L_WHERE_CLAUSE4JOIN              VARCHAR2(1000);
+
+BEGIN
+
+   IF NVL(A_NR_OF_ROWS,0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN (UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+
+   IF NVL(A_NEXT_ROWS, 0) NOT IN (-1, 0, 1) THEN
+      RETURN(UNAPIGEN.DBERR_NEXTROWS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = -1 THEN
+      IF P_SELECTDC_CURSOR IS NOT NULL THEN
+         DBMS_SQL.CLOSE_CURSOR(P_SELECTDC_CURSOR);
+         P_SELECTDC_CURSOR := NULL;
+      END IF;
+      RETURN (UNAPIGEN.DBERR_SUCCESS);
+   END IF;
+   
+   
+   IF A_NEXT_ROWS = 1 THEN
+      IF P_SELECTDC_CURSOR IS NULL THEN
+         RETURN(UNAPIGEN.DBERR_NOCURSOR);
+      END IF;
+   END IF;
+
+   
+   IF NVL(A_NEXT_ROWS,0) = 0 THEN
+      P_SELECTION_VAL_TAB.DELETE;
+      L_SQL_STRING := 'SELECT a.dc, a.version, nvl(a.version_is_current,''0''), a.effective_from, '||
+                      'a.effective_till, a.description, a.creation_date, a.created_by, '||
+                      'a.tooltip, a.url, a.last_checkout_by, a.last_checkout_url, a.checked_out, '||
+                      'a.dc_class, a.log_hs, a.allow_modify, a.active, a.lc, a.lc_version, a.ss FROM ';
+      L_FROM_CLAUSE := 'dd' || UNAPIGEN.P_DD || '.uvdc a' ;
+      
+      
+      L_WHERE_CLAUSE4JOIN := '';
+      L_WHERE_CLAUSE := '';
+      L_ANYOR_PRESENT := FALSE;
+
+      FOR I IN 1..A_COL_NR_OF_ROWS LOOP
+         L_COLUMN_HANDLED(I) := FALSE;
+         IF LTRIM(RTRIM(UPPER(A_COL_ANDOR(I)))) = 'OR' AND
+            NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+            L_ANYOR_PRESENT := TRUE;
+         END IF;
+         
+         
+         IF I<>1 THEN
+            IF NVL(A_COL_TP(I), ' ') = NVL(A_COL_TP(I-1), ' ') AND
+               NVL(A_COL_ID(I), ' ') = NVL(A_COL_ID(I-1), ' ') AND
+               NVL(A_COL_OPERATOR(I), '=') = '=' AND
+               NVL(A_COL_OPERATOR(I-1), '=') = '=' AND
+               NVL(A_COL_ANDOR(I-1), 'AND') =  'AND' AND
+               (NVL(A_COL_VALUE(I), ' ') <> ' ' OR NVL(A_COL_VALUE(I-1), ' ') <> ' ') THEN
+               IF I> 2 AND A_COL_ANDOR(I-2) = 'OR' THEN
+                  L_ANYOR_PRESENT := TRUE;
+               END IF;
+            END IF;
+         END IF;         
+      END LOOP;
+
+      
+      
+      
+      L_NEXT_DCGK_JOIN := 'a';
+      L_NEXT_DC_JOIN := 'a';
+      
+      FOR I IN REVERSE 1..A_COL_NR_OF_ROWS LOOP
+         IF NVL(LTRIM(A_COL_ID(I)), ' ') = ' ' THEN
+            RETURN(UNAPIGEN.DBERR_SELCOLSINVALID);
+         END IF;
+
+         
+         L_COL_ANDOR := 'AND';
+         IF I<>1 THEN
+            L_COL_ANDOR := A_COL_ANDOR(I-1);
+         END IF;
+         IF L_COL_ANDOR IS NULL THEN
+            
+            L_COL_ANDOR := 'AND';
+         END IF;
+         IF L_COLUMN_HANDLED(I) = FALSE THEN
+            IF NVL(A_COL_TP(I), ' ') = 'dcgk' THEN
+               IF NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+                  UNAPIGEN.WHERECLAUSESTRINGBUILDER (A_BASE_TABLE => 'utdc', A_INDEX =>I, A_COL_TP => A_COL_TP(I), A_COL_ID => A_COL_ID(I),
+                                   A_COL_VALUE => A_COL_VALUE(I), A_COL_OPERATOR => A_COL_OPERATOR(I),
+                                   A_COL_ANDOR => L_COL_ANDOR, A_ANYOR_PRESENT => L_ANYOR_PRESENT,
+                                   A_JOINTABLE_PREFIX => 'utdcgk', A_JOINCOLUMN1 => 'dc', A_JOINCOLUMN2 => 'version', 
+                                   A_PREV_COL_TP => L_PREV_COL_TP, A_PREV_COL_ID => L_PREV_COL_ID, A_PREV_COL_INDEX => L_PREV_COL_INDEX,
+                                   A_NEXTTABLE_TOJOIN => L_NEXT_DCGK_JOIN, A_FROM_CLAUSE => L_FROM_CLAUSE,
+                                   A_WHERE_CLAUSE4JOIN => L_WHERE_CLAUSE4JOIN, A_WHERE_CLAUSE => L_WHERE_CLAUSE,
+                                   A_SQL_VAL_TAB => P_SELECTION_VAL_TAB);                  
+               ELSIF INSTR(A_ORDER_BY_CLAUSE, 't'|| TO_CHAR(I)) <> 0 THEN
+                  L_FROM_CLAUSE := L_FROM_CLAUSE || ', utdcgk' || A_COL_ID(I) || ' t' || I;
+                  L_COL_ANDOR := 'AND'; 
+                  
+                  L_WHERE_CLAUSE4JOIN := L_WHERE_CLAUSE4JOIN ||
+                                    't' || I || '.dc(+) = a.dc AND t' || I || '.version(+) = a.version ' || L_COL_ANDOR || ' ';
+               END IF;
+               L_COLUMN_HANDLED(I) := TRUE; 
+         
+         
+         
+         
+        
+            ELSE
+               IF (LOWER(NVL(A_COL_ID(I),' ')) = 'version') AND (NVL(A_COL_VALUE(I),' ') = 'MAX') THEN
+                  L_WHERE_CLAUSE := L_WHERE_CLAUSE || '(a.dc, a.' || A_COL_ID(I) || ') ' ||
+                                    'IN (SELECT dc, MAX(' || A_COL_ID(I) || ') '|| 
+                                        'FROM dd'|| UNAPIGEN.P_DD ||'.uvdc GROUP BY dc) '||
+                                     A_COL_ANDOR(I) || ' '; 
+               ELSIF NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+                  UNAPIGEN.WHERECLAUSESTRINGBUILDER (A_BASE_TABLE => 'utdc', A_INDEX =>I, A_COL_TP => A_COL_TP(I), A_COL_ID => A_COL_ID(I),
+                                   A_COL_VALUE => A_COL_VALUE(I), A_COL_OPERATOR => A_COL_OPERATOR(I),
+                                   A_COL_ANDOR => L_COL_ANDOR, A_ANYOR_PRESENT => L_ANYOR_PRESENT,
+                                   A_JOINTABLE_PREFIX => '', A_JOINCOLUMN1 => '', A_JOINCOLUMN2 => '', 
+                                   A_PREV_COL_TP => L_PREV_COL_TP, A_PREV_COL_ID => L_PREV_COL_ID, A_PREV_COL_INDEX => L_PREV_COL_INDEX,
+                                   A_NEXTTABLE_TOJOIN => L_NEXT_DC_JOIN, A_FROM_CLAUSE => L_FROM_CLAUSE,
+                                   A_WHERE_CLAUSE4JOIN => L_WHERE_CLAUSE4JOIN, A_WHERE_CLAUSE => L_WHERE_CLAUSE,
+                                   A_SQL_VAL_TAB => P_SELECTION_VAL_TAB);                  
+               END IF;
+               L_COLUMN_HANDLED(I) := TRUE; 
+            END IF;
+         END IF;      
+      END LOOP;
+
+      
+      IF SUBSTR(L_WHERE_CLAUSE4JOIN, -4) = 'AND ' THEN
+         L_WHERE_CLAUSE4JOIN := SUBSTR(L_WHERE_CLAUSE4JOIN, 1,
+                                  LENGTH(L_WHERE_CLAUSE4JOIN)-4);
+      END IF;
+      
+      
+      IF SUBSTR(L_WHERE_CLAUSE, -4) = 'AND ' THEN
+         L_WHERE_CLAUSE := SUBSTR(L_WHERE_CLAUSE, 1,
+                                  LENGTH(L_WHERE_CLAUSE)-4);
+      END IF;
+      IF UPPER(SUBSTR(L_WHERE_CLAUSE, -4)) = ' OR ' THEN
+         L_WHERE_CLAUSE := SUBSTR(L_WHERE_CLAUSE, 1,
+                                  LENGTH(L_WHERE_CLAUSE)-3);
+      END IF;
+   
+      IF L_WHERE_CLAUSE4JOIN IS NOT NULL THEN
+         IF L_WHERE_CLAUSE IS NULL THEN
+            L_WHERE_CLAUSE := ' WHERE ' || L_WHERE_CLAUSE4JOIN;
+         ELSE
+            L_WHERE_CLAUSE := ' WHERE (' || L_WHERE_CLAUSE4JOIN || ') AND ('||L_WHERE_CLAUSE||') ';
+         END IF;
+      ELSE
+         IF L_WHERE_CLAUSE IS NOT NULL THEN
+            L_WHERE_CLAUSE := ' WHERE '||L_WHERE_CLAUSE;
+         ELSE
+            L_WHERE_CLAUSE := ' ';
+         END IF;
+      END IF;
+   
+
+      IF NVL(A_ORDER_BY_CLAUSE, ' ') = ' ' THEN
+         L_ORDER_BY_CLAUSE := ' ORDER BY a.dc, a.version';
+      ELSE
+         L_ORDER_BY_CLAUSE := A_ORDER_BY_CLAUSE; 
+      END IF;
+
+      L_SQL_STRING := L_SQL_STRING || L_FROM_CLAUSE || L_WHERE_CLAUSE || L_ORDER_BY_CLAUSE;
+      P_SELECTION_CLAUSE := L_FROM_CLAUSE || L_WHERE_CLAUSE;
+      
+      IF P_SELECTDC_CURSOR IS NULL THEN
+         P_SELECTDC_CURSOR := DBMS_SQL.OPEN_CURSOR;
+      END IF;
+      
+      UNAPIAUT.ADDORACLECBOHINT (L_SQL_STRING) ;
+      DBMS_SQL.PARSE(P_SELECTDC_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+      FOR L_X IN 1..P_SELECTION_VAL_TAB.COUNT() LOOP
+         DBMS_SQL.BIND_VARIABLE(P_SELECTDC_CURSOR, ':col_val'||L_X , P_SELECTION_VAL_TAB(L_X)); 
+      END LOOP;      
+
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTDC_CURSOR, 1, L_DC, 40);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTDC_CURSOR, 2, L_VERSION, 20);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_SELECTDC_CURSOR, 3, L_VERSION_IS_CURRENT, 1);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTDC_CURSOR, 4, L_EFFECTIVE_FROM);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTDC_CURSOR, 5, L_EFFECTIVE_TILL);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTDC_CURSOR, 6, L_DESCRIPTION, 80);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTDC_CURSOR, 7, L_CREATION_DATE);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTDC_CURSOR, 8, L_CREATED_BY, 20);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTDC_CURSOR, 9, L_TOOLTIP, 255);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTDC_CURSOR, 10, L_URL, 512);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTDC_CURSOR, 11, L_LAST_CHECKOUT_BY, 20);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTDC_CURSOR, 12, L_LAST_CHECKOUT_URL, 512);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_SELECTDC_CURSOR, 13, L_CHECKED_OUT, 1);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTDC_CURSOR, 14, L_DC_CLASS, 2);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_SELECTDC_CURSOR, 15, L_LOG_HS, 1);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_SELECTDC_CURSOR, 16, L_ALLOW_MODIFY, 1);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_SELECTDC_CURSOR, 17, L_ACTIVE, 1);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTDC_CURSOR, 18, L_LC, 2);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTDC_CURSOR, 19, L_LC_VERSION, 20);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTDC_CURSOR, 20, L_SS, 2);
+
+      L_RESULT := DBMS_SQL.EXECUTE(P_SELECTDC_CURSOR);
+   END IF;
+   
+   L_RESULT := DBMS_SQL.FETCH_ROWS(P_SELECTDC_CURSOR);
+   L_FETCHED_ROWS := 0;
+
+   LOOP
+      EXIT WHEN L_RESULT = 0 OR L_FETCHED_ROWS >= A_NR_OF_ROWS;
+
+      DBMS_SQL.COLUMN_VALUE(P_SELECTDC_CURSOR, 1, L_DC);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTDC_CURSOR, 2, L_VERSION);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_SELECTDC_CURSOR, 3, L_VERSION_IS_CURRENT);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTDC_CURSOR, 4, L_EFFECTIVE_FROM);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTDC_CURSOR, 5, L_EFFECTIVE_TILL);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTDC_CURSOR, 6, L_DESCRIPTION);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTDC_CURSOR, 7, L_CREATION_DATE);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTDC_CURSOR, 8, L_CREATED_BY);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTDC_CURSOR, 9, L_TOOLTIP);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTDC_CURSOR, 10, L_URL);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTDC_CURSOR, 11, L_LAST_CHECKOUT_BY);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTDC_CURSOR, 12, L_LAST_CHECKOUT_URL);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_SELECTDC_CURSOR, 13, L_CHECKED_OUT);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTDC_CURSOR, 14, L_DC_CLASS);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_SELECTDC_CURSOR, 15, L_LOG_HS);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_SELECTDC_CURSOR, 16, L_ALLOW_MODIFY);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_SELECTDC_CURSOR, 17, L_ACTIVE);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTDC_CURSOR, 18, L_LC);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTDC_CURSOR, 19, L_LC_VERSION);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTDC_CURSOR, 20, L_SS);
+
+      L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+
+      A_DC (L_FETCHED_ROWS) := L_DC;
+      A_VERSION (L_FETCHED_ROWS) := L_VERSION;
+      A_VERSION_IS_CURRENT (L_FETCHED_ROWS) := L_VERSION_IS_CURRENT;
+      A_EFFECTIVE_FROM (L_FETCHED_ROWS) := L_EFFECTIVE_FROM;
+      A_EFFECTIVE_TILL (L_FETCHED_ROWS) := L_EFFECTIVE_TILL;
+      A_DESCRIPTION (L_FETCHED_ROWS) := L_DESCRIPTION;
+      A_CREATION_DATE (L_FETCHED_ROWS) := L_CREATION_DATE;
+      A_CREATED_BY (L_FETCHED_ROWS) := L_CREATED_BY;
+      A_TOOLTIP (L_FETCHED_ROWS) := L_TOOLTIP;
+      A_URL (L_FETCHED_ROWS) := L_URL;
+      A_LAST_CHECKOUT_BY (L_FETCHED_ROWS) := L_LAST_CHECKOUT_BY;
+      A_LAST_CHECKOUT_URL (L_FETCHED_ROWS) := L_LAST_CHECKOUT_URL;
+      A_CHECKED_OUT (L_FETCHED_ROWS) := L_CHECKED_OUT;
+      A_DC_CLASS(L_FETCHED_ROWS) := L_DC_CLASS;
+      A_LOG_HS(L_FETCHED_ROWS) := L_LOG_HS;
+      A_ALLOW_MODIFY(L_FETCHED_ROWS) := L_ALLOW_MODIFY;
+      A_ACTIVE(L_FETCHED_ROWS) := L_ACTIVE;
+      A_LC(L_FETCHED_ROWS) := L_LC;
+      A_LC_VERSION(L_FETCHED_ROWS) := L_LC_VERSION;
+      A_SS(L_FETCHED_ROWS) := L_SS;
+
+      IF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+         L_RESULT := DBMS_SQL.FETCH_ROWS(P_SELECTDC_CURSOR);
+      END IF;
+   END LOOP;
+
+   
+   IF (L_FETCHED_ROWS = 0) THEN
+       DBMS_SQL.CLOSE_CURSOR(P_SELECTDC_CURSOR);
+       P_SELECTDC_CURSOR := NULL;
+       RETURN(UNAPIGEN.DBERR_NORECORDS);
+   ELSIF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+      DBMS_SQL.CLOSE_CURSOR(P_SELECTDC_CURSOR);
+      P_SELECTDC_CURSOR := NULL;
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, API_NAME, ERROR_MSG)
+      VALUES (UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, SYSDATE,
+              'SelectDocument', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      L_LENGTH := 200;
+      FOR L_X IN 1..10 LOOP
+         IF ( LENGTH(L_SQL_STRING) > ((L_LENGTH*(L_X-1))+1) ) THEN
+            INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+            VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+                   'SelectDocument', '(SQL)'||SUBSTR(L_SQL_STRING, (L_LENGTH*(L_X-1))+1, L_LENGTH));             
+         ELSE
+            EXIT;
+         END IF;
+      END LOOP;            
+      UNAPIGEN.U4COMMIT;
+      IF DBMS_SQL.IS_OPEN (P_SELECTDC_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR (P_SELECTDC_CURSOR);
+      END IF;
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END SELECTDOCUMENT;
+
+FUNCTION SELECTDCGKVALUES
+(A_COL_ID           IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_TP           IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_VALUE        IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_NR_OF_ROWS   IN      NUMBER,                    
+ A_GK               IN      VARCHAR2,                  
+ A_VALUE            OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_NR_OF_ROWS       IN OUT  NUMBER,                    
+ A_ORDER_BY_CLAUSE  IN      VARCHAR2,                  
+ A_NEXT_ROWS        IN      NUMBER)                    
+RETURN NUMBER IS
+L_COL_OPERATOR           UNAPIGEN.VC20_TABLE_TYPE;
+L_COL_ANDOR              UNAPIGEN.VC3_TABLE_TYPE;
+BEGIN
+   FOR L_X IN 1..A_COL_NR_OF_ROWS LOOP
+       L_COL_OPERATOR(L_X) := '=';
+       L_COL_ANDOR(L_X) := 'AND';
+   END LOOP;
+   RETURN(UNAPIDC.SELECTDCGKVALUES(A_COL_ID,
+                                    A_COL_TP,
+                                    A_COL_VALUE,
+                                    L_COL_OPERATOR,
+                                    L_COL_ANDOR,
+                                    A_COL_NR_OF_ROWS,
+                                    A_GK,
+                                    A_VALUE,
+                                    A_NR_OF_ROWS,
+                                    A_ORDER_BY_CLAUSE,
+                                    A_NEXT_ROWS));
+END SELECTDCGKVALUES;
+
+FUNCTION SELECTDCGKVALUES
+(A_COL_ID           IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_TP           IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_VALUE        IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_OPERATOR     IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_COL_ANDOR        IN      UNAPIGEN.VC3_TABLE_TYPE,   
+ A_COL_NR_OF_ROWS   IN      NUMBER,                    
+ A_GK               IN      VARCHAR2,                  
+ A_VALUE            OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_NR_OF_ROWS       IN OUT  NUMBER,                    
+ A_ORDER_BY_CLAUSE  IN      VARCHAR2,                  
+ A_NEXT_ROWS        IN      NUMBER)                    
+RETURN NUMBER IS
+
+L_VALUE                          VARCHAR2(40);
+L_ORDER_BY_CLAUSE                VARCHAR2(255);
+L_FROM_CLAUSE                    VARCHAR2(500);
+L_NEXT_DC_JOIN                   VARCHAR2(4);
+L_NEXT_DCGK_JOIN                 VARCHAR2(4);
+L_COLUMN_HANDLED                 BOOLEAN_TABLE_TYPE;
+L_ANYOR_PRESENT                  BOOLEAN;
+L_COL_ANDOR                      VARCHAR2(3);
+L_PREV_COL_TP                    VARCHAR2(40);
+L_PREV_COL_ID                    VARCHAR2(40);
+L_PREV_COL_INDEX                 INTEGER;
+L_WHERE_CLAUSE4JOIN              VARCHAR2(2000);
+L_LENGTH                         INTEGER;
+L_SQL_VAL_TAB                    VC40_NESTEDTABLE_TYPE := VC40_NESTEDTABLE_TYPE();
+
+BEGIN
+
+   IF NVL(A_NR_OF_ROWS,0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN (UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+
+   IF NVL(A_NEXT_ROWS, 0) NOT IN (-1, 0, 1) THEN
+      RETURN(UNAPIGEN.DBERR_NEXTROWS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = -1 THEN
+      IF P_SELECTDCGK_CURSOR IS NOT NULL THEN
+         DBMS_SQL.CLOSE_CURSOR(P_SELECTDCGK_CURSOR);
+         P_SELECTDCGK_CURSOR := NULL;
+      END IF;
+      RETURN (UNAPIGEN.DBERR_SUCCESS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = 1 THEN
+      IF P_SELECTDCGK_CURSOR IS NULL THEN
+         RETURN(UNAPIGEN.DBERR_NOCURSOR);
+      END IF;
+   END IF;
+   
+   
+   IF NVL(A_NEXT_ROWS,0) = 0 THEN
+   
+      
+      L_SQL_STRING := 'SELECT DISTINCT b.' || A_GK|| ' FROM ';
+      L_FROM_CLAUSE := 'dd' || UNAPIGEN.P_DD || '.uvdc a,utdcgk' || A_GK || ' b';
+
+      
+      L_WHERE_CLAUSE4JOIN := 'a.dc = b.dc AND '|| 
+                        'a.version = b.version AND '; 
+      L_WHERE_CLAUSE := '';
+      L_ANYOR_PRESENT := FALSE;
+      FOR I IN 1..A_COL_NR_OF_ROWS LOOP
+         L_COLUMN_HANDLED(I) := FALSE;
+         IF LTRIM(RTRIM(UPPER(A_COL_ANDOR(I)))) = 'OR' AND
+            NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+            L_ANYOR_PRESENT := TRUE;
+         END IF;
+         
+         
+         IF I<>1 THEN
+            IF NVL(A_COL_TP(I), ' ') = NVL(A_COL_TP(I-1), ' ') AND
+               NVL(A_COL_ID(I), ' ') = NVL(A_COL_ID(I-1), ' ') AND
+               NVL(A_COL_OPERATOR(I), '=') = '=' AND
+               NVL(A_COL_OPERATOR(I-1), '=') = '=' AND
+               NVL(A_COL_ANDOR(I-1), 'AND') =  'AND' AND
+               (NVL(A_COL_VALUE(I), ' ') <> ' ' OR NVL(A_COL_VALUE(I-1), ' ') <> ' ') THEN
+               IF I> 2 AND A_COL_ANDOR(I-2) = 'OR' THEN
+                  L_ANYOR_PRESENT := TRUE;
+               END IF;
+            END IF;
+         END IF;         
+      END LOOP;
+
+      
+      
+      
+      L_NEXT_DCGK_JOIN := 'b';
+      L_NEXT_DC_JOIN := 'a';
+      FOR I IN REVERSE 1..A_COL_NR_OF_ROWS LOOP
+         IF NVL(LTRIM(A_COL_ID(I)), ' ') = ' ' THEN
+            RETURN(UNAPIGEN.DBERR_SELCOLSINVALID);
+         END IF;
+
+         
+         L_COL_ANDOR := 'AND';
+         IF I<>1 THEN
+            L_COL_ANDOR := A_COL_ANDOR(I-1);
+         END IF;
+         IF L_COL_ANDOR IS NULL THEN
+            
+            L_COL_ANDOR := 'AND';
+         END IF;
+
+         IF L_COLUMN_HANDLED(I) = FALSE THEN
+            IF NVL(A_COL_TP(I), ' ') = 'dcgk' THEN 
+               IF NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+                  UNAPIGEN.WHERECLAUSESTRINGBUILDER (A_BASE_TABLE => 'utdc', A_INDEX =>I, A_COL_TP => A_COL_TP(I), A_COL_ID => A_COL_ID(I),
+                                 A_COL_VALUE => A_COL_VALUE(I), A_COL_OPERATOR => A_COL_OPERATOR(I),
+                                 A_COL_ANDOR => L_COL_ANDOR, A_ANYOR_PRESENT => L_ANYOR_PRESENT,
+                                 A_JOINTABLE_PREFIX => 'utdcgk', A_JOINCOLUMN1 => 'dc', A_JOINCOLUMN2 => 'version', 
+                                 A_PREV_COL_TP => L_PREV_COL_TP, A_PREV_COL_ID => L_PREV_COL_ID, A_PREV_COL_INDEX => L_PREV_COL_INDEX,
+                                 A_NEXTTABLE_TOJOIN => L_NEXT_DCGK_JOIN, A_FROM_CLAUSE => L_FROM_CLAUSE,
+                                 A_WHERE_CLAUSE4JOIN => L_WHERE_CLAUSE4JOIN, A_WHERE_CLAUSE => L_WHERE_CLAUSE,
+                                 A_SQL_VAL_TAB => L_SQL_VAL_TAB);                 
+               END IF;
+               L_COLUMN_HANDLED(I) := TRUE; 
+            ELSE 
+               IF (LOWER(NVL(A_COL_ID(I),' ')) = 'version') AND (NVL(A_COL_VALUE(I),' ') = 'MAX') THEN
+                  L_WHERE_CLAUSE := L_WHERE_CLAUSE || '(a.dc, a.' || A_COL_ID(I) || ') ' ||
+                                    'IN (SELECT dc, MAX(' || A_COL_ID(I) || ') '|| 
+                                        'FROM dd'|| UNAPIGEN.P_DD ||'.uvdc GROUP BY dc) '||
+                                    L_COL_ANDOR || ' '; 
+               ELSIF NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+                  UNAPIGEN.WHERECLAUSESTRINGBUILDER (A_BASE_TABLE => 'utdc', A_INDEX =>I, A_COL_TP => A_COL_TP(I), A_COL_ID => A_COL_ID(I),
+                                 A_COL_VALUE => A_COL_VALUE(I), A_COL_OPERATOR => A_COL_OPERATOR(I),
+                                 A_COL_ANDOR => L_COL_ANDOR, A_ANYOR_PRESENT => L_ANYOR_PRESENT,
+                                 A_JOINTABLE_PREFIX => '', A_JOINCOLUMN1 => '', A_JOINCOLUMN2 => '', 
+                                 A_PREV_COL_TP => L_PREV_COL_TP, A_PREV_COL_ID => L_PREV_COL_ID, A_PREV_COL_INDEX => L_PREV_COL_INDEX,
+                                 A_NEXTTABLE_TOJOIN => L_NEXT_DC_JOIN, A_FROM_CLAUSE => L_FROM_CLAUSE,
+                                 A_WHERE_CLAUSE4JOIN => L_WHERE_CLAUSE4JOIN, A_WHERE_CLAUSE => L_WHERE_CLAUSE,
+                                 A_SQL_VAL_TAB => L_SQL_VAL_TAB); 
+               END IF;
+            END IF;
+         END IF;
+      END LOOP;
+      
+      
+      IF SUBSTR(L_WHERE_CLAUSE4JOIN, -4) = 'AND ' THEN
+         L_WHERE_CLAUSE4JOIN := SUBSTR(L_WHERE_CLAUSE4JOIN, 1,
+                                  LENGTH(L_WHERE_CLAUSE4JOIN)-4);
+      END IF;
+      
+      
+      IF SUBSTR(L_WHERE_CLAUSE, -4) = 'AND ' THEN
+         L_WHERE_CLAUSE := SUBSTR(L_WHERE_CLAUSE, 1,
+                                  LENGTH(L_WHERE_CLAUSE)-4);
+      END IF;
+      IF UPPER(SUBSTR(L_WHERE_CLAUSE, -4)) = ' OR ' THEN
+         L_WHERE_CLAUSE := SUBSTR(L_WHERE_CLAUSE, 1,
+                                  LENGTH(L_WHERE_CLAUSE)-3);
+      END IF;
+      
+      IF L_WHERE_CLAUSE4JOIN IS NOT NULL THEN
+         IF L_WHERE_CLAUSE IS NULL THEN
+            L_WHERE_CLAUSE := ' WHERE ' || L_WHERE_CLAUSE4JOIN;
+         ELSE
+            L_WHERE_CLAUSE := ' WHERE (' || L_WHERE_CLAUSE4JOIN || ') AND ('||L_WHERE_CLAUSE||') ';
+         END IF;
+      ELSE
+         IF L_WHERE_CLAUSE IS NOT NULL THEN
+            L_WHERE_CLAUSE := ' WHERE '||L_WHERE_CLAUSE;
+         ELSE
+            L_WHERE_CLAUSE := ' ';
+         END IF;
+      END IF;
+
+      L_ORDER_BY_CLAUSE := NVL(A_ORDER_BY_CLAUSE, ' ORDER BY 1');
+
+      L_SQL_STRING := L_SQL_STRING || L_FROM_CLAUSE || L_WHERE_CLAUSE || L_ORDER_BY_CLAUSE;
+
+      L_LENGTH := 200;
+      FOR L_X IN 1..10 LOOP
+         IF ( LENGTH(L_SQL_STRING) > ((L_LENGTH*(L_X-1))+1) ) THEN
+            DBMS_OUTPUT.PUT_LINE(SUBSTR(L_SQL_STRING, (L_LENGTH*(L_X-1))+1, L_LENGTH));
+         ELSE
+            EXIT;
+         END IF;
+      END LOOP;            
+                      
+      IF P_SELECTDCGK_CURSOR IS NULL THEN 
+         P_SELECTDCGK_CURSOR := DBMS_SQL.OPEN_CURSOR;
+      END IF;
+
+      UNAPIAUT.ADDORACLECBOHINT (L_SQL_STRING) ;
+      DBMS_SQL.PARSE(P_SELECTDCGK_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+      FOR L_X IN 1..L_SQL_VAL_TAB.COUNT() LOOP
+         DBMS_SQL.BIND_VARIABLE(P_SELECTDCGK_CURSOR, ':col_val'||L_X , L_SQL_VAL_TAB(L_X)); 
+      END LOOP;   
+   
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTDCGK_CURSOR, 1, L_VALUE, 40);
+
+
+      L_RESULT := DBMS_SQL.EXECUTE(P_SELECTDCGK_CURSOR);
+
+   END IF;
+   
+   L_RESULT := DBMS_SQL.FETCH_ROWS(P_SELECTDCGK_CURSOR);
+   L_FETCHED_ROWS := 0;
+   
+   LOOP
+      EXIT WHEN L_RESULT = 0 OR L_FETCHED_ROWS >= A_NR_OF_ROWS;
+
+      DBMS_SQL.COLUMN_VALUE(P_SELECTDCGK_CURSOR, 1, L_VALUE);
+   
+      L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+   
+      A_VALUE(L_FETCHED_ROWS) := L_VALUE;
+   
+      IF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+         L_RESULT := DBMS_SQL.FETCH_ROWS(P_SELECTDCGK_CURSOR);
+      END IF;
+   END LOOP;
+   
+   
+   IF (L_FETCHED_ROWS = 0) THEN
+       DBMS_SQL.CLOSE_CURSOR(P_SELECTDCGK_CURSOR);
+       P_SELECTDCGK_CURSOR := NULL;
+       RETURN(UNAPIGEN.DBERR_NORECORDS);
+   ELSIF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+      DBMS_SQL.CLOSE_CURSOR(P_SELECTDCGK_CURSOR);
+      P_SELECTDCGK_CURSOR := NULL;
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, API_NAME, ERROR_MSG)
+      VALUES (UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, SYSDATE,
+              'SelectDcGkValues', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      IF DBMS_SQL.IS_OPEN (P_SELECTDCGK_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR (P_SELECTDCGK_CURSOR);
+      END IF;
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END SELECTDCGKVALUES;
+
+FUNCTION SELECTDCPROPVALUES
+(A_COL_ID           IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_TP           IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_VALUE        IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_NR_OF_ROWS   IN      NUMBER,                    
+ A_PROP             IN      VARCHAR2,                  
+ A_VALUE            OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_NR_OF_ROWS       IN OUT  NUMBER,                    
+ A_ORDER_BY_CLAUSE  IN      VARCHAR2,                  
+ A_NEXT_ROWS        IN      NUMBER)                    
+RETURN NUMBER IS
+L_COL_OPERATOR           UNAPIGEN.VC20_TABLE_TYPE;
+L_COL_ANDOR              UNAPIGEN.VC3_TABLE_TYPE;
+BEGIN
+FOR L_X IN 1..A_COL_NR_OF_ROWS LOOP
+    L_COL_OPERATOR(L_X) := '=';
+    L_COL_ANDOR(L_X) := 'AND';
+END LOOP;
+ RETURN(UNAPIDC.SELECTDCPROPVALUES(A_COL_ID,
+                                 A_COL_TP,
+                                 A_COL_VALUE,
+                                 L_COL_OPERATOR,
+                                 L_COL_ANDOR,
+                                 A_COL_NR_OF_ROWS,
+                                 A_PROP,
+                                 A_VALUE,
+                                 A_NR_OF_ROWS,
+                                 A_ORDER_BY_CLAUSE,
+                                 A_NEXT_ROWS));
+END SELECTDCPROPVALUES;
+
+FUNCTION SELECTDCPROPVALUES
+(A_COL_ID           IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_TP           IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_VALUE        IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_OPERATOR     IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_COL_ANDOR        IN      UNAPIGEN.VC3_TABLE_TYPE,   
+ A_COL_NR_OF_ROWS   IN      NUMBER,                    
+ A_PROP             IN      VARCHAR2,                  
+ A_VALUE            OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_NR_OF_ROWS       IN OUT  NUMBER,                    
+ A_ORDER_BY_CLAUSE  IN      VARCHAR2,                  
+ A_NEXT_ROWS        IN      NUMBER)                    
+RETURN NUMBER IS
+
+L_VALUE                          VARCHAR2(40);
+L_ORDER_BY_CLAUSE                VARCHAR2(255);
+L_FROM_CLAUSE                    VARCHAR2(500);
+L_NEXT_DCGK_JOIN                 VARCHAR2(4);
+L_NEXT_DC_JOIN                   VARCHAR2(4);
+L_COLUMN_HANDLED                 BOOLEAN_TABLE_TYPE;
+L_ANYOR_PRESENT                  BOOLEAN;
+L_COL_ANDOR                      VARCHAR2(3);
+L_PREV_COL_TP                    VARCHAR2(40);
+L_PREV_COL_ID                    VARCHAR2(40);
+L_PREV_COL_INDEX                 INTEGER;
+L_WHERE_CLAUSE4JOIN              VARCHAR2(2000);
+L_LENGTH                         INTEGER;
+L_SQL_VAL_TAB                    VC40_NESTEDTABLE_TYPE := VC40_NESTEDTABLE_TYPE();
+
+BEGIN
+
+   IF NVL(A_NR_OF_ROWS,0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN (UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+
+   IF NVL(A_NEXT_ROWS, 0) NOT IN (-1, 0, 1) THEN
+      RETURN(UNAPIGEN.DBERR_NEXTROWS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = -1 THEN
+      IF P_SELECTDCPROP_CURSOR IS NOT NULL THEN
+         DBMS_SQL.CLOSE_CURSOR(P_SELECTDCPROP_CURSOR);
+         P_SELECTDCPROP_CURSOR := NULL;
+      END IF;
+      RETURN (UNAPIGEN.DBERR_SUCCESS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = 1 THEN
+      IF P_SELECTDCPROP_CURSOR IS NULL THEN
+         RETURN(UNAPIGEN.DBERR_NOCURSOR);
+      END IF;
+   END IF;
+
+   
+   IF NVL(A_NEXT_ROWS,0) = 0 THEN
+      L_SQL_STRING := 'SELECT DISTINCT a.' || A_PROP ||' FROM ';
+      L_FROM_CLAUSE := 'dd' || UNAPIGEN.P_DD || '.uvdc a';
+
+      
+      L_WHERE_CLAUSE4JOIN := '';
+      L_WHERE_CLAUSE := '';
+      L_ANYOR_PRESENT := FALSE;
+      FOR I IN 1..A_COL_NR_OF_ROWS LOOP
+         L_COLUMN_HANDLED(I) := FALSE;
+         IF LTRIM(RTRIM(UPPER(A_COL_ANDOR(I)))) = 'OR' AND
+            NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+            L_ANYOR_PRESENT := TRUE;
+         END IF;
+         
+         
+         IF I<>1 THEN
+            IF NVL(A_COL_TP(I), ' ') = NVL(A_COL_TP(I-1), ' ') AND
+               NVL(A_COL_ID(I), ' ') = NVL(A_COL_ID(I-1), ' ') AND
+               NVL(A_COL_OPERATOR(I), '=') = '=' AND
+               NVL(A_COL_OPERATOR(I-1), '=') = '=' AND
+               NVL(A_COL_ANDOR(I-1), 'AND') =  'AND' AND
+               (NVL(A_COL_VALUE(I), ' ') <> ' ' OR NVL(A_COL_VALUE(I-1), ' ') <> ' ') THEN
+               IF I> 2 AND A_COL_ANDOR(I-2) = 'OR' THEN
+                  L_ANYOR_PRESENT := TRUE;
+               END IF;
+            END IF;
+         END IF;         
+      END LOOP;
+
+      
+      
+      
+      L_NEXT_DCGK_JOIN := 'a';
+      L_NEXT_DC_JOIN := 'a';
+      FOR I IN REVERSE 1..A_COL_NR_OF_ROWS LOOP
+         IF NVL(LTRIM(A_COL_ID(I)), ' ') = ' ' THEN
+            RETURN(UNAPIGEN.DBERR_SELCOLSINVALID);
+        END IF;
+         
+         L_COL_ANDOR := 'AND';
+         IF I<>1 THEN
+            L_COL_ANDOR := A_COL_ANDOR(I-1);
+         END IF;
+         IF L_COL_ANDOR IS NULL THEN
+            
+            L_COL_ANDOR := 'AND';
+         END IF;
+
+         IF L_COLUMN_HANDLED(I) = FALSE THEN
+           IF NVL(A_COL_TP(I), ' ') = 'dcgk' THEN 
+               IF NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+                  UNAPIGEN.WHERECLAUSESTRINGBUILDER (A_BASE_TABLE => 'utdc', A_INDEX =>I, A_COL_TP => A_COL_TP(I), A_COL_ID => A_COL_ID(I),
+                                 A_COL_VALUE => A_COL_VALUE(I), A_COL_OPERATOR => A_COL_OPERATOR(I),
+                                 A_COL_ANDOR => L_COL_ANDOR, A_ANYOR_PRESENT => L_ANYOR_PRESENT,
+                                 A_JOINTABLE_PREFIX => 'utdcgk', A_JOINCOLUMN1 => 'dc', A_JOINCOLUMN2 => 'version', 
+                                 A_PREV_COL_TP => L_PREV_COL_TP, A_PREV_COL_ID => L_PREV_COL_ID, A_PREV_COL_INDEX => L_PREV_COL_INDEX,
+                                 A_NEXTTABLE_TOJOIN => L_NEXT_DCGK_JOIN, A_FROM_CLAUSE => L_FROM_CLAUSE,
+                                 A_WHERE_CLAUSE4JOIN => L_WHERE_CLAUSE4JOIN, A_WHERE_CLAUSE => L_WHERE_CLAUSE,
+                                 A_SQL_VAL_TAB => L_SQL_VAL_TAB);                  
+               END IF;
+               L_COLUMN_HANDLED(I) := TRUE; 
+           ELSE 
+              IF (LOWER(NVL(A_COL_ID(I),' ')) = 'version') AND (NVL(A_COL_VALUE(I),' ') = 'MAX') THEN
+                 L_WHERE_CLAUSE := L_WHERE_CLAUSE || '(a.dc, a.' || A_COL_ID(I) || ') ' ||
+                                   'IN (SELECT dc, MAX(' || A_COL_ID(I) || ') '|| 
+                                       'FROM dd'|| UNAPIGEN.P_DD ||'.uvdc GROUP BY dc) '||
+                                   'AND '; 
+               ELSIF NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+                  UNAPIGEN.WHERECLAUSESTRINGBUILDER (A_BASE_TABLE => 'utdc', A_INDEX =>I, A_COL_TP => A_COL_TP(I), A_COL_ID => A_COL_ID(I),
+                                 A_COL_VALUE => A_COL_VALUE(I), A_COL_OPERATOR => A_COL_OPERATOR(I),
+                                 A_COL_ANDOR => L_COL_ANDOR, A_ANYOR_PRESENT => L_ANYOR_PRESENT,
+                                 A_JOINTABLE_PREFIX => '', A_JOINCOLUMN1 => '', A_JOINCOLUMN2 => '', 
+                                 A_PREV_COL_TP => L_PREV_COL_TP, A_PREV_COL_ID => L_PREV_COL_ID, A_PREV_COL_INDEX => L_PREV_COL_INDEX,
+                                 A_NEXTTABLE_TOJOIN => L_NEXT_DC_JOIN, A_FROM_CLAUSE => L_FROM_CLAUSE,
+                                 A_WHERE_CLAUSE4JOIN => L_WHERE_CLAUSE4JOIN, A_WHERE_CLAUSE => L_WHERE_CLAUSE,
+                                 A_SQL_VAL_TAB => L_SQL_VAL_TAB);                  
+               END IF;
+               L_COLUMN_HANDLED(I) := TRUE; 
+            END IF;
+         END IF;
+      END LOOP;
+
+      
+      IF SUBSTR(L_WHERE_CLAUSE4JOIN, -4) = 'AND ' THEN
+         L_WHERE_CLAUSE4JOIN := SUBSTR(L_WHERE_CLAUSE4JOIN, 1,
+                                  LENGTH(L_WHERE_CLAUSE4JOIN)-4);
+      END IF;
+      
+      
+      IF SUBSTR(L_WHERE_CLAUSE, -4) = 'AND ' THEN
+         L_WHERE_CLAUSE := SUBSTR(L_WHERE_CLAUSE, 1,
+                                  LENGTH(L_WHERE_CLAUSE)-4);
+      END IF;
+      IF UPPER(SUBSTR(L_WHERE_CLAUSE, -4)) = ' OR ' THEN
+         L_WHERE_CLAUSE := SUBSTR(L_WHERE_CLAUSE, 1,
+                                  LENGTH(L_WHERE_CLAUSE)-3);
+      END IF;
+      
+      IF L_WHERE_CLAUSE4JOIN IS NOT NULL THEN
+         IF L_WHERE_CLAUSE IS NULL THEN
+            L_WHERE_CLAUSE := ' WHERE ' || L_WHERE_CLAUSE4JOIN;
+         ELSE
+            L_WHERE_CLAUSE := ' WHERE (' || L_WHERE_CLAUSE4JOIN || ') AND ('||L_WHERE_CLAUSE||') ';
+         END IF;
+      ELSE
+         IF L_WHERE_CLAUSE IS NOT NULL THEN
+            L_WHERE_CLAUSE := ' WHERE '||L_WHERE_CLAUSE;
+         ELSE
+            L_WHERE_CLAUSE := ' ';
+         END IF;
+      END IF;
+
+      L_ORDER_BY_CLAUSE := NVL(A_ORDER_BY_CLAUSE, ' ORDER BY 1');
+
+      L_SQL_STRING := L_SQL_STRING || L_FROM_CLAUSE || L_WHERE_CLAUSE || L_ORDER_BY_CLAUSE;
+
+      L_LENGTH := 200;
+      FOR L_X IN 1..10 LOOP
+         IF ( LENGTH(L_SQL_STRING) > ((L_LENGTH*(L_X-1))+1) ) THEN
+            DBMS_OUTPUT.PUT_LINE(SUBSTR(L_SQL_STRING, (L_LENGTH*(L_X-1))+1, L_LENGTH));
+         ELSE
+            EXIT;
+         END IF;
+      END LOOP;            
+
+      IF P_SELECTDCPROP_CURSOR IS NULL THEN 
+         P_SELECTDCPROP_CURSOR := DBMS_SQL.OPEN_CURSOR;
+      END IF;
+      
+      UNAPIAUT.ADDORACLECBOHINT (L_SQL_STRING) ;
+      DBMS_SQL.PARSE(P_SELECTDCPROP_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+      FOR L_X IN 1..L_SQL_VAL_TAB.COUNT() LOOP
+         DBMS_SQL.BIND_VARIABLE(P_SELECTDCPROP_CURSOR, ':col_val'||L_X , L_SQL_VAL_TAB(L_X)); 
+      END LOOP;
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTDCPROP_CURSOR, 1, L_VALUE, 40);
+      L_RESULT := DBMS_SQL.EXECUTE(P_SELECTDCPROP_CURSOR);
+
+   END IF;
+
+   L_RESULT := DBMS_SQL.FETCH_ROWS(P_SELECTDCPROP_CURSOR);
+   L_FETCHED_ROWS := 0;
+
+   LOOP
+      EXIT WHEN L_RESULT = 0 OR L_FETCHED_ROWS >= A_NR_OF_ROWS;
+
+      DBMS_SQL.COLUMN_VALUE(P_SELECTDCPROP_CURSOR, 1, L_VALUE);
+      L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+      A_VALUE(L_FETCHED_ROWS) := L_VALUE;
+
+      IF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+         L_RESULT := DBMS_SQL.FETCH_ROWS(P_SELECTDCPROP_CURSOR);
+      END IF;
+   END LOOP;
+
+   
+   IF (L_FETCHED_ROWS = 0) THEN
+       DBMS_SQL.CLOSE_CURSOR(P_SELECTDCPROP_CURSOR);
+       P_SELECTDCPROP_CURSOR := NULL;
+       RETURN(UNAPIGEN.DBERR_NORECORDS);
+   ELSIF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+      DBMS_SQL.CLOSE_CURSOR(P_SELECTDCPROP_CURSOR);
+      P_SELECTDCPROP_CURSOR := NULL;
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+   END IF;
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, API_NAME, ERROR_MSG)
+      VALUES (UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, SYSDATE,
+              'SelectDcPropValues', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      L_LENGTH := 200;
+      FOR L_X IN 1..10 LOOP
+         IF ( LENGTH(L_SQL_STRING) > ((L_LENGTH*(L_X-1))+1) ) THEN
+            INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+            VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+                   'SelectStPropValues', '(SQL)'||SUBSTR(L_SQL_STRING, (L_LENGTH*(L_X-1))+1, L_LENGTH));             
+         ELSE
+            EXIT;
+         END IF;
+      END LOOP;            
+      L_LENGTH := 200;
+      FOR L_X IN 1..10 LOOP
+         IF ( LENGTH(L_SQLERRM) > ((L_LENGTH*(L_X-1))+1) ) THEN
+            DBMS_OUTPUT.PUT_LINE(SUBSTR(L_SQLERRM, (L_LENGTH*(L_X-1))+1, L_LENGTH));
+         ELSE
+            EXIT;
+         END IF;
+      END LOOP;            
+      UNAPIGEN.U4COMMIT;
+      IF DBMS_SQL.IS_OPEN (P_SELECTDCPROP_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR (P_SELECTDCPROP_CURSOR);
+      END IF;
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END SELECTDCPROPVALUES;
+
+FUNCTION SAVEDOCUMENT
+(A_DC                 IN  VARCHAR2,                  
+ A_VERSION            IN  VARCHAR2,                  
+ A_VERSION_IS_CURRENT IN  CHAR,                      
+ A_EFFECTIVE_FROM     IN  DATE,                      
+ A_EFFECTIVE_TILL     IN  DATE,                      
+ A_DESCRIPTION        IN  VARCHAR2,                  
+ A_CREATION_DATE      IN  VARCHAR2,                  
+ A_CREATED_BY         IN  VARCHAR2,                  
+ A_TOOLTIP            IN  VARCHAR2,                  
+ A_URL                IN  VARCHAR2,                  
+ A_DATA               IN  BLOB,                      
+ A_LAST_CHECKOUT_BY   IN  VARCHAR2,                  
+ A_LAST_CHECKOUT_URL  IN  VARCHAR2,                  
+ A_CHECKED_OUT        IN  VARCHAR2,                  
+ A_DC_CLASS           IN  VARCHAR2,                  
+ A_LOG_HS             IN OUT CHAR,                      
+ A_LC                 IN OUT VARCHAR2,                  
+ A_LC_VERSION         IN OUT VARCHAR2,                  
+ A_MODIFY_REASON      IN  VARCHAR2)                  
+RETURN NUMBER IS
+
+L_LC           VARCHAR2(2);
+L_LC_VERSION   VARCHAR2(20);
+L_SS           VARCHAR2(2);
+L_LOG_HS       CHAR(1);
+L_ALLOW_MODIFY CHAR(1);
+L_ACTIVE       CHAR(1);
+L_INSERT       BOOLEAN;
+
+
+
+
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_DC, ' ') = ' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_VERSION, ' ') = ' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJVERSION;
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(SUBSTR(A_LOG_HS,1,1), ' ') NOT IN ('1','0', ' ') THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_LOGHS;
+      RAISE STPERROR;
+   END IF;
+
+   L_RET_CODE := UNAPIGEN.GETAUTHORISATION('dc', A_DC, A_VERSION, L_LC, L_LC_VERSION, L_SS,
+                                           L_ALLOW_MODIFY, L_ACTIVE, L_LOG_HS);
+   IF L_RET_CODE = UNAPIGEN.DBERR_NOOBJECT THEN
+      L_INSERT := TRUE;
+   ELSIF L_RET_CODE = UNAPIGEN.DBERR_SUCCESS THEN
+      L_INSERT := FALSE;
+   ELSE
+      UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+      RAISE STPERROR;
+   END IF;
+
+   IF L_INSERT THEN     
+      IF A_LC = '--' THEN
+         A_LC := NULL;
+      ELSIF NVL(A_LC, ' ') = ' ' THEN
+         A_LC := L_LC;
+      END IF;
+ 
+      IF NVL(A_LC_VERSION, ' ') = ' ' THEN
+         A_LC_VERSION := L_LC_VERSION;
+      END IF;
+       IF NVL(SUBSTR(A_LOG_HS,1,1), ' ') = ' ' THEN
+         A_LOG_HS := L_LOG_HS;
+      END IF;
+      INSERT INTO UTDC(DC, VERSION, EFFECTIVE_FROM, DESCRIPTION, CREATION_DATE, CREATED_BY,
+                       TOOLTIP, URL, DATA, LAST_CHECKOUT_BY, LAST_CHECKOUT_URL, CHECKED_OUT,
+                       DC_CLASS, LOG_HS, ALLOW_MODIFY, ACTIVE, LC, LC_VERSION)
+      VALUES(A_DC, A_VERSION, A_EFFECTIVE_FROM, A_DESCRIPTION, A_CREATION_DATE, A_CREATED_BY,
+             A_TOOLTIP, A_URL, A_DATA, A_LAST_CHECKOUT_BY, A_LAST_CHECKOUT_URL, A_CHECKED_OUT,
+             A_DC_CLASS, SUBSTR(A_LOG_HS,1,1), '#', '0', A_LC, A_LC_VERSION);
+      L_EVENT_TP := 'ObjectCreated';
+   ELSE                 
+      IF NVL(SUBSTR(A_LOG_HS,1,1), ' ') NOT IN ('1','0') THEN
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_LOGHS;
+         RAISE STPERROR;
+      END IF;
+      A_LC := L_LC;
+      A_LC_VERSION := L_LC_VERSION;
+      
+      UPDATE UTDC
+      SET EFFECTIVE_FROM    = DECODE(EFFECTIVE_TILL, NULL, A_EFFECTIVE_FROM, EFFECTIVE_FROM),
+          DESCRIPTION       = A_DESCRIPTION,
+          TOOLTIP           = A_TOOLTIP,
+          URL               = A_URL,
+          DATA              = A_DATA,
+          LAST_CHECKOUT_BY  = A_LAST_CHECKOUT_BY,
+          LAST_CHECKOUT_URL = A_LAST_CHECKOUT_URL,
+          CHECKED_OUT       = A_CHECKED_OUT,
+          DC_CLASS          = A_DC_CLASS,
+          LOG_HS            = SUBSTR(A_LOG_HS,1,1),
+          ALLOW_MODIFY      = '#'
+      WHERE DC = A_DC
+        AND VERSION = A_VERSION;
+      L_EVENT_TP := 'ObjectUpdated';
+   END IF;
+
+   L_EV_SEQ_NR := -1;
+   L_RESULT :=
+         UNAPIEV.INSERTEVENT('SaveDocument', UNAPIGEN.P_EVMGR_NAME, 'dc', A_DC, L_LC, L_LC_VERSION, 
+                             L_SS, L_EVENT_TP, 'version='||A_VERSION, L_EV_SEQ_NR);
+   IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS  THEN
+      UNAPIGEN.P_TXN_ERROR := L_RESULT;
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(L_LOG_HS, ' ') <> SUBSTR(A_LOG_HS,1,1) THEN
+      IF SUBSTR(A_LOG_HS,1,1) = '1' THEN
+         INSERT INTO UTDCHS (DC, VERSION, WHO, WHO_DESCRIPTION, WHAT, 
+                             WHAT_DESCRIPTION, LOGDATE, WHY, TR_SEQ, EV_SEQ)
+         VALUES (A_DC, A_VERSION, UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, 'History switched ON', 
+                 'Audit trail is turned on.', SYSDATE, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+      ELSE
+         INSERT INTO UTDCHS (DC, VERSION, WHO, WHO_DESCRIPTION, WHAT, 
+                             WHAT_DESCRIPTION, LOGDATE, WHY, TR_SEQ, EV_SEQ)
+         VALUES (A_DC, A_VERSION, UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, 'History switched OFF', 
+                 'Audit trail is turned off.', SYSDATE, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+      END IF;
+   END IF;
+
+   IF NVL(SUBSTR(A_LOG_HS,1,1), ' ') = '1' THEN
+      IF L_EVENT_TP = 'ObjectCreated' THEN
+         INSERT INTO UTDCHS (DC, VERSION, WHO, WHO_DESCRIPTION, WHAT, 
+                             WHAT_DESCRIPTION, LOGDATE, WHY, TR_SEQ, EV_SEQ)
+         VALUES (A_DC, A_VERSION, UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+                 'document "'||A_DC||'" , version "'|| A_VERSION||'", is created.', SYSDATE, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, 
+                 L_EV_SEQ_NR);
+      ELSE
+         INSERT INTO UTDCHS (DC, VERSION, WHO, WHO_DESCRIPTION, WHAT, 
+                             WHAT_DESCRIPTION, LOGDATE, WHY, TR_SEQ, EV_SEQ)
+         VALUES (A_DC, A_VERSION, UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+                 'document "'||A_DC||'", version "'|| A_VERSION||'", is updated.', SYSDATE, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, 
+                 L_EV_SEQ_NR);
+      END IF;
+   ELSE
+      
+      
+      IF L_EVENT_TP = 'ObjectCreated' THEN
+         INSERT INTO UTDCHS (DC, VERSION, WHO, WHO_DESCRIPTION, WHAT, 
+                             WHAT_DESCRIPTION, LOGDATE, WHY, TR_SEQ, EV_SEQ)
+         VALUES (A_DC, A_VERSION, UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+                 'document "'||A_DC||'", version "'|| A_VERSION||'", is created.', SYSDATE, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, 
+                 L_EV_SEQ_NR);
+      END IF;
+   END IF;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   RETURN (UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+        UNAPIGEN.LOGERROR('SaveDocument', SQLERRM);
+   END IF;
+   IF L_SQLERRM IS NOT NULL THEN
+        UNAPIGEN.LOGERROR('SaveDocument', L_SQLERRM);
+   END IF;   
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR,'SaveDocument'));
+END SAVEDOCUMENT;
+
+FUNCTION SAVEDOCUMENT
+(A_DC                 IN  VARCHAR2,                  
+ A_VERSION            IN  VARCHAR2,                  
+ A_VERSION_IS_CURRENT IN  CHAR,                      
+ A_EFFECTIVE_FROM     IN  DATE,                      
+ A_EFFECTIVE_TILL     IN  DATE,                      
+ A_DESCRIPTION        IN  VARCHAR2,                  
+ A_CREATION_DATE      IN  VARCHAR2,                  
+ A_CREATED_BY         IN  VARCHAR2,                  
+ A_TOOLTIP            IN  VARCHAR2,                  
+ A_URL                IN  VARCHAR2,                  
+ A_LAST_CHECKOUT_BY   IN  VARCHAR2,                  
+ A_LAST_CHECKOUT_URL  IN  VARCHAR2,                  
+ A_CHECKED_OUT        IN  VARCHAR2,                  
+ A_DC_CLASS           IN  VARCHAR2,                  
+ A_LOG_HS             IN OUT  CHAR,                      
+ A_LC                 IN OUT VARCHAR2,                  
+ A_LC_VERSION         IN OUT VARCHAR2,                  
+ A_MODIFY_REASON      IN  VARCHAR2)                  
+RETURN NUMBER IS
+
+L_LC           VARCHAR2(2);
+L_LC_VERSION   VARCHAR2(20);
+L_SS           VARCHAR2(2);
+L_LOG_HS       CHAR(1);
+L_ALLOW_MODIFY CHAR(1);
+L_ACTIVE       CHAR(1);
+L_INSERT       BOOLEAN;
+
+
+
+
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_DC, ' ') = ' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_VERSION, ' ') = ' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJVERSION;
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(SUBSTR(A_LOG_HS,1,1), ' ') NOT IN ('1','0') THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_LOGHS;
+      RAISE STPERROR;
+   END IF;
+
+   L_RET_CODE := UNAPIGEN.GETAUTHORISATION('dc', A_DC, A_VERSION, L_LC, L_LC_VERSION, L_SS,
+                                           L_ALLOW_MODIFY, L_ACTIVE, L_LOG_HS);
+   IF L_RET_CODE = UNAPIGEN.DBERR_NOOBJECT THEN
+      L_INSERT := TRUE;
+   ELSIF L_RET_CODE = UNAPIGEN.DBERR_SUCCESS THEN
+      L_INSERT := FALSE;
+   ELSE
+      UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+      RAISE STPERROR;
+   END IF;
+
+   IF L_INSERT THEN     
+      IF A_LC = '--' THEN
+         L_LC := NULL;
+      ELSIF NVL(A_LC, ' ') = ' ' THEN
+         A_LC := L_LC;
+      END IF;
+      IF NVL(A_LC_VERSION, ' ') = ' ' THEN
+         A_LC_VERSION := L_LC_VERSION;
+      END IF;
+      IF NVL(SUBSTR(A_LOG_HS,1,1), ' ') = ' ' THEN
+         A_LOG_HS := L_LOG_HS;
+      END IF;
+     INSERT INTO UTDC(DC, VERSION, EFFECTIVE_FROM, DESCRIPTION, CREATION_DATE, CREATED_BY,
+                       TOOLTIP, URL,  LAST_CHECKOUT_BY, LAST_CHECKOUT_URL, CHECKED_OUT,
+                       DC_CLASS, LOG_HS, ALLOW_MODIFY, ACTIVE, LC, LC_VERSION)
+      VALUES(A_DC, A_VERSION, A_EFFECTIVE_FROM, A_DESCRIPTION, A_CREATION_DATE, A_CREATED_BY,
+             A_TOOLTIP, A_URL,  A_LAST_CHECKOUT_BY, A_LAST_CHECKOUT_URL, A_CHECKED_OUT,
+             A_DC_CLASS, SUBSTR(A_LOG_HS,1,1), '#', '0', A_LC, A_LC_VERSION);
+      L_EVENT_TP := 'ObjectCreated';
+   ELSE                 
+      IF NVL(SUBSTR(A_LOG_HS,1,1), ' ') NOT IN ('1','0') THEN
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_LOGHS;
+         RAISE STPERROR;
+      END IF;
+
+      A_LC := L_LC;
+      A_LC_VERSION := L_LC_VERSION;
+
+      UPDATE UTDC
+      SET EFFECTIVE_FROM    = DECODE(EFFECTIVE_TILL, NULL, A_EFFECTIVE_FROM, EFFECTIVE_FROM),
+          DESCRIPTION       = A_DESCRIPTION,
+          TOOLTIP           = A_TOOLTIP,
+          URL               = A_URL,
+          LAST_CHECKOUT_BY  = A_LAST_CHECKOUT_BY,
+          LAST_CHECKOUT_URL = A_LAST_CHECKOUT_URL,
+          CHECKED_OUT       = A_CHECKED_OUT,
+          DC_CLASS          = A_DC_CLASS,
+          LOG_HS            = SUBSTR(A_LOG_HS,1,1),
+          ALLOW_MODIFY      = '#'
+      WHERE DC = A_DC
+        AND VERSION = A_VERSION;
+      L_EVENT_TP := 'ObjectUpdated';
+   END IF;
+
+   L_EV_SEQ_NR := -1;
+   L_RESULT :=
+         UNAPIEV.INSERTEVENT('SaveDocument', UNAPIGEN.P_EVMGR_NAME, 'dc', A_DC, A_LC, A_LC_VERSION, 
+                             L_SS, L_EVENT_TP, 'version='||A_VERSION, L_EV_SEQ_NR);
+   IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS  THEN
+      UNAPIGEN.P_TXN_ERROR := L_RESULT;
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(L_LOG_HS, ' ') <> SUBSTR(A_LOG_HS,1,1) THEN
+      IF SUBSTR(A_LOG_HS,1,1) = '1' THEN
+         INSERT INTO UTDCHS (DC, VERSION, WHO, WHO_DESCRIPTION, WHAT, 
+                             WHAT_DESCRIPTION, LOGDATE, WHY, TR_SEQ, EV_SEQ)
+         VALUES (A_DC, A_VERSION, UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, 'History switched ON', 
+                 'Audit trail is turned on.', SYSDATE, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+      ELSE
+         INSERT INTO UTDCHS (DC, VERSION, WHO, WHO_DESCRIPTION, WHAT, 
+                             WHAT_DESCRIPTION, LOGDATE, WHY, TR_SEQ, EV_SEQ)
+         VALUES (A_DC, A_VERSION, UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, 'History switched OFF', 
+                 'Audit trail is turned off.', SYSDATE, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+      END IF;
+   END IF;
+
+   IF NVL(SUBSTR(A_LOG_HS,1,1), ' ') = '1' THEN
+      IF L_EVENT_TP = 'ObjectCreated' THEN
+         INSERT INTO UTDCHS (DC, VERSION, WHO, WHO_DESCRIPTION, WHAT, 
+                             WHAT_DESCRIPTION, LOGDATE, WHY, TR_SEQ, EV_SEQ)
+         VALUES (A_DC, A_VERSION, UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+                 'document "'||A_DC||'", version "'|| A_VERSION||'", is created.', SYSDATE, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, 
+                 L_EV_SEQ_NR);
+      ELSE
+         INSERT INTO UTDCHS (DC, VERSION, WHO, WHO_DESCRIPTION, WHAT, 
+                             WHAT_DESCRIPTION, LOGDATE, WHY, TR_SEQ, EV_SEQ)
+         VALUES (A_DC, A_VERSION, UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+                 'document "'||A_DC||'", version "'|| A_VERSION||'", is updated.', SYSDATE, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, 
+                 L_EV_SEQ_NR);
+      END IF;
+   ELSE
+      
+      
+      IF L_EVENT_TP = 'ObjectCreated' THEN
+         INSERT INTO UTDCHS (DC, VERSION, WHO, WHO_DESCRIPTION, WHAT, 
+                             WHAT_DESCRIPTION, LOGDATE, WHY, TR_SEQ, EV_SEQ)
+         VALUES (A_DC, A_VERSION, UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+                 'document "'||A_DC||'", version "'|| A_VERSION||'", is created.', SYSDATE, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, 
+                 L_EV_SEQ_NR);
+      END IF;
+   END IF;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   RETURN (UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+        UNAPIGEN.LOGERROR('SaveDocument', SQLERRM);
+   END IF;
+   IF L_SQLERRM IS NOT NULL THEN
+        UNAPIGEN.LOGERROR('SaveDocument', L_SQLERRM);
+   END IF;   
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR,'SaveDocument'));
+END SAVEDOCUMENT;
+
+FUNCTION CREATENEWDOCUMENTVERSION
+(A_DC                 IN  VARCHAR2,                  
+ A_REF_VERSION        IN  VARCHAR2,                  
+ A_NEW_VERSION        IN  VARCHAR2,                  
+ A_EFFECTIVE_FROM     IN  DATE,                      
+ A_CREATION_DATE      IN  VARCHAR2,                  
+ A_CREATED_BY         IN  VARCHAR2,                  
+ A_MODIFY_REASON      IN  VARCHAR2)                  
+RETURN NUMBER IS
+
+L_DC_TO_GK_CURSOR       INTEGER;
+
+CURSOR L_DC_CURSOR(A_DC IN VARCHAR2, A_REF_VERSION IN VARCHAR2) IS
+   SELECT *
+   FROM UTDC
+   WHERE DC = A_DC
+   AND VERSION = A_REF_VERSION;
+L_DC_REC L_DC_CURSOR%ROWTYPE;
+
+CURSOR L_DC_FROM_GK_CURSOR(A_DC IN VARCHAR2, A_REF_VERSION IN VARCHAR2) IS
+   SELECT A.GK, A.GKSEQ, A.VALUE
+   FROM UTDCGK A
+   WHERE A.DC = A_DC
+   AND VERSION = A_REF_VERSION;
+
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_DC, ' ') = ' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_REF_VERSION, ' ') = ' ' OR
+      NVL(A_NEW_VERSION, ' ') = ' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJVERSION;
+      RAISE STPERROR;
+   END IF;
+
+   
+   OPEN L_DC_CURSOR (A_DC, A_NEW_VERSION);
+   FETCH L_DC_CURSOR
+   INTO L_DC_REC;
+   IF L_DC_CURSOR%FOUND THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_ALREADYEXISTS;
+       CLOSE L_DC_CURSOR;
+      RAISE STPERROR;
+   END IF;
+   CLOSE L_DC_CURSOR;
+   
+   OPEN L_DC_CURSOR (A_DC, A_REF_VERSION);
+   FETCH L_DC_CURSOR
+   INTO L_DC_REC;
+   CLOSE L_DC_CURSOR;
+
+   L_RET_CODE := SAVEDOCUMENT
+                  (A_DC                 => A_DC,
+                   A_VERSION            => A_NEW_VERSION,
+                   A_VERSION_IS_CURRENT => NULL,
+                   A_EFFECTIVE_FROM     => A_EFFECTIVE_FROM,
+                   A_EFFECTIVE_TILL     => NULL,
+                   A_DESCRIPTION        => L_DC_REC.DESCRIPTION,
+                   A_CREATION_DATE      => A_CREATION_DATE,
+                   A_CREATED_BY         => A_CREATED_BY,
+                   A_TOOLTIP            => L_DC_REC.TOOLTIP,
+                   A_URL                => L_DC_REC.URL,
+                   A_DATA               => L_DC_REC.DATA,
+                   A_LAST_CHECKOUT_BY   => L_DC_REC.LAST_CHECKOUT_BY,
+                   A_LAST_CHECKOUT_URL  => L_DC_REC.LAST_CHECKOUT_URL,
+                   A_CHECKED_OUT        => L_DC_REC.CHECKED_OUT,
+                   A_DC_CLASS           => L_DC_REC.DC_CLASS,
+                   A_LOG_HS             => L_DC_REC.LOG_HS,
+                   A_LC                 => L_DC_REC.LC,
+                   A_LC_VERSION         => L_DC_REC.LC_VERSION,
+                   A_MODIFY_REASON      => A_MODIFY_REASON);
+
+   
+   INSERT INTO UTDCAU(DC, VERSION, AU, AUSEQ, VALUE)
+   SELECT A_DC, A_NEW_VERSION, AU, AUSEQ, VALUE
+   FROM UTDCAU
+   WHERE DC = A_DC
+   AND VERSION= A_REF_VERSION;   
+      
+    
+    L_DC_TO_GK_CURSOR := DBMS_SQL.OPEN_CURSOR;
+   
+   
+   
+   FOR L_DC_FROM_GK_REC IN L_DC_FROM_GK_CURSOR(A_DC, A_REF_VERSION) LOOP
+      BEGIN
+         IF L_DC_FROM_GK_REC.VALUE IS NOT NULL THEN
+            L_SQL_STRING := 'INSERT INTO utdcgk' || L_DC_FROM_GK_REC.GK ||
+                            '(dc, version, ' || L_DC_FROM_GK_REC.GK || ') VALUES ' ||
+                            '(:dc, :version, :gk_val)';
+
+            DBMS_SQL.PARSE(L_DC_TO_GK_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+            DBMS_SQL.BIND_VARIABLE(L_DC_TO_GK_CURSOR, ':dc', A_DC);
+            DBMS_SQL.BIND_VARIABLE(L_DC_TO_GK_CURSOR, ':version', A_NEW_VERSION);
+            DBMS_SQL.BIND_VARIABLE(L_DC_TO_GK_CURSOR, ':gk_val', L_DC_FROM_GK_REC.VALUE);
+            L_RESULT := DBMS_SQL.EXECUTE(L_DC_TO_GK_CURSOR);
+
+            IF L_RESULT = 0 THEN
+               UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NORECORDS;
+               RAISE STPERROR;
+            END IF;
+         END IF;
+
+         
+         INSERT INTO UTDCGK(DC, VERSION, GK, GKSEQ, VALUE)
+         VALUES(A_DC, A_NEW_VERSION, L_DC_FROM_GK_REC.GK, L_DC_FROM_GK_REC.GKSEQ, L_DC_FROM_GK_REC.VALUE);
+      EXCEPTION
+      WHEN DUP_VAL_ON_INDEX THEN
+         
+         
+         NULL;
+      WHEN OTHERS THEN
+         
+         
+         IF SQLCODE=-942 THEN
+            NULL;
+         ELSE
+            RAISE;
+         END IF;
+      END;
+   END LOOP;
+   DBMS_SQL.CLOSE_CURSOR(L_DC_TO_GK_CURSOR);
+
+   
+   L_EV_SEQ_NR := -1;
+   L_EVENT_TP := 'ObjectCopied';
+   L_RESULT :=
+         UNAPIEV.INSERTEVENT('SaveDocument', UNAPIGEN.P_EVMGR_NAME, 'dc', A_DC, L_DC_REC.LC, L_DC_REC.LC_VERSION, 
+                             L_DC_REC.SS, L_EVENT_TP, 'version='||A_NEW_VERSION||'#old_version='||A_REF_VERSION, L_EV_SEQ_NR);
+   IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS  THEN
+      UNAPIGEN.P_TXN_ERROR := L_RESULT;
+      RAISE STPERROR;
+   END IF;
+   
+   
+   INSERT INTO UTDCHS (DC, VERSION, WHO, WHO_DESCRIPTION, WHAT, 
+                       WHAT_DESCRIPTION, LOGDATE, WHY, TR_SEQ, EV_SEQ)
+   VALUES (A_DC, A_NEW_VERSION, UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+           'ref_version='||A_REF_VERSION, SYSDATE, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   RETURN (UNAPIGEN.DBERR_SUCCESS);   
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+        UNAPIGEN.LOGERROR('CreateNewDocumentVersion', SQLERRM);
+   END IF;
+   IF L_DC_CURSOR%ISOPEN THEN
+      CLOSE L_DC_CURSOR;
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR,'SaveDocument'));
+END CREATENEWDOCUMENTVERSION;
+
+FUNCTION DELETEDOCUMENT
+(A_DC            IN  VARCHAR2,          
+ A_VERSION       IN  VARCHAR2,          
+ A_MODIFY_REASON IN  VARCHAR2)          
+RETURN NUMBER IS
+
+L_ALLOW_MODIFY CHAR(1);
+L_ACTIVE       CHAR(1);
+L_LC           CHAR(2);
+L_LC_VERSION   CHAR(20);
+L_SS           VARCHAR2(2);
+L_LOG_HS       CHAR(1);
+L_DC_CURSOR    INTEGER;
+
+CURSOR L_DCGK_CURSOR IS
+   SELECT DISTINCT GK
+     FROM UTDCGK
+    WHERE DC = A_DC
+      AND VERSION = A_VERSION;
+
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_DC, ' ')= ' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_VERSION, ' ')= ' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJVERSION;
+      RAISE STPERROR;
+   END IF;
+
+   L_RET_CODE := UNAPIGEN.GETAUTHORISATION('dc', A_DC, A_VERSION, L_LC, L_LC_VERSION, L_SS,
+                                           L_ALLOW_MODIFY, L_ACTIVE, L_LOG_HS);
+   IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+      UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+      RAISE STPERROR;
+   END IF;
+
+   
+   IF UNAPIGEN.ISSYSTEM21CFR11COMPLIANT = UNAPIGEN.DBERR_SUCCESS THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOTALLOWEDIN21CFR11;
+      RAISE STPERROR;
+   END IF;
+
+   DELETE FROM UTDCAU
+   WHERE DC = A_DC
+     AND VERSION = A_VERSION;
+
+   DELETE FROM UTDCHS
+   WHERE DC = A_DC
+     AND VERSION = A_VERSION;
+
+   L_DC_CURSOR := DBMS_SQL.OPEN_CURSOR;
+   FOR L_DCGK IN L_DCGK_CURSOR LOOP
+      BEGIN
+         L_SQL_STRING := ' DELETE FROM utdcgk' || L_DCGK.GK ||
+                         ' WHERE dc = ''' || REPLACE(A_DC, '''', '''''') || '''' || 
+                         ' AND version = ''' || REPLACE(A_VERSION, '''', '''''') || ''''; 
+         DBMS_SQL.PARSE(L_DC_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+         L_RESULT := DBMS_SQL.EXECUTE(L_DC_CURSOR);
+      EXCEPTION
+      WHEN OTHERS THEN
+         IF SQLCODE = -942 THEN
+            NULL; 
+         ELSE
+            RAISE;
+         END IF;
+      END;
+   END LOOP;
+   
+   DELETE FROM UTDCGK
+   WHERE DC = A_DC
+     AND VERSION = A_VERSION;
+
+   DELETE FROM UTEVTIMED
+   WHERE (OBJECT_TP='dc' AND OBJECT_ID=A_DC AND INSTR(EV_DETAILS,'version='||A_VERSION)<>0);
+
+   DELETE FROM UTEVRULESDELAYED
+   WHERE (OBJECT_TP='dc' AND OBJECT_ID=A_DC AND INSTR(EV_DETAILS,'version='||A_VERSION)<>0);
+
+   
+   DELETE FROM UTDC
+   WHERE DC = A_DC
+     AND VERSION = A_VERSION;
+   
+   L_EVENT_TP := 'ObjectDeleted';
+   L_EV_SEQ_NR := -1;
+   L_RESULT := UNAPIEV.INSERTEVENT('DeleteDocument',UNAPIGEN.P_EVMGR_NAME, 'dc', A_DC, L_LC, 
+                                   L_LC_VERSION, L_SS, L_EVENT_TP, 'version='||A_VERSION, L_EV_SEQ_NR);
+   IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+      UNAPIGEN.P_TXN_ERROR := L_RESULT;
+      RAISE STPERROR;
+   END IF;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   DBMS_SQL.CLOSE_CURSOR(L_DC_CURSOR);
+   RETURN (UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+   WHEN OTHERS THEN
+      IF SQLCODE <> 1 THEN
+        UNAPIGEN.LOGERROR('DeleteDocument', SQLERRM);
+      END IF;
+      IF DBMS_SQL.IS_OPEN (L_DC_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR (L_DC_CURSOR);
+      END IF;
+      RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR,'DeleteDocument'));
+END DELETEDOCUMENT;
+
+
+END UNAPIDC;

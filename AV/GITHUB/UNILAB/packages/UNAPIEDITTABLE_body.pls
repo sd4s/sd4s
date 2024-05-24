@@ -1,0 +1,1597 @@
+PACKAGE BODY unapiedittable AS
+
+L_SQLERRM         VARCHAR2(255);
+L_SQL_STRING      VARCHAR2(4000);
+L_WHERE_CLAUSE    VARCHAR2(1000);
+L_EVENT_TP        UTEV.EV_TP%TYPE;
+L_RET_CODE        NUMBER;
+L_RESULT          NUMBER;
+L_FETCHED_ROWS    NUMBER;
+L_EV_SEQ_NR       NUMBER;
+STPERROR          EXCEPTION;
+
+
+P_TABLE_CURSOR                 INTEGER;
+
+
+TYPE BOOLEAN_TABLE_TYPE IS TABLE OF BOOLEAN INDEX BY BINARY_INTEGER;
+P_SAVETABLE_CALLS              INTEGER;
+P_SAVETABLE_TR_SEQ             INTEGER;
+P_TBL_RECORD_HANDLE            BOOLEAN_TABLE_TYPE;
+P_TBL_RECORD_UPDATED           BOOLEAN_TABLE_TYPE;
+
+P_NEW_ROW_VALUES               UNAPIGEN.VC4000_TABLE_TYPE; 
+P_NEW_ROW_VALUES_NR_OF_ROWS    NUMBER;
+
+
+P_HS_CURSOR                    INTEGER;
+P_HS_DETAILS_CURSOR            INTEGER;
+
+CURSOR C_SYSTEM (A_SETTING_NAME VARCHAR2) IS
+   SELECT SETTING_VALUE
+   FROM UTSYSTEM
+   WHERE SETTING_NAME = A_SETTING_NAME;
+
+FUNCTION GETVERSION
+   RETURN VARCHAR2
+IS
+BEGIN
+   RETURN('06.07.00.00_00.13');
+EXCEPTION
+   WHEN OTHERS THEN
+      RETURN (NULL);
+END GETVERSION;
+
+FUNCTION GETTABLELIST
+(A_TABLE_NAME          OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_DESCRIPTION         OUT    UNAPIGEN.VC40_TABLE_TYPE,    
+ A_LOG_HS              OUT    UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_LOG_HS_DETAILS      OUT    UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_WHERE_CLAUSE        OUT    UNAPIGEN.VC511_TABLE_TYPE,   
+ A_NR_OF_ROWS          IN OUT NUMBER)                      
+RETURN NUMBER IS
+   L_TABLE_NAME        VARCHAR2(20);
+   L_DESCRIPTION       VARCHAR2(40);
+   L_LOG_HS            CHAR(1);
+   L_LOG_HS_DETAILS    CHAR(1);
+   L_WHERE_CLAUSE      VARCHAR2(511);
+   L_TBL_CURSOR        INTEGER;
+BEGIN
+   
+   IF NVL(A_NR_OF_ROWS,0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN (UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+
+   L_TBL_CURSOR := DBMS_SQL.OPEN_CURSOR;
+   
+   L_SQL_STRING := 'SELECT table_name, description, log_hs, log_hs_details, where_clause '||
+                   'FROM dd'||UNAPIGEN.P_DD||'.uvedtbl ORDER BY seq';
+   DBMS_SQL.PARSE(L_TBL_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+   DBMS_SQL.DEFINE_COLUMN     (L_TBL_CURSOR, 1, L_TABLE_NAME    ,  20);
+   DBMS_SQL.DEFINE_COLUMN     (L_TBL_CURSOR, 2, L_DESCRIPTION   ,  40);
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_TBL_CURSOR, 3, L_LOG_HS        ,   1);
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_TBL_CURSOR, 4, L_LOG_HS_DETAILS,   1);
+   DBMS_SQL.DEFINE_COLUMN     (L_TBL_CURSOR, 5, L_WHERE_CLAUSE  , 511);
+   L_RESULT := DBMS_SQL.EXECUTE(L_TBL_CURSOR);
+   L_RESULT := DBMS_SQL.FETCH_ROWS(L_TBL_CURSOR);
+   L_FETCHED_ROWS := 0;
+
+   LOOP
+      EXIT WHEN L_RESULT = 0 OR L_FETCHED_ROWS >= A_NR_OF_ROWS;
+
+      DBMS_SQL.COLUMN_VALUE     (L_TBL_CURSOR, 1, L_TABLE_NAME     );
+      DBMS_SQL.COLUMN_VALUE     (L_TBL_CURSOR, 2, L_DESCRIPTION    );
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_TBL_CURSOR, 3, L_LOG_HS         );
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_TBL_CURSOR, 4, L_LOG_HS_DETAILS );
+      DBMS_SQL.COLUMN_VALUE     (L_TBL_CURSOR, 5, L_WHERE_CLAUSE   );
+
+      L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+      A_TABLE_NAME    (L_FETCHED_ROWS) := L_TABLE_NAME;
+      A_DESCRIPTION   (L_FETCHED_ROWS) := L_DESCRIPTION;
+      A_LOG_HS        (L_FETCHED_ROWS) := L_LOG_HS;
+      A_LOG_HS_DETAILS(L_FETCHED_ROWS) := L_LOG_HS_DETAILS;
+      A_WHERE_CLAUSE  (L_FETCHED_ROWS) := L_WHERE_CLAUSE;
+
+      IF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+         L_RESULT := DBMS_SQL.FETCH_ROWS(L_TBL_CURSOR);
+      END IF;
+   END LOOP;
+   DBMS_SQL.CLOSE_CURSOR(L_TBL_CURSOR);
+
+   IF L_FETCHED_ROWS = 0 THEN
+      L_RET_CODE := UNAPIGEN.DBERR_NORECORDS;
+   ELSE
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+      L_RET_CODE := UNAPIGEN.DBERR_SUCCESS;
+   END IF;
+
+   RETURN(L_RET_CODE);
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES (UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'GetTableList', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      IF DBMS_SQL.IS_OPEN (L_TBL_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR (L_TBL_CURSOR);
+      END IF;
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END GETTABLELIST;
+
+FUNCTION SAVETABLELIST
+(A_TABLE_NAME          IN    VARCHAR2,                   
+ A_DESCRIPTION         IN    VARCHAR2,                   
+ A_LOG_HS              IN    CHAR,                       
+ A_LOG_HS_DETAILS      IN    CHAR,                       
+ A_WHERE_CLAUSE        IN    VARCHAR2)                   
+RETURN NUMBER IS
+
+L_OLD_DESCRIPTION         VARCHAR2(40);
+L_OLD_LOG_HS              CHAR(1);
+L_OLD_LOG_HS_DETAILS      CHAR(1);
+L_OLD_WHERE_CLAUSE        VARCHAR2(511);
+L_HS_DETAILS_SEQ_NR       INTEGER;
+
+
+BEGIN
+   L_SQLERRM := NULL;
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   
+   IF NVL(A_TABLE_NAME, ' ') = ' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_LOG_HS, ' ') NOT IN ('0', '1') THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_LOGHS;
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_LOG_HS_DETAILS, ' ') NOT IN ('0', '1') THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_LOGHSDETAILS;
+      RAISE STPERROR;
+   END IF;
+
+   
+   BEGIN
+      SELECT DESCRIPTION, LOG_HS, LOG_HS_DETAILS, WHERE_CLAUSE
+      INTO L_OLD_DESCRIPTION, L_OLD_LOG_HS, L_OLD_LOG_HS_DETAILS, L_OLD_WHERE_CLAUSE
+      FROM UTEDTBL
+      WHERE TABLE_NAME = A_TABLE_NAME;
+   EXCEPTION
+   WHEN NO_DATA_FOUND THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJECT;
+      RAISE STPERROR;   
+   END;
+
+   UPDATE UTEDTBL
+   SET DESCRIPTION = A_DESCRIPTION,
+       LOG_HS = A_LOG_HS,
+       LOG_HS_DETAILS = A_LOG_HS_DETAILS,
+       WHERE_CLAUSE = A_WHERE_CLAUSE
+   WHERE TABLE_NAME = A_TABLE_NAME;
+   
+   IF SQL%ROWCOUNT=0 THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJECT;
+      RAISE STPERROR;   
+   END IF;
+   
+   L_RET_CODE := UNAPIGEN.GETNEXTEVENTSEQNR(L_EV_SEQ_NR);
+   IF L_RET_CODE <> 0 THEN
+      UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(L_OLD_LOG_HS, ' ') <> A_LOG_HS THEN
+      IF A_LOG_HS = '1' THEN
+         INSERT INTO UTEDTBLHS (TABLE_NAME, WHO, WHO_DESCRIPTION, WHAT, 
+                                WHAT_DESCRIPTION, LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+         VALUES (A_TABLE_NAME, UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, 'History switched ON', 
+                 'Audit trail is turned on.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '', UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+      ELSE
+         INSERT INTO UTEDTBLHS (TABLE_NAME, WHO, WHO_DESCRIPTION, WHAT, 
+                               WHAT_DESCRIPTION, LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+         VALUES (A_TABLE_NAME, UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, 'History switched OFF', 
+                 'Audit trail is turned off.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '', UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+      END IF;
+   END IF;
+
+   
+   
+   
+   L_HS_DETAILS_SEQ_NR := 0;
+   IF NVL(L_OLD_LOG_HS_DETAILS, ' ') <> A_LOG_HS_DETAILS THEN
+      IF A_LOG_HS_DETAILS = '1' THEN
+         L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+         INSERT INTO UTEDTBLHSDETAILS(TABLE_NAME, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+         VALUES(A_TABLE_NAME, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR, 
+                'Detailed Audit trail is turned on.');
+      ELSE
+         L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+         INSERT INTO UTEDTBLHSDETAILS(TABLE_NAME, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+         VALUES(A_TABLE_NAME, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR, 
+                'Detailed Audit trail is turned off.');
+      END IF;
+   END IF;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   RETURN (UNAPIGEN.DBERR_SUCCESS);
+EXCEPTION
+   WHEN OTHERS THEN
+      IF SQLCODE <> 1 THEN
+         UNAPIGEN.LOGERROR('SaveTableList', SQLERRM);
+      ELSIF L_SQLERRM IS NOT NULL THEN
+         UNAPIGEN.LOGERROR('SaveTableList',L_SQLERRM);   
+      END IF;
+      RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR,'SaveTableList'));
+END SAVETABLELIST;
+
+FUNCTION GETTABLEDESCRIPTION
+(A_COLUMN_NAME         OUT     UNAPIGEN.VC40_TABLE_TYPE,   
+ A_NULLABLE            OUT     UNAPIGEN.CHAR1_TABLE_TYPE,  
+ A_DATA_TYPE           OUT     UNAPIGEN.VC40_TABLE_TYPE,   
+ A_DATA_LENGTH         OUT     UNAPIGEN.NUM_TABLE_TYPE,    
+ A_DATA_PRECISION      OUT     UNAPIGEN.NUM_TABLE_TYPE,    
+ A_DATA_SCALE          OUT     UNAPIGEN.NUM_TABLE_TYPE,    
+ A_CHAR_LENGTH         OUT     UNAPIGEN.NUM_TABLE_TYPE,    
+ A_ISPARTOFPRIMARYKEY  OUT     UNAPIGEN.CHAR1_TABLE_TYPE,  
+ A_NR_OF_ROWS          IN OUT  NUMBER,                     
+ A_TABLE_NAME          IN      VARCHAR2,                   
+ A_ORDER_BY_CLAUSE     IN      VARCHAR2)                   
+RETURN NUMBER IS
+   L_COLUMN_NAME           VARCHAR2(40);
+   L_NULLABLE              CHAR(1);
+   L_DATA_TYPE             VARCHAR2(40);
+   L_DATA_LENGTH           NUMBER;
+   L_DATA_PRECISION        NUMBER;
+   L_DATA_SCALE            NUMBER;
+   L_CHAR_LENGTH           NUMBER;
+   L_ORDER_BY_CLAUSE       VARCHAR2(255);
+   L_TBL_CURSOR            INTEGER;
+   L_DBA_NAME              VARCHAR2(20);
+   L_CHECK_CHAR_LENGTH     CHAR(1);
+BEGIN
+   
+   IF NVL(A_NR_OF_ROWS,0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN (UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+
+   IF NVL(A_TABLE_NAME, ' ') = ' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   
+   OPEN C_SYSTEM('DBA_NAME');
+   FETCH C_SYSTEM INTO L_DBA_NAME;
+   IF C_SYSTEM%NOTFOUND THEN
+      CLOSE C_SYSTEM;
+      RETURN (UNAPIGEN.DBERR_SYSDEFAULTS);
+   END IF;
+   CLOSE C_SYSTEM;
+
+   L_TBL_CURSOR := DBMS_SQL.OPEN_CURSOR;
+   
+   
+   IF NVL(A_ORDER_BY_CLAUSE, ' ') = ' ' THEN
+      L_ORDER_BY_CLAUSE := 'ORDER BY column_id'; 
+   ELSE
+      L_ORDER_BY_CLAUSE := A_ORDER_BY_CLAUSE; 
+   END IF;
+
+   
+   
+   L_SQL_STRING := 'SELECT column_name, nullable, data_type, data_length, data_precision, data_scale, char_length '||
+                   'FROM user_tab_columns WHERE table_name = '''||UPPER(A_TABLE_NAME)||''' '||L_ORDER_BY_CLAUSE;
+   BEGIN
+      SELECT 'X'
+      INTO L_CHECK_CHAR_LENGTH
+      FROM ALL_TAB_COLUMNS   
+      WHERE TABLE_NAME = 'USER_TAB_COLUMNS'
+      AND COLUMN_NAME ='CHAR_LENGTH';
+   EXCEPTION
+   WHEN NO_DATA_FOUND THEN
+      L_SQL_STRING := 'SELECT column_name, nullable, data_type, data_length, data_precision, data_scale, data_length '||
+                      'FROM user_tab_columns WHERE table_name = '''||UPPER(A_TABLE_NAME)||''' '||L_ORDER_BY_CLAUSE;
+      
+   END;
+            
+   
+   DBMS_SQL.PARSE(L_TBL_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+   DBMS_SQL.DEFINE_COLUMN     (L_TBL_CURSOR, 1, L_COLUMN_NAME   , 40);
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_TBL_CURSOR, 2, L_NULLABLE      ,  1);
+   DBMS_SQL.DEFINE_COLUMN     (L_TBL_CURSOR, 3, L_DATA_TYPE     , 40);
+   DBMS_SQL.DEFINE_COLUMN     (L_TBL_CURSOR, 4, L_DATA_LENGTH       );
+   DBMS_SQL.DEFINE_COLUMN     (L_TBL_CURSOR, 5, L_DATA_PRECISION    );
+   DBMS_SQL.DEFINE_COLUMN     (L_TBL_CURSOR, 6, L_DATA_SCALE        );
+   DBMS_SQL.DEFINE_COLUMN     (L_TBL_CURSOR, 7, L_CHAR_LENGTH       );
+   L_RESULT := DBMS_SQL.EXECUTE(L_TBL_CURSOR);
+   L_RESULT := DBMS_SQL.FETCH_ROWS(L_TBL_CURSOR);
+   L_FETCHED_ROWS := 0;
+   LOOP
+      EXIT WHEN L_RESULT = 0 OR L_FETCHED_ROWS >= A_NR_OF_ROWS;
+
+      DBMS_SQL.COLUMN_VALUE     (L_TBL_CURSOR, 1, L_COLUMN_NAME   );
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_TBL_CURSOR, 2, L_NULLABLE      );
+      DBMS_SQL.COLUMN_VALUE     (L_TBL_CURSOR, 3, L_DATA_TYPE     );
+      DBMS_SQL.COLUMN_VALUE     (L_TBL_CURSOR, 4, L_DATA_LENGTH   );
+      DBMS_SQL.COLUMN_VALUE     (L_TBL_CURSOR, 5, L_DATA_PRECISION);
+      DBMS_SQL.COLUMN_VALUE     (L_TBL_CURSOR, 6, L_DATA_SCALE    );
+      DBMS_SQL.COLUMN_VALUE     (L_TBL_CURSOR, 7, L_CHAR_LENGTH   );
+
+      L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+      A_COLUMN_NAME(L_FETCHED_ROWS)        := L_COLUMN_NAME;
+      A_NULLABLE(L_FETCHED_ROWS)           := L_NULLABLE;
+      A_DATA_TYPE(L_FETCHED_ROWS)          := L_DATA_TYPE;
+      A_DATA_LENGTH(L_FETCHED_ROWS)        := L_DATA_LENGTH;
+      A_DATA_PRECISION(L_FETCHED_ROWS)     := L_DATA_PRECISION;
+      A_DATA_SCALE(L_FETCHED_ROWS)         := L_DATA_SCALE;
+      A_CHAR_LENGTH(L_FETCHED_ROWS)        := L_CHAR_LENGTH;
+      
+      A_ISPARTOFPRIMARYKEY(L_FETCHED_ROWS) := '0';
+      
+      
+      IF L_DATA_TYPE = 'RAW' THEN
+         A_DATA_LENGTH(L_FETCHED_ROWS)        := L_DATA_LENGTH*2;
+         A_CHAR_LENGTH(L_FETCHED_ROWS)        := L_CHAR_LENGTH*2;
+      END IF;
+
+      IF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+         L_RESULT := DBMS_SQL.FETCH_ROWS(L_TBL_CURSOR);
+      END IF;
+   END LOOP;
+
+   IF L_FETCHED_ROWS = 0 THEN
+      L_RET_CODE := UNAPIGEN.DBERR_NORECORDS;
+   ELSE
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+      L_RET_CODE := UNAPIGEN.DBERR_SUCCESS;
+   END IF;
+
+   
+   L_SQL_STRING := 'SELECT b.column_name FROM user_cons_columns b, user_constraints a '||
+                   'WHERE a.table_name = b.table_name '||
+                   'AND a.constraint_name = b.constraint_name '||
+                   'AND a.owner = b.owner '||
+                   'AND a.constraint_type = ''P'' '||
+                   'AND a.table_name = '''||UPPER(A_TABLE_NAME)||
+                   ''' AND a.owner = '''||L_DBA_NAME||''' ORDER BY b.position';
+   DBMS_SQL.PARSE(L_TBL_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+   DBMS_SQL.DEFINE_COLUMN(L_TBL_CURSOR, 1, L_COLUMN_NAME, 40);
+   L_RESULT := DBMS_SQL.EXECUTE(L_TBL_CURSOR);
+   L_RESULT := DBMS_SQL.FETCH_ROWS(L_TBL_CURSOR);
+   LOOP
+      EXIT WHEN L_RESULT = 0;
+
+      DBMS_SQL.COLUMN_VALUE(L_TBL_CURSOR, 1, L_COLUMN_NAME);
+
+      
+      FOR I IN 1..A_NR_OF_ROWS LOOP
+         IF A_COLUMN_NAME(I) = L_COLUMN_NAME THEN
+            A_ISPARTOFPRIMARYKEY(I) := '1';
+         END IF;
+      END LOOP;
+
+      L_RESULT := DBMS_SQL.FETCH_ROWS(L_TBL_CURSOR);
+   END LOOP;
+
+   DBMS_SQL.CLOSE_CURSOR(L_TBL_CURSOR);
+
+   RETURN(L_RET_CODE);
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES (UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'GetTableDescription', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      IF C_SYSTEM%ISOPEN THEN
+         CLOSE C_SYSTEM;
+      END IF;
+      IF DBMS_SQL.IS_OPEN (L_TBL_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR (L_TBL_CURSOR);
+      END IF;
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END GETTABLEDESCRIPTION;
+
+FUNCTION GETTABLEDATA
+(A_ROW_VALUES          OUT     UNAPIGEN.VC4000_TABLE_TYPE, 
+ A_NR_OF_ROWS          IN OUT  NUMBER,                     
+ A_TABLE_NAME          IN      VARCHAR2,                   
+ A_WHERE_CLAUSE        IN      VARCHAR2,                   
+ A_NEXT_ROWS           IN      NUMBER)                     
+RETURN NUMBER IS
+   L_ROW_VALUES                  VARCHAR2(4000);
+   L_PK                          VARCHAR2(4000);
+   L_ALL_COLS                    VARCHAR2(4000);
+   
+   
+   L_NR_OF_ROWS                  NUMBER;
+   L_ORDER_BY_CLAUSE             VARCHAR2(255);
+   L_COLUMN_NAME                 UNAPIGEN.VC40_TABLE_TYPE;
+   L_NULLABLE                    UNAPIGEN.CHAR1_TABLE_TYPE;
+   L_DATA_TYPE                   UNAPIGEN.VC40_TABLE_TYPE;
+   L_DATA_LENGTH                 UNAPIGEN.NUM_TABLE_TYPE;
+   L_DATA_PRECISION              UNAPIGEN.NUM_TABLE_TYPE;
+   L_DATA_SCALE                  UNAPIGEN.NUM_TABLE_TYPE;
+   L_CHAR_LENGTH                 UNAPIGEN.NUM_TABLE_TYPE;
+   L_ISPARTOFPRIMARYKEY          UNAPIGEN.CHAR1_TABLE_TYPE;
+BEGIN
+   
+   IF NVL(A_NR_OF_ROWS,0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN (UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+   
+   IF NVL(A_TABLE_NAME, ' ') = ' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_NEXT_ROWS, 0) NOT IN (-1, 0, 1) THEN
+      RETURN(UNAPIGEN.DBERR_NEXTROWS);
+   END IF;
+
+   
+   L_NR_OF_ROWS      := 1000;
+   L_ORDER_BY_CLAUSE := NULL;
+   L_RET_CODE := UNAPIEDITTABLE.GETTABLEDESCRIPTION
+                   (L_COLUMN_NAME,
+                    L_NULLABLE,
+                    L_DATA_TYPE,
+                    L_DATA_LENGTH,
+                    L_DATA_PRECISION,
+                    L_DATA_SCALE,
+                    L_CHAR_LENGTH,
+                    L_ISPARTOFPRIMARYKEY,
+                    L_NR_OF_ROWS,
+                    A_TABLE_NAME,
+                    L_ORDER_BY_CLAUSE);
+   IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+      RETURN(L_RET_CODE);
+   END IF;
+   
+   FOR I IN 1..L_NR_OF_ROWS LOOP
+      IF L_ISPARTOFPRIMARYKEY(I) = '1' THEN
+         L_PK := L_PK||L_COLUMN_NAME(I)||', ';
+      END IF;
+      
+      IF L_DATA_TYPE(I) = 'RAW' THEN
+         L_ALL_COLS := L_ALL_COLS||'TO_CHAR(RAWTOHEX('||L_COLUMN_NAME(I)||')) || CHR(9) ||';
+      
+      ELSIF L_DATA_TYPE(I) = 'VARCHAR2' THEN
+         L_ALL_COLS := L_ALL_COLS||'replace('||L_COLUMN_NAME(I)||', CHR(9), ''[:tab:]'') || CHR(9) ||';
+      ELSE
+         L_ALL_COLS := L_ALL_COLS||L_COLUMN_NAME(I)|| ' || CHR(9) ||';
+      END IF;
+   END LOOP;
+   
+   IF L_PK IS NOT NULL THEN
+      L_PK := SUBSTR(L_PK, 1, LENGTH(L_PK)-2);
+   END IF;
+   
+   L_ALL_COLS := SUBSTR(L_ALL_COLS, 1, LENGTH(L_ALL_COLS)-13);
+   
+   
+   IF L_PK IS NULL THEN
+         FOR I IN 1..L_NR_OF_ROWS LOOP
+               L_PK := L_PK||L_COLUMN_NAME(I)||', ';
+      END LOOP;
+      L_PK := SUBSTR(L_PK, 1, LENGTH(L_PK)-2);
+   END IF;
+   
+   
+   IF A_NEXT_ROWS = -1 THEN
+      IF P_TABLE_CURSOR IS NOT NULL THEN
+         DBMS_SQL.CLOSE_CURSOR(P_TABLE_CURSOR);
+         P_TABLE_CURSOR := NULL;
+      END IF;
+      RETURN (UNAPIGEN.DBERR_SUCCESS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = 1 THEN
+      IF P_TABLE_CURSOR IS NULL THEN
+         RETURN(UNAPIGEN.DBERR_NOCURSOR);
+      END IF;
+   END IF;
+
+   
+   IF NVL(A_NEXT_ROWS,0) = 0 THEN
+      IF P_TABLE_CURSOR IS NULL THEN
+         P_TABLE_CURSOR := DBMS_SQL.OPEN_CURSOR;
+      END IF;
+
+      IF NVL(A_WHERE_CLAUSE,' ') = ' ' THEN
+         
+         L_WHERE_CLAUSE := 'ORDER BY '||L_PK;
+      ELSE
+         L_WHERE_CLAUSE := A_WHERE_CLAUSE; 
+      END IF;
+
+      
+      
+      
+      L_SQL_STRING := 'SELECT '||L_ALL_COLS||' FROM '||A_TABLE_NAME||' '||L_WHERE_CLAUSE;
+ 
+      DBMS_SQL.PARSE(P_TABLE_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+      DBMS_SQL.DEFINE_COLUMN(P_TABLE_CURSOR, 1, L_ROW_VALUES, 1000);
+      L_RESULT := DBMS_SQL.EXECUTE(P_TABLE_CURSOR);
+   END IF;
+
+   L_RESULT := DBMS_SQL.FETCH_ROWS(P_TABLE_CURSOR);
+   L_FETCHED_ROWS := 0;
+
+   LOOP
+      EXIT WHEN L_RESULT = 0 OR L_FETCHED_ROWS >= A_NR_OF_ROWS;
+
+      DBMS_SQL.COLUMN_VALUE(P_TABLE_CURSOR, 1, L_ROW_VALUES);
+
+      L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+      A_ROW_VALUES(L_FETCHED_ROWS) := L_ROW_VALUES;
+
+      IF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+         L_RESULT := DBMS_SQL.FETCH_ROWS(P_TABLE_CURSOR);
+      END IF;
+   END LOOP;
+
+   IF L_FETCHED_ROWS = 0 THEN
+       DBMS_SQL.CLOSE_CURSOR(P_TABLE_CURSOR);
+       P_TABLE_CURSOR := NULL;
+       RETURN(UNAPIGEN.DBERR_NORECORDS);
+   ELSIF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+      DBMS_SQL.CLOSE_CURSOR(P_TABLE_CURSOR);
+      P_TABLE_CURSOR := NULL;
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES (UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'GetTableData', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      IF DBMS_SQL.IS_OPEN(P_TABLE_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR(P_TABLE_CURSOR);
+      END IF;
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END GETTABLEDATA;
+
+FUNCTION SAVETABLEDATA
+(A_ROW_VALUES          IN      UNAPIGEN.VC4000_TABLE_TYPE, 
+ A_NR_OF_ROWS          IN      NUMBER,                     
+ A_TABLE_NAME          IN      VARCHAR2,                   
+ A_WHERE_CLAUSE        IN      VARCHAR2,                   
+ A_NEXT_ROWS           IN      NUMBER,                     
+ A_MODIFY_REASON       IN      VARCHAR2)                   
+RETURN NUMBER IS
+   
+   L_LOG_HS                              CHAR(1);
+   L_LOG_HS_DETAILS                      CHAR(1);
+   L_HS_DETAILS_SEQ_NR                   INTEGER;
+   
+   L_TBL_RECORD_FOUND                    BOOLEAN;
+   
+   L_PK                                  VARCHAR2(4000);
+   L_PK_NR_OF_COLS                       NUMBER;
+   L_PK_IDENTICAL                        BOOLEAN;
+   
+   L_NOT_PK                              VARCHAR2(4000);
+   L_NOT_PK_NR_OF_COLS                   NUMBER;
+   
+   L_ALL_COLS                            VARCHAR2(4000);
+
+   L_OBJECT_KEY                          VARCHAR2(4000);
+
+   
+   L_WHERE_CLAUSE                        VARCHAR2(4000);
+   L_SELECT_CLAUSE                       VARCHAR2(4000);
+   L_NOT_EXISTS_CLAUSE                   VARCHAR2(4000);
+   L_COLUMN_NAME                         VARCHAR2(40);
+   L_OLD_VALUE                           VARCHAR2(4000);
+   L_NEW_VALUE                           VARCHAR2(4000);
+   L_NBR_OF_CHANGED_COLUMNS              NUMBER;
+
+   L_OLD_ROW_VALUE                       VARCHAR2(4000);
+   L_NEW_ROW_VALUE                       VARCHAR2(4000);
+   
+   L_TBL_CURSOR                          INTEGER;
+   
+   
+   L_OLD_ROW_VALUES                      UNAPIGEN.VC4000_TABLE_TYPE; 
+   L_OLD_ROW_VALUES_NR_OF_ROWS           NUMBER;
+   
+   L_DYN_CURSOR                          INTEGER;
+   
+   L_INSERTED                            NUMBER;
+   
+   
+   L_GETDESC_NR_OF_ROWS                  NUMBER;
+   L_GETDESC_ORDER_BY_CLAUSE             VARCHAR2(255);
+   L_GETDESC_COLUMN_NAME                 UNAPIGEN.VC40_TABLE_TYPE;
+   L_GETDESC_NULLABLE                    UNAPIGEN.CHAR1_TABLE_TYPE;
+   L_GETDESC_DATA_TYPE                   UNAPIGEN.VC40_TABLE_TYPE;
+   L_GETDESC_DATA_LENGTH                 UNAPIGEN.NUM_TABLE_TYPE;
+   L_GETDESC_DATA_PRECISION              UNAPIGEN.NUM_TABLE_TYPE;
+   L_GETDESC_DATA_SCALE                  UNAPIGEN.NUM_TABLE_TYPE;
+   L_GETDESC_CHAR_LENGTH                 UNAPIGEN.NUM_TABLE_TYPE;
+   L_GETDESC_ISPARTOFPRIMARYKEY          UNAPIGEN.CHAR1_TABLE_TYPE;
+
+   
+   L_GET_NR_OF_ROWS                      NUMBER;
+   L_GET_NEXT_ROWS                       NUMBER;
+   L_GET_ROW_VALUES                      UNAPIGEN.VC4000_TABLE_TYPE;
+  
+   L_MERGE                    BOOLEAN;
+   L_ONLY_NEW                    BOOLEAN;
+ 
+   
+   CURSOR L_TBL_HS_CURSOR IS
+      SELECT LOG_HS, LOG_HS_DETAILS
+      FROM UTEDTBL
+      WHERE LOWER(TABLE_NAME) = LOWER(A_TABLE_NAME);
+
+   
+   CURSOR L_UTEDTBLTMP_CURSOR (A_MODIFY_FLAG  VARCHAR2) IS
+      SELECT *
+      FROM UTEDTBLTMP
+      WHERE MODIFY_FLAG = A_MODIFY_FLAG;
+      
+   
+   CURSOR L_TEMP_OLDROW_CURSOR  (A_OBJECT_KEY VARCHAR2) IS
+      SELECT ROW_VALUES
+      FROM UTEDTBLTMP
+      WHERE OBJECT_TP = 'OLD'
+      AND OBJECT_KEY = A_OBJECT_KEY;
+      
+  L_REC_UTEDTBLTMP   L_TEMP_OLDROW_CURSOR%ROWTYPE;  
+
+   
+   FUNCTION GETSUBSTRING
+   (A_STR          IN VARCHAR2,        
+    A_NR           IN NUMBER)          
+   RETURN VARCHAR2 IS
+      L_STARTPOS   NUMBER;
+      L_ENDPOS     NUMBER;
+   BEGIN
+      
+      IF A_NR = 1 THEN
+         L_STARTPOS := 1;
+      ELSE
+         L_STARTPOS := INSTR(A_STR, CHR(9), 1, A_NR-1) + 1;
+      END IF;
+      
+      L_ENDPOS := INSTR(A_STR, CHR(9), 1, A_NR) - 1;
+      
+      
+      IF L_ENDPOS = -1 THEN
+         L_ENDPOS := LENGTH(A_STR);
+      END IF;
+      
+      RETURN(SUBSTR(A_STR, L_STARTPOS, L_ENDPOS-L_STARTPOS+1));
+   END GETSUBSTRING;
+
+   
+   FUNCTION GETVALUE
+   (A_COL_STR      IN VARCHAR2,        
+    A_VALUES_STR   IN VARCHAR2,        
+    A_COLUMN_NAME  IN VARCHAR2)        
+   RETURN VARCHAR2 IS
+      L_NR            NUMBER;
+      L_COLUMN_NAME   VARCHAR2(40);
+   BEGIN
+      
+      L_NR := 0;
+      L_COLUMN_NAME := ' ';
+      LOOP
+         EXIT WHEN A_COLUMN_NAME = L_COLUMN_NAME;
+         L_NR := L_NR + 1;
+         L_COLUMN_NAME := GETSUBSTRING(A_COL_STR, L_NR);
+      END LOOP;
+      
+      RETURN (REPLACE(GETSUBSTRING(A_VALUES_STR, L_NR), '[:tab:]', CHR(9)));
+   END GETVALUE;
+   
+   
+   PROCEDURE SAVEPREAMBLESHORTCUT
+   (A_TABLE_NAME   IN VARCHAR2,        
+    A_COL_STR      IN VARCHAR2,        
+    A_VALUES_STR   IN VARCHAR2)        
+   IS
+      L_PREAMBLE         VARCHAR2(255);
+      L_SHORTCUT         RAW(8);
+   BEGIN
+      
+      IF LOWER(A_TABLE_NAME) = 'utsystem' AND
+         GETVALUE(A_COL_STR,A_VALUES_STR,'SETTING_NAME') = 'PREAMBLE' THEN
+         
+         L_PREAMBLE := GETVALUE(A_COL_STR, A_VALUES_STR, 'SETTING_VALUE');
+         IF SUBSTR(L_PREAMBLE, 1, 1) = '=' THEN
+            L_SQL_STRING := 'BEGIN :l_preamble:'||L_PREAMBLE ||'; END;';
+            L_DYN_CURSOR := DBMS_SQL.OPEN_CURSOR;
+            DBMS_SQL.PARSE(L_DYN_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':l_preamble', L_PREAMBLE);
+            L_RESULT := DBMS_SQL.EXECUTE(L_DYN_CURSOR);
+            DBMS_SQL.VARIABLE_VALUE(L_DYN_CURSOR, ':l_preamble', L_PREAMBLE);
+            DBMS_SQL.CLOSE_CURSOR(L_DYN_CURSOR);
+         END IF;
+         
+         L_SHORTCUT := UTL_RAW.CAST_TO_RAW(SUBSTR(L_PREAMBLE,1,8));
+         
+         DELETE FROM UTSHORTCUT
+         WHERE KEY_TP = 'bc';
+         INSERT INTO UTSHORTCUT(KEY_TP, SHORTCUT)
+         VALUES('bc', L_SHORTCUT);
+      END IF;
+   END SAVEPREAMBLESHORTCUT;
+   
+   
+   PROCEDURE ADDCOLUMN
+   (A_CLAUSE_TYPE      IN     VARCHAR2,    
+    A_CLAUSE           IN OUT VARCHAR2,    
+    A_COLUMN_NAME      IN     VARCHAR2,    
+    A_VALUE            IN     VARCHAR2)    
+   IS
+      L_COLUMN_NAME    VARCHAR2(50);
+      L_COMPARATOR     VARCHAR2(5);
+      L_SEPARATOR      VARCHAR2(5);
+      L_DATE_FORMAT    VARCHAR2(255);
+   BEGIN
+      
+      IF A_CLAUSE_TYPE = 'WHERE' THEN
+         L_COLUMN_NAME := A_COLUMN_NAME;
+         IF A_VALUE IS NULL THEN
+            L_COMPARATOR  := ' IS ';
+         ELSE 
+            L_COMPARATOR  := '=';
+         END IF;
+         L_SEPARATOR   := ' AND ';
+      ELSIF A_CLAUSE_TYPE = 'SET' THEN
+         L_COLUMN_NAME := A_COLUMN_NAME;
+         L_COMPARATOR  := '=';
+         L_SEPARATOR   := ',';
+      ELSIF A_CLAUSE_TYPE = 'SELECT' THEN
+         L_COLUMN_NAME := NULL;
+         L_COMPARATOR  := NULL;
+         L_SEPARATOR   := ',';
+      END IF;
+      
+      
+      IF A_VALUE IS NULL THEN
+         A_CLAUSE := A_CLAUSE||L_COLUMN_NAME||L_COMPARATOR||'NULL'||L_SEPARATOR; 
+      ELSE
+         
+         
+         FOR J IN 1..L_GETDESC_NR_OF_ROWS LOOP
+            
+            IF A_COLUMN_NAME = L_GETDESC_COLUMN_NAME(J) THEN
+               
+               IF L_GETDESC_DATA_TYPE(J) = 'RAW' THEN
+                  A_CLAUSE := A_CLAUSE||L_COLUMN_NAME||L_COMPARATOR||
+                              'HEXTORAW('''||REPLACE(A_VALUE,'''','''''')||''')'||
+                              L_SEPARATOR; 
+               
+               ELSE
+                  A_CLAUSE := A_CLAUSE||L_COLUMN_NAME||L_COMPARATOR||''''||REPLACE(A_VALUE,'''','''''')||
+                              ''''||L_SEPARATOR; 
+               END IF;
+            END IF;
+         END LOOP;
+      END IF;
+   END ADDCOLUMN;
+BEGIN
+   L_SQLERRM := NULL;
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   
+   IF NVL(A_TABLE_NAME, ' ') = ' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   
+   IF NVL(A_NEXT_ROWS, 0) = 0 THEN
+      IF NVL(P_SAVETABLE_CALLS, 0) <> 0 THEN
+         L_SQLERRM := 'SaveTableData termination call never called for previous method sheet ! (a_next_rows=-1) a_next_rows='||
+                      TO_CHAR(A_NEXT_ROWS);
+         RAISE STPERROR;
+      END IF;
+      P_SAVETABLE_CALLS := 1;
+   
+   ELSIF NVL(A_NEXT_ROWS, 0) = -1 THEN
+      P_SAVETABLE_CALLS := NVL(P_SAVETABLE_CALLS, 0) + 1;      
+   
+   ELSIF NVL(A_NEXT_ROWS, 0) = 1 THEN
+      IF NVL(P_SAVETABLE_CALLS, 0) = 0 THEN   
+         L_SQLERRM := 'SaveTableData startup call never called ! (a_next_rows=0)';
+         RAISE STPERROR;   
+      END IF;
+      IF NVL(UNAPIGEN.P_TXN_LEVEL, 0) <= 1 THEN   
+         L_SQLERRM := 'SaveTableData called with a_next_rows=1 in a non MST transaction !';
+         RAISE STPERROR;   
+      END IF;
+      P_SAVETABLE_CALLS := NVL(P_SAVETABLE_CALLS, 0) + 1;      
+   ELSE
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NEXTROWS;
+      RAISE STPERROR;
+   END IF;         
+   
+   IF P_SAVETABLE_CALLS = 1 THEN
+      P_SAVETABLE_TR_SEQ := UNAPIGEN.P_TR_SEQ;
+   
+   ELSE
+      IF UNAPIGEN.P_TR_SEQ <> P_SAVETABLE_TR_SEQ THEN
+         L_SQLERRM := 'Successive calls of SaveTableData not in the same transaction !';
+         RAISE STPERROR;   
+      END IF;
+   END IF;
+   
+   
+   
+   
+   
+   
+   
+   FOR I IN 1..A_NR_OF_ROWS LOOP
+      
+      IF NVL(A_ROW_VALUES(I), ' ') = ' ' THEN
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+         RAISE STPERROR;
+      END IF;
+
+      
+      P_NEW_ROW_VALUES_NR_OF_ROWS := P_NEW_ROW_VALUES_NR_OF_ROWS + 1;
+      P_NEW_ROW_VALUES(P_NEW_ROW_VALUES_NR_OF_ROWS) := A_ROW_VALUES(I);
+      
+      
+      P_TBL_RECORD_HANDLE(P_NEW_ROW_VALUES_NR_OF_ROWS)  := TRUE;
+      P_TBL_RECORD_UPDATED(P_NEW_ROW_VALUES_NR_OF_ROWS) := FALSE;
+   END LOOP;
+   
+   
+   
+   
+   
+   
+   IF NVL(A_NEXT_ROWS, 0) = -1 THEN 
+      
+      DELETE FROM UTEDTBLTMP;
+      
+      
+      L_GETDESC_NR_OF_ROWS      := 1000;
+      L_GETDESC_ORDER_BY_CLAUSE := NULL;
+      L_RET_CODE := UNAPIEDITTABLE.GETTABLEDESCRIPTION(L_GETDESC_COLUMN_NAME,
+                                                       L_GETDESC_NULLABLE,
+                                                       L_GETDESC_DATA_TYPE,
+                                                       L_GETDESC_DATA_LENGTH,
+                                                       L_GETDESC_DATA_PRECISION,
+                                                       L_GETDESC_DATA_SCALE,
+                                                       L_GETDESC_CHAR_LENGTH,
+                                                       L_GETDESC_ISPARTOFPRIMARYKEY,
+                                                       L_GETDESC_NR_OF_ROWS,
+                                                       A_TABLE_NAME,
+                                                       L_GETDESC_ORDER_BY_CLAUSE);
+      IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+         RAISE STPERROR;
+      END IF;
+      
+      
+      L_PK_NR_OF_COLS := 0;
+      L_NOT_PK_NR_OF_COLS := 0;
+      FOR I IN 1..L_GETDESC_NR_OF_ROWS LOOP
+         IF L_GETDESC_ISPARTOFPRIMARYKEY(I) = '1' THEN
+            L_PK := L_PK ||L_GETDESC_COLUMN_NAME(I)||CHR(9);
+            L_PK_NR_OF_COLS := L_PK_NR_OF_COLS + 1;
+         ELSE
+            L_NOT_PK := L_NOT_PK ||L_GETDESC_COLUMN_NAME(I)||CHR(9);
+            L_NOT_PK_NR_OF_COLS := L_NOT_PK_NR_OF_COLS + 1;
+         END IF;
+         L_ALL_COLS := L_ALL_COLS||L_GETDESC_COLUMN_NAME(I)||CHR(9);
+      END LOOP;
+      
+      IF L_PK IS NOT NULL THEN
+         L_PK := SUBSTR(L_PK, 1, LENGTH(L_PK)-1);
+      END IF;
+      IF L_NOT_PK IS NOT NULL THEN
+         L_NOT_PK := SUBSTR(L_NOT_PK, 1, LENGTH(L_NOT_PK)-1);
+      END IF;
+      L_ALL_COLS := SUBSTR(L_ALL_COLS, 1, LENGTH(L_ALL_COLS)-1);
+      
+      
+      IF L_PK IS NULL THEN
+         L_PK := L_ALL_COLS;
+         L_PK_NR_OF_COLS := L_GETDESC_NR_OF_ROWS;
+         L_NOT_PK := NULL;
+         L_NOT_PK_NR_OF_COLS := 0;
+      END IF;
+
+      
+      L_EV_SEQ_NR := -1;
+      L_EVENT_TP := 'TableUpdated';
+      L_RESULT := UNAPIEV.INSERTEVENT('SaveTableData', UNAPIGEN.P_EVMGR_NAME,
+                                      'tbl', A_TABLE_NAME, '', '', '', L_EVENT_TP, '', L_EV_SEQ_NR);
+      IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+         UNAPIGEN.P_TXN_ERROR := L_RESULT;
+         RAISE STPERROR;
+      END IF;
+      
+      
+      
+      FOR L_TBL_HS_REC IN L_TBL_HS_CURSOR LOOP
+         L_LOG_HS         := L_TBL_HS_REC.LOG_HS;
+         L_LOG_HS_DETAILS := L_TBL_HS_REC.LOG_HS_DETAILS;
+      END LOOP;
+      L_HS_DETAILS_SEQ_NR := 0;
+      
+      IF UPPER(A_WHERE_CLAUSE) = 'MERGE' THEN
+         L_MERGE := TRUE;
+         L_ONLY_NEW := FALSE;
+         L_WHERE_CLAUSE := 'where 1=1';
+      ELSIF UPPER(A_WHERE_CLAUSE) = 'ONLY_NEW' THEN
+         L_MERGE := TRUE;
+         L_ONLY_NEW := TRUE;
+         L_WHERE_CLAUSE := 'where 1=1';
+      ELSE
+         L_MERGE := FALSE;
+         L_ONLY_NEW := FALSE;
+         L_WHERE_CLAUSE := A_WHERE_CLAUSE;
+      END IF;
+
+      
+      
+      L_RET_CODE                       := UNAPIGEN.DBERR_SUCCESS;
+      L_OLD_ROW_VALUES_NR_OF_ROWS      := 0;
+      
+      L_GET_NR_OF_ROWS                 := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+      L_GET_NEXT_ROWS                  := 0;
+      LOOP
+         EXIT WHEN L_GET_NR_OF_ROWS < UNAPIGEN.P_DEFAULT_CHUNK_SIZE OR L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS;
+         L_RET_CODE := UNAPIEDITTABLE.GETTABLEDATA(L_GET_ROW_VALUES,
+                                                   L_GET_NR_OF_ROWS,
+                                                   A_TABLE_NAME,
+                                                   L_WHERE_CLAUSE,
+                                                   L_GET_NEXT_ROWS);
+         IF L_RET_CODE IN (UNAPIGEN.DBERR_NOCURSOR,UNAPIGEN.DBERR_NORECORDS) THEN
+            
+            L_GET_NR_OF_ROWS := 0;
+         ELSIF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+            UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+            RAISE STPERROR;
+         END IF;
+         
+         
+         FOR I IN 1..L_GET_NR_OF_ROWS LOOP
+            L_OBJECT_KEY := '';           
+            FOR J IN 1..L_PK_NR_OF_COLS LOOP
+               L_OBJECT_KEY := L_OBJECT_KEY || NVL(GETVALUE(L_ALL_COLS,L_GET_ROW_VALUES(I) , GETSUBSTRING(L_PK,J)), '') || '|';
+            END LOOP;
+            INSERT INTO UTEDTBLTMP(OBJECT_TP, OBJECT_PK, OBJECT_KEY, ROW_VALUES, MODIFY_FLAG) VALUES ('OLD', SUBSTR(L_OBJECT_KEY, 1, 255), L_OBJECT_KEY, L_GET_ROW_VALUES(I), UNAPIGEN.DBERR_SUCCESS);
+          END LOOP;
+          
+         L_GET_NR_OF_ROWS             := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+         L_GET_NEXT_ROWS              := 1;
+      END LOOP;
+
+      
+      FOR L_NEW_ROW IN 1..P_NEW_ROW_VALUES_NR_OF_ROWS LOOP
+            L_OBJECT_KEY := '';           
+            FOR I IN 1..L_PK_NR_OF_COLS LOOP
+               L_OBJECT_KEY := L_OBJECT_KEY || NVL(GETVALUE(L_ALL_COLS,P_NEW_ROW_VALUES(L_NEW_ROW) , GETSUBSTRING(L_PK,I)), '') || '|';
+            END LOOP;
+            INSERT INTO UTEDTBLTMP(OBJECT_TP, OBJECT_PK, OBJECT_KEY, ROW_VALUES, MODIFY_FLAG) VALUES ('NEW', SUBSTR(L_OBJECT_KEY, 1, 255), L_OBJECT_KEY, P_NEW_ROW_VALUES(L_NEW_ROW), UNAPIGEN.DBERR_SUCCESS);
+      END LOOP;
+      
+      
+      
+      UPDATE UTEDTBLTMP A
+      SET A.MODIFY_FLAG = UNAPIGEN.MOD_FLAG_DELETE
+      WHERE A.OBJECT_TP = 'OLD'
+       AND NOT EXISTS (SELECT 'X' FROM 
+                     UTEDTBLTMP B
+                     WHERE B.OBJECT_TP = 'NEW'
+                     AND B.OBJECT_PK = A.OBJECT_PK
+                     AND B.OBJECT_KEY = A.OBJECT_KEY );
+       
+       
+      UPDATE UTEDTBLTMP A
+      SET A.MODIFY_FLAG = UNAPIGEN.MOD_FLAG_INSERT
+      WHERE A.OBJECT_TP = 'NEW'
+       AND NOT EXISTS (SELECT 'X' FROM 
+                     UTEDTBLTMP B
+                     WHERE B.OBJECT_TP = 'OLD'
+                     AND B.OBJECT_PK = A.OBJECT_PK
+                     AND B.OBJECT_KEY = A.OBJECT_KEY );
+       
+       
+      UPDATE UTEDTBLTMP A
+      SET A.MODIFY_FLAG = UNAPIGEN.MOD_FLAG_UPDATE
+      WHERE A.OBJECT_TP = 'NEW'
+       AND  EXISTS (SELECT 'X' FROM 
+                     UTEDTBLTMP B
+                     WHERE B.OBJECT_TP = 'OLD'
+                     AND A.OBJECT_PK = B.OBJECT_PK
+                     AND A.OBJECT_KEY = B.OBJECT_KEY
+                     AND NVL(A.ROW_VALUES, ' ') <> NVL(B.ROW_VALUES, ' ') );
+       
+     
+      IF L_MERGE = FALSE THEN     
+         
+         FOR L_REC_UTEDTBLTMP IN L_UTEDTBLTMP_CURSOR(UNAPIGEN.MOD_FLAG_DELETE) LOOP
+            L_OLD_ROW_VALUE := L_REC_UTEDTBLTMP.ROW_VALUES;
+
+               
+               L_TBL_CURSOR := DBMS_SQL.OPEN_CURSOR;
+               
+               L_SQL_STRING := 'DELETE FROM '||A_TABLE_NAME||' WHERE ';
+               
+               FOR I IN 1..L_PK_NR_OF_COLS LOOP
+                  
+                  L_COLUMN_NAME := GETSUBSTRING(L_PK,I);
+                  
+                  L_OLD_VALUE := GETVALUE(L_ALL_COLS, L_OLD_ROW_VALUE, L_COLUMN_NAME);
+                  
+                  ADDCOLUMN('WHERE', L_SQL_STRING, L_COLUMN_NAME, L_OLD_VALUE);
+               END LOOP;
+               
+               L_SQL_STRING := SUBSTR(L_SQL_STRING, 1, LENGTH(L_SQL_STRING)-5);
+
+               DBMS_SQL.PARSE(L_TBL_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+               L_RESULT := DBMS_SQL.EXECUTE(L_TBL_CURSOR);
+               DBMS_SQL.CLOSE_CURSOR(L_TBL_CURSOR);
+
+               
+               IF L_LOG_HS_DETAILS = '1' THEN
+                  L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+                  INSERT INTO UTEDTBLHSDETAILS(TABLE_NAME, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+                  VALUES(A_TABLE_NAME, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR, 
+                  'a record is removed from table "'||A_TABLE_NAME||'".');
+               END IF;
+
+               
+               IF LOWER(A_TABLE_NAME) = 'utsystem' AND
+                  GETVALUE(L_ALL_COLS,L_OLD_ROW_VALUE,'SETTING_NAME') = 'PREAMBLE' THEN
+                  
+                  DELETE FROM UTSHORTCUT
+                  WHERE KEY_TP = 'bc';
+               END IF;        
+         END LOOP;
+      END IF;
+     
+      FOR L_REC_UTEDTBLTMP IN L_UTEDTBLTMP_CURSOR(UNAPIGEN.MOD_FLAG_INSERT) LOOP
+         L_NEW_ROW_VALUE := L_REC_UTEDTBLTMP.ROW_VALUES;       
+               
+               
+               
+               
+               
+               L_TBL_CURSOR := DBMS_SQL.OPEN_CURSOR;
+               
+               L_SQL_STRING := 'BEGIN INSERT INTO '||A_TABLE_NAME||'(';
+               L_SELECT_CLAUSE := ') SELECT ';
+               L_NOT_EXISTS_CLAUSE := ' FROM DUAL WHERE NOT EXISTS (SELECT ''X'' FROM '||A_TABLE_NAME||' WHERE ';
+               
+               FOR I IN 1..L_GETDESC_NR_OF_ROWS LOOP
+                  
+                  L_COLUMN_NAME := GETSUBSTRING(L_ALL_COLS,I);
+                  
+                  L_NEW_VALUE := GETVALUE(L_ALL_COLS,L_NEW_ROW_VALUE ,L_COLUMN_NAME);
+                  
+                  L_SQL_STRING := L_SQL_STRING||L_COLUMN_NAME||','; 
+                  
+                  ADDCOLUMN('SELECT', L_SELECT_CLAUSE, L_COLUMN_NAME, L_NEW_VALUE);
+               END LOOP;
+               
+               L_SQL_STRING := SUBSTR(L_SQL_STRING, 1, LENGTH(L_SQL_STRING)-1);
+               L_SELECT_CLAUSE := SUBSTR(L_SELECT_CLAUSE, 1, LENGTH(L_SELECT_CLAUSE)-1);
+               
+               FOR I IN 1..L_PK_NR_OF_COLS LOOP
+                  
+                  L_COLUMN_NAME := GETSUBSTRING(L_PK,I);
+                  
+                  L_NEW_VALUE := GETVALUE(L_ALL_COLS,L_NEW_ROW_VALUE,L_COLUMN_NAME);
+                  
+                  ADDCOLUMN('WHERE', L_NOT_EXISTS_CLAUSE, L_COLUMN_NAME, L_NEW_VALUE);
+               END LOOP;
+               
+               L_NOT_EXISTS_CLAUSE := SUBSTR(L_NOT_EXISTS_CLAUSE, 1, LENGTH(L_NOT_EXISTS_CLAUSE)-5);
+               
+               
+               L_NOT_EXISTS_CLAUSE := L_NOT_EXISTS_CLAUSE||'); '||
+                                      'IF SQL%FOUND THEN :l_inserted := 1; ELSE :l_inserted := 0; END IF; END;';
+               DBMS_SQL.PARSE(L_TBL_CURSOR, L_SQL_STRING||L_SELECT_CLAUSE||L_NOT_EXISTS_CLAUSE, DBMS_SQL.V7); 
+               DBMS_SQL.BIND_VARIABLE(L_TBL_CURSOR, ':l_inserted', L_INSERTED);
+               L_RESULT := DBMS_SQL.EXECUTE(L_TBL_CURSOR);
+               DBMS_SQL.VARIABLE_VALUE(L_TBL_CURSOR, ':l_inserted', L_INSERTED);
+               DBMS_SQL.CLOSE_CURSOR(L_TBL_CURSOR);
+
+               
+               IF (L_LOG_HS_DETAILS = '1') AND (L_INSERTED = 1) THEN
+                  L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+                  INSERT INTO UTEDTBLHSDETAILS(TABLE_NAME, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+                  VALUES(A_TABLE_NAME, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR, 
+                  'a record is added to table "'||A_TABLE_NAME||'".');
+               END IF;
+
+               
+               SAVEPREAMBLESHORTCUT(A_TABLE_NAME, L_ALL_COLS, L_NEW_ROW_VALUE);
+      END LOOP;
+      
+ 
+      IF L_ONLY_NEW = FALSE THEN     
+         
+         FOR L_REC_UTEDTBLTMP IN L_UTEDTBLTMP_CURSOR(UNAPIGEN.MOD_FLAG_UPDATE) LOOP
+            L_NEW_ROW_VALUE := L_REC_UTEDTBLTMP.ROW_VALUES; 
+            OPEN L_TEMP_OLDROW_CURSOR(L_REC_UTEDTBLTMP.OBJECT_KEY);
+            FETCH L_TEMP_OLDROW_CURSOR INTO L_OLD_ROW_VALUE;
+            IF L_TEMP_OLDROW_CURSOR%NOTFOUND THEN 
+               IF L_TEMP_OLDROW_CURSOR%ISOPEN THEN
+                  CLOSE L_TEMP_OLDROW_CURSOR;
+               END IF;
+               EXIT;
+            END IF;
+            CLOSE L_TEMP_OLDROW_CURSOR;
+
+
+            
+            
+            
+            
+            
+            
+            L_TBL_CURSOR := DBMS_SQL.OPEN_CURSOR;
+            
+            L_SQL_STRING := 'UPDATE '||A_TABLE_NAME||' SET ';
+            L_WHERE_CLAUSE := ' WHERE ';
+            L_NBR_OF_CHANGED_COLUMNS := 0;
+            
+            FOR I IN 1..L_NOT_PK_NR_OF_COLS LOOP
+               
+               L_COLUMN_NAME := GETSUBSTRING(L_NOT_PK,I);
+               
+               L_OLD_VALUE := GETVALUE(L_ALL_COLS,L_OLD_ROW_VALUE,L_COLUMN_NAME);
+               L_NEW_VALUE := GETVALUE(L_ALL_COLS,L_NEW_ROW_VALUE,L_COLUMN_NAME);
+               
+               IF NVL(L_OLD_VALUE,' ') <> NVL(L_NEW_VALUE,' ') THEN
+                  
+                  ADDCOLUMN('SET', L_SQL_STRING, L_COLUMN_NAME, L_NEW_VALUE);
+                  L_NBR_OF_CHANGED_COLUMNS := L_NBR_OF_CHANGED_COLUMNS + 1;
+                  
+                  IF L_LOG_HS_DETAILS = '1' THEN
+                     L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+                     INSERT INTO UTEDTBLHSDETAILS(TABLE_NAME, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+                     VALUES(A_TABLE_NAME, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR, 
+                            SUBSTR('record "'||REPLACE(L_OLD_ROW_VALUE,CHR(9),'#')||
+                                   '" from table "'||A_TABLE_NAME||'" is updated: column <'||
+                                   L_COLUMN_NAME||'> changed value from "'||L_OLD_VALUE||'" to "'||
+                                   L_NEW_VALUE||'".',1,2000));
+                  END IF;
+               END IF;
+            END LOOP;
+            IF L_NBR_OF_CHANGED_COLUMNS > 0 THEN 
+               
+               L_SQL_STRING := SUBSTR(L_SQL_STRING, 1, LENGTH(L_SQL_STRING)-1);
+               
+               FOR I IN 1..L_PK_NR_OF_COLS LOOP
+                  
+                  L_COLUMN_NAME := GETSUBSTRING(L_PK,I);
+                  
+                  L_OLD_VALUE := GETVALUE(L_ALL_COLS,L_OLD_ROW_VALUE,L_COLUMN_NAME);
+                  
+                  ADDCOLUMN('WHERE', L_WHERE_CLAUSE, L_COLUMN_NAME, L_OLD_VALUE);
+               END LOOP;
+               
+               L_WHERE_CLAUSE := SUBSTR(L_WHERE_CLAUSE, 1, LENGTH(L_WHERE_CLAUSE)-5);
+               DBMS_SQL.PARSE(L_TBL_CURSOR, L_SQL_STRING||L_WHERE_CLAUSE, DBMS_SQL.V7); 
+               L_RESULT := DBMS_SQL.EXECUTE(L_TBL_CURSOR);
+
+               
+               SAVEPREAMBLESHORTCUT(A_TABLE_NAME, L_ALL_COLS, L_NEW_ROW_VALUE);
+            END IF;
+            DBMS_SQL.CLOSE_CURSOR(L_TBL_CURSOR);
+         END LOOP;
+      END IF;
+      
+      
+      
+      IF L_HS_DETAILS_SEQ_NR > 0 THEN
+         
+         IF L_LOG_HS = '1' THEN
+            INSERT INTO UTEDTBLHS(TABLE_NAME, WHO, WHO_DESCRIPTION, WHAT, 
+                                  WHAT_DESCRIPTION, LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+            VALUES(A_TABLE_NAME, UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+                   'table "'||A_TABLE_NAME||'" is updated.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, A_MODIFY_REASON, 
+                   UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+         END IF;
+         
+         IF L_LOG_HS_DETAILS = '1' THEN
+            L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+            INSERT INTO UTEDTBLHSDETAILS(TABLE_NAME, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+            VALUES(A_TABLE_NAME, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR,
+                   'table "'||A_TABLE_NAME||'" is updated.');
+         END IF;
+      END IF;
+
+      
+      P_SAVETABLE_CALLS := 0;
+      P_NEW_ROW_VALUES_NR_OF_ROWS := 0;
+   END IF;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   RETURN (UNAPIGEN.DBERR_SUCCESS);
+EXCEPTION
+   WHEN OTHERS THEN
+      IF SQLCODE <> 1 THEN
+         UNAPIGEN.LOGERROR('SaveTableData', SQLERRM);
+       ELSIF L_SQLERRM IS NOT NULL THEN
+         UNAPIGEN.LOGERROR('SaveTableData',L_SQLERRM);   
+      END IF;
+      IF DBMS_SQL.IS_OPEN(L_TBL_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR(L_TBL_CURSOR);
+      END IF;
+      IF DBMS_SQL.IS_OPEN(L_DYN_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR(L_DYN_CURSOR);
+      END IF;
+      IF L_TEMP_OLDROW_CURSOR%ISOPEN THEN
+         CLOSE L_TEMP_OLDROW_CURSOR;
+      END IF;
+      
+      P_SAVETABLE_CALLS := 0;
+      P_NEW_ROW_VALUES_NR_OF_ROWS := 0;
+      RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR,'SaveTableData'));
+END SAVETABLEDATA;
+
+FUNCTION GETTABLEHISTORY
+(A_TABLE_NAME        OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_WHO               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_WHO_DESCRIPTION   OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_WHAT              OUT     UNAPIGEN.VC60_TABLE_TYPE,  
+ A_WHAT_DESCRIPTION  OUT     UNAPIGEN.VC255_TABLE_TYPE, 
+ A_LOGDATE           OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_WHY               OUT     UNAPIGEN.VC255_TABLE_TYPE, 
+ A_TR_SEQ            OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_EV_SEQ            OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_NR_OF_ROWS        IN OUT  NUMBER,                    
+ A_WHERE_CLAUSE      IN      VARCHAR2,                  
+ A_NEXT_ROWS         IN      NUMBER)                    
+RETURN NUMBER IS
+
+L_TABLE_NAME        VARCHAR2(20);
+L_WHO               VARCHAR2(20);
+L_WHO_DESCRIPTION   VARCHAR2(40);
+L_WHAT              VARCHAR2(60);
+L_WHAT_DESCRIPTION  VARCHAR2(255);
+L_LOGDATE           TIMESTAMP WITH TIME ZONE;
+L_WHY               VARCHAR2(255);
+L_TR_SEQ            NUMBER;
+L_EV_SEQ            NUMBER;
+
+BEGIN
+
+   IF NVL(A_NR_OF_ROWS,0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN(UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+
+   IF NVL(A_NEXT_ROWS, 0) NOT IN (-1, 0, 1) THEN
+      RETURN(UNAPIGEN.DBERR_NEXTROWS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = -1 THEN
+      IF DBMS_SQL.IS_OPEN(P_HS_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR(P_HS_CURSOR);
+      END IF;
+      RETURN (UNAPIGEN.DBERR_SUCCESS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = 1 THEN
+      IF P_HS_CURSOR IS NULL THEN
+         RETURN(UNAPIGEN.DBERR_NOCURSOR);
+      END IF;
+   END IF;
+
+   
+   IF NVL(A_NEXT_ROWS,0) = 0 THEN
+      
+      IF NVL(A_WHERE_CLAUSE, ' ') = ' ' THEN
+         RETURN(UNAPIGEN.DBERR_WHERECLAUSE);
+      ELSIF UPPER(SUBSTR(A_WHERE_CLAUSE,1,6)) <> 'WHERE ' THEN
+         L_WHERE_CLAUSE := 'WHERE table_name = ''' || REPLACE(A_WHERE_CLAUSE, '''', '''''') || 
+                           ''' ORDER BY logdate DESC';
+      ELSE
+         L_WHERE_CLAUSE := A_WHERE_CLAUSE; 
+      END IF;
+      
+      L_WHERE_CLAUSE := REPLACE(REPLACE(L_WHERE_CLAUSE, 
+                                        'logdate DESC', 
+                                        'logdate DESC, ROWID DESC'),
+                                'LOGDATE DESC', 
+                                'LOGDATE DESC, ROWID DESC');
+
+      IF DBMS_SQL.IS_OPEN(P_HS_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR(P_HS_CURSOR);
+      END IF;
+      P_HS_CURSOR := DBMS_SQL.OPEN_CURSOR;
+      L_SQL_STRING := 'SELECT table_name, who, who_description, what, what_description, logdate, why, tr_seq, ev_seq '||
+                      'FROM dd' || UNAPIGEN.P_DD || '.uvedtblhs ' || L_WHERE_CLAUSE;
+      DBMS_SQL.PARSE(P_HS_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+
+      DBMS_SQL.DEFINE_COLUMN(P_HS_CURSOR,  1, L_TABLE_NAME,        20);
+      DBMS_SQL.DEFINE_COLUMN(P_HS_CURSOR,  2, L_WHO,               20);
+      DBMS_SQL.DEFINE_COLUMN(P_HS_CURSOR,  3, L_WHO_DESCRIPTION,   40);
+      DBMS_SQL.DEFINE_COLUMN(P_HS_CURSOR,  4, L_WHAT,              60);
+      DBMS_SQL.DEFINE_COLUMN(P_HS_CURSOR,  5, L_WHAT_DESCRIPTION, 255);
+      DBMS_SQL.DEFINE_COLUMN(P_HS_CURSOR,  6, L_LOGDATE              );
+      DBMS_SQL.DEFINE_COLUMN(P_HS_CURSOR,  7, L_WHY,              255);
+      DBMS_SQL.DEFINE_COLUMN(P_HS_CURSOR,  8, L_TR_SEQ               );
+      DBMS_SQL.DEFINE_COLUMN(P_HS_CURSOR,  9, L_EV_SEQ               );
+      L_RESULT := DBMS_SQL.EXECUTE(P_HS_CURSOR);
+   END IF;
+   
+   L_RESULT := DBMS_SQL.FETCH_ROWS(P_HS_CURSOR);
+   L_FETCHED_ROWS := 0;
+
+   LOOP
+      EXIT WHEN L_RESULT = 0 OR L_FETCHED_ROWS >= A_NR_OF_ROWS;
+      DBMS_SQL.COLUMN_VALUE(P_HS_CURSOR,  1, L_TABLE_NAME     );
+      DBMS_SQL.COLUMN_VALUE(P_HS_CURSOR,  2, L_WHO            );
+      DBMS_SQL.COLUMN_VALUE(P_HS_CURSOR,  3, L_WHO_DESCRIPTION);
+      DBMS_SQL.COLUMN_VALUE(P_HS_CURSOR,  4,L_WHAT            );
+      DBMS_SQL.COLUMN_VALUE(P_HS_CURSOR,  5,L_WHAT_DESCRIPTION);
+      DBMS_SQL.COLUMN_VALUE(P_HS_CURSOR,  6,L_LOGDATE         );
+      DBMS_SQL.COLUMN_VALUE(P_HS_CURSOR,  7,L_WHY             );
+      DBMS_SQL.COLUMN_VALUE(P_HS_CURSOR,  8,L_TR_SEQ          );
+      DBMS_SQL.COLUMN_VALUE(P_HS_CURSOR,  9,L_EV_SEQ          );
+      L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+      A_TABLE_NAME(L_FETCHED_ROWS)       := L_TABLE_NAME;
+      A_WHO(L_FETCHED_ROWS)              := L_WHO;
+      A_WHO_DESCRIPTION(L_FETCHED_ROWS)  := L_WHO_DESCRIPTION;
+      A_WHAT(L_FETCHED_ROWS)             := L_WHAT;
+      A_WHAT_DESCRIPTION(L_FETCHED_ROWS) := L_WHAT_DESCRIPTION;
+      A_LOGDATE(L_FETCHED_ROWS)          := TO_CHAR(L_LOGDATE);
+      A_WHY(L_FETCHED_ROWS)              := L_WHY;
+      A_TR_SEQ(L_FETCHED_ROWS)           := L_TR_SEQ;
+      A_EV_SEQ(L_FETCHED_ROWS)           := L_EV_SEQ;
+      IF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+         L_RESULT := DBMS_SQL.FETCH_ROWS(P_HS_CURSOR);
+      END IF;
+   END LOOP;
+
+   IF L_FETCHED_ROWS = 0 THEN
+      L_RET_CODE := UNAPIGEN.DBERR_NORECORDS;
+      DBMS_SQL.CLOSE_CURSOR(P_HS_CURSOR);
+   ELSIF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+      L_RET_CODE := UNAPIGEN.DBERR_SUCCESS;
+      DBMS_SQL.CLOSE_CURSOR(P_HS_CURSOR);
+   ELSE
+      L_RET_CODE := UNAPIGEN.DBERR_SUCCESS;
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+   END IF;
+   RETURN(L_RET_CODE);
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+             'GetTableHistory', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      IF DBMS_SQL.IS_OPEN(P_HS_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR(P_HS_CURSOR);
+      END IF;
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END GETTABLEHISTORY;
+
+FUNCTION GETTABLEHISTORYDETAILS 
+(A_TABLE_NAME        OUT     UNAPIGEN.VC20_TABLE_TYPE,    
+ A_TR_SEQ            OUT     UNAPIGEN.NUM_TABLE_TYPE,     
+ A_EV_SEQ            OUT     UNAPIGEN.NUM_TABLE_TYPE,     
+ A_SEQ               OUT     UNAPIGEN.NUM_TABLE_TYPE,     
+ A_DETAILS           OUT     UNAPIGEN.VC4000_TABLE_TYPE,  
+ A_NR_OF_ROWS        IN OUT  NUMBER,                      
+ A_WHERE_CLAUSE      IN      VARCHAR2,                    
+ A_NEXT_ROWS         IN      NUMBER)                      
+RETURN NUMBER IS
+
+L_TABLE_NAME              VARCHAR2(20);
+L_TR_SEQ                  NUMBER;
+L_EV_SEQ                  NUMBER;
+L_SEQ                     NUMBER;
+L_DETAILS                 VARCHAR2(4000);
+
+BEGIN
+
+   IF NVL(A_NR_OF_ROWS,0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN(UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+
+   IF NVL(A_NEXT_ROWS, 0) NOT IN (-1, 0, 1) THEN
+      RETURN(UNAPIGEN.DBERR_NEXTROWS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = -1 THEN
+      IF DBMS_SQL.IS_OPEN(P_HS_DETAILS_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR(P_HS_DETAILS_CURSOR);
+      END IF;
+      RETURN (UNAPIGEN.DBERR_SUCCESS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = 1 THEN
+      IF P_HS_DETAILS_CURSOR IS NULL THEN
+         RETURN(UNAPIGEN.DBERR_NOCURSOR);
+      END IF;
+   END IF;
+
+   
+   IF NVL(A_NEXT_ROWS,0) = 0 THEN
+
+      
+      IF NVL(A_WHERE_CLAUSE, ' ') = ' ' THEN
+         RETURN(UNAPIGEN.DBERR_WHERECLAUSE);
+      ELSIF UPPER(SUBSTR(A_WHERE_CLAUSE,1,6)) <> 'WHERE ' THEN
+         L_WHERE_CLAUSE := 'WHERE table_name = ''' || REPLACE(A_WHERE_CLAUSE, '''', '''''') || 
+                           ''' ORDER BY tr_seq DESC, ev_seq DESC, seq DESC';
+      ELSE
+         L_WHERE_CLAUSE := A_WHERE_CLAUSE; 
+      END IF;
+
+      IF DBMS_SQL.IS_OPEN(P_HS_DETAILS_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR(P_HS_DETAILS_CURSOR);
+      END IF;
+      P_HS_DETAILS_CURSOR := DBMS_SQL.OPEN_CURSOR;
+      L_SQL_STRING := 'SELECT table_name, tr_seq, ev_seq, seq, details '||
+                      'FROM dd' || UNAPIGEN.P_DD || '.uvedtblhsdetails ' ||
+                      L_WHERE_CLAUSE;
+      DBMS_SQL.PARSE(P_HS_DETAILS_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+      DBMS_SQL.DEFINE_COLUMN(P_HS_DETAILS_CURSOR,  1, L_TABLE_NAME,   20);
+      DBMS_SQL.DEFINE_COLUMN(P_HS_DETAILS_CURSOR,  2, L_TR_SEQ          );
+      DBMS_SQL.DEFINE_COLUMN(P_HS_DETAILS_CURSOR,  3, L_EV_SEQ          );
+      DBMS_SQL.DEFINE_COLUMN(P_HS_DETAILS_CURSOR,  4, L_SEQ             );
+      DBMS_SQL.DEFINE_COLUMN(P_HS_DETAILS_CURSOR,  5, L_DETAILS,    4000);   
+      L_RESULT := DBMS_SQL.EXECUTE(P_HS_DETAILS_CURSOR);
+   END IF;
+   
+   L_RESULT := DBMS_SQL.FETCH_ROWS(P_HS_DETAILS_CURSOR);
+   L_FETCHED_ROWS := 0;
+
+   LOOP
+      EXIT WHEN L_RESULT = 0 OR L_FETCHED_ROWS >= A_NR_OF_ROWS;
+      DBMS_SQL.COLUMN_VALUE(P_HS_DETAILS_CURSOR,  1, L_TABLE_NAME);
+      DBMS_SQL.COLUMN_VALUE(P_HS_DETAILS_CURSOR,  2, L_TR_SEQ    );
+      DBMS_SQL.COLUMN_VALUE(P_HS_DETAILS_CURSOR,  3, L_EV_SEQ    );
+      DBMS_SQL.COLUMN_VALUE(P_HS_DETAILS_CURSOR,  4, L_SEQ       );
+      DBMS_SQL.COLUMN_VALUE(P_HS_DETAILS_CURSOR,  5, L_DETAILS   );
+      L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+      A_TABLE_NAME(L_FETCHED_ROWS)  := L_TABLE_NAME;
+      A_TR_SEQ(L_FETCHED_ROWS)      := L_TR_SEQ;
+      A_EV_SEQ(L_FETCHED_ROWS)      := L_EV_SEQ;
+      A_SEQ(L_FETCHED_ROWS)         := L_SEQ;
+      A_DETAILS(L_FETCHED_ROWS)     := L_DETAILS;
+      IF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+         L_RESULT := DBMS_SQL.FETCH_ROWS(P_HS_DETAILS_CURSOR);
+      END IF;
+   END LOOP;
+
+   IF L_FETCHED_ROWS = 0 THEN
+      L_RET_CODE := UNAPIGEN.DBERR_NORECORDS;
+      DBMS_SQL.CLOSE_CURSOR(P_HS_DETAILS_CURSOR);
+   ELSIF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+      L_RET_CODE := UNAPIGEN.DBERR_SUCCESS;
+      DBMS_SQL.CLOSE_CURSOR(P_HS_DETAILS_CURSOR);
+   ELSE
+      L_RET_CODE := UNAPIGEN.DBERR_SUCCESS;
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+   END IF;
+   RETURN(L_RET_CODE);
+
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+             'GetTableHistoryDetails', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      IF DBMS_SQL.IS_OPEN(P_HS_DETAILS_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR(P_HS_DETAILS_CURSOR);
+      END IF;
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END GETTABLEHISTORYDETAILS;
+
+FUNCTION SAVETABLEHISTORY
+(A_TABLE_NAME        IN        VARCHAR2,                   
+ A_WHO               IN        UNAPIGEN.VC20_TABLE_TYPE,   
+ A_WHO_DESCRIPTION   IN        UNAPIGEN.VC40_TABLE_TYPE,   
+ A_WHAT              IN        UNAPIGEN.VC60_TABLE_TYPE,   
+ A_WHAT_DESCRIPTION  IN        UNAPIGEN.VC255_TABLE_TYPE,  
+ A_LOGDATE           IN        UNAPIGEN.DATE_TABLE_TYPE,   
+ A_WHY               IN        UNAPIGEN.VC255_TABLE_TYPE,  
+ A_TR_SEQ            IN        UNAPIGEN.NUM_TABLE_TYPE,    
+ A_EV_SEQ            IN        UNAPIGEN.NUM_TABLE_TYPE,    
+ A_NR_OF_ROWS        IN        NUMBER)                     
+RETURN NUMBER IS
+
+L_ALLOW_MODIFY     CHAR(1);
+L_LOG_HS           CHAR(1);
+L_LC               VARCHAR2(2);
+L_LC_VERSION       VARCHAR2(20);
+L_SS               VARCHAR2(2);
+L_ACTIVE           CHAR(1);
+
+BEGIN
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_NR_OF_ROWS, -1) < 0 THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NROFROWS;
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_TABLE_NAME, ' ') = ' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   FOR I IN 1..A_NR_OF_ROWS LOOP
+      UPDATE UTEDTBLHS
+         SET WHY = A_WHY(I)
+       WHERE TABLE_NAME = A_TABLE_NAME
+         AND WHO  = A_WHO(I)
+         AND WHO_DESCRIPTION  = A_WHO_DESCRIPTION(I)
+         AND TO_CHAR(LOGDATE) = A_LOGDATE(I)
+         AND WHAT = A_WHAT(I)
+         AND WHAT_DESCRIPTION  = A_WHAT_DESCRIPTION(I)
+         AND TR_SEQ = A_TR_SEQ(I)
+         AND EV_SEQ = A_EV_SEQ(I);
+   END LOOP;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('SaveTableHistory', SQLERRM);
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR, 'SaveTableHistory'));
+END SAVETABLEHISTORY;
+
+
+
+
+BEGIN
+   P_NEW_ROW_VALUES_NR_OF_ROWS := 0;
+END UNAPIEDITTABLE;
