@@ -1,0 +1,2 @@
+backup incremental level 0 database;
+delete force noprompt obsolete;
