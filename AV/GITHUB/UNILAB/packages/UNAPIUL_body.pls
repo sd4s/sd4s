@@ -1,0 +1,2366 @@
+PACKAGE BODY unapiul AS
+
+L_SQLERRM         VARCHAR2(255);
+L_SQL_STRING      VARCHAR2(2000);
+L_WHERE_CLAUSE    VARCHAR2(1000);
+L_EVENT_TP        UTEV.EV_TP%TYPE;
+L_TIMED_EVENT_TP  UTEVTIMED.EV_TP%TYPE;
+L_RET_CODE        NUMBER;
+L_RESULT          NUMBER;
+L_FETCHED_ROWS    NUMBER;
+L_EV_SEQ_NR       NUMBER;
+L_EV_DETAILS      VARCHAR2(255);
+STPERROR          EXCEPTION;
+
+P_EOF_MODE               VARCHAR2(20);
+P_ERROR_MESSAGE          VARCHAR2(255) DEFAULT '';
+P_LOG_FILE_HANDLE        UTL_FILE.FILE_TYPE;
+P_OUT_FILE_HANDLE        UTL_FILE.FILE_TYPE;
+P_TRC_FILE_HANDLE        UTL_FILE.FILE_TYPE;
+
+CURSOR C_SYSTEM (A_SETTING_NAME VARCHAR2) IS
+   SELECT SETTING_VALUE
+   FROM UTSYSTEM
+   WHERE SETTING_NAME = A_SETTING_NAME;
+
+CURSOR L_JOBS_CURSOR (A_SEARCH VARCHAR2) IS
+   SELECT JOB_NAME, ENABLED, JOB_ACTION
+   FROM SYS.DBA_SCHEDULER_JOBS 
+   WHERE INSTR(JOB_ACTION, A_SEARCH)<>0;
+
+
+
+
+
+FUNCTION GETVERSION
+   RETURN VARCHAR2
+IS
+BEGIN
+   RETURN('06.07.00.00_00.13');
+EXCEPTION
+   WHEN OTHERS THEN
+      RETURN (NULL);
+END GETVERSION;
+
+
+PROCEDURE COPYINFILETOERROR
+IS
+L_IN_FILE_HANDLE      UTL_FILE.FILE_TYPE;
+L_ERROR_FILE_HANDLE     UTL_FILE.FILE_TYPE;
+L_ERROR_FILE_NAME       VARCHAR2(255);
+L_BUFF                VARCHAR2(2000);
+
+BEGIN
+
+   L_ERROR_FILE_NAME := P_FILE_NAME;
+   L_ERROR_FILE_HANDLE := UTL_FILE.FOPEN (P_LOC_ERROR_DIR, L_ERROR_FILE_NAME, 'W');
+   L_IN_FILE_HANDLE := UTL_FILE.FOPEN (P_LOC_IN_DIR, P_FILE_NAME, 'R');
+
+   LOOP
+      BEGIN
+         UTL_FILE.GET_LINE(L_IN_FILE_HANDLE, L_BUFF);
+         UTL_FILE.PUT_LINE(L_ERROR_FILE_HANDLE,L_BUFF);
+      EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+         EXIT;
+      END;
+   END LOOP;
+   UTL_FILE.FCLOSE (L_ERROR_FILE_HANDLE);
+   UTL_FILE.FCLOSE (L_IN_FILE_HANDLE);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF UTL_FILE.IS_OPEN (L_IN_FILE_HANDLE) THEN
+      UTL_FILE.FCLOSE (L_IN_FILE_HANDLE);
+   END IF;
+   IF UTL_FILE.IS_OPEN (L_ERROR_FILE_HANDLE) THEN
+      UTL_FILE.FCLOSE (L_ERROR_FILE_HANDLE);
+   END IF;
+END COPYINFILETOERROR;
+
+
+FUNCTION PROCESSONEFILE               
+(A_LOC_DIR       IN     VARCHAR2,     
+ A_FILE_NAME     IN     VARCHAR2,     
+ A_TO_PARSE      IN     BOOLEAN,      
+ A_CF            IN     VARCHAR2,     
+ A_AFTER_PROCESS IN     VARCHAR2,     
+ A_EOF_OK        OUT    BOOLEAN,      
+ A_FILE_EXIST    OUT    BOOLEAN)      
+RETURN NUMBER IS
+
+L_IN_FILE_HANDLE      UTL_FILE.FILE_TYPE;
+L_RDY_FILE_HANDLE     UTL_FILE.FILE_TYPE;
+L_LOG_FILE_HANDLE     UTL_FILE.FILE_TYPE;
+L_LINE_NR             NUMBER;
+L_BUFF                VARCHAR2(2000);
+L_LAST_LINE           VARCHAR2(2000);
+L_PENULTIMATE_LINE    VARCHAR2(2000);
+L_LAST_LINE_NR        NUMBER;
+L_PENULTIMATE_LINE_NR NUMBER;
+L_NEW_FILESIZE        NUMBER;
+L_SYSDATE             TIMESTAMP WITH TIME ZONE;
+L_DYN_CURSOR          INTEGER;
+L_NOERROR             BOOLEAN;
+L_PARSING_OK          BOOLEAN;
+L_CF_RET_CODE         INTEGER;
+L_EOF_ON_PENULTIMATE_LINE  BOOLEAN:= FALSE;
+L_EOF_ON_LAST_LINE         BOOLEAN:= FALSE;
+
+CURSOR L_UTULIN_CURSOR IS
+   SELECT TEXT_LINE
+   FROM UTULIN
+   WHERE UNILINK_ID = P_UNILINK_ID
+   AND FILE_NAME = NVL(A_FILE_NAME, UNAPIUL.P_FILE_NAME)
+   ORDER BY LINE_NBR;
+
+CURSOR L_UTULFILESTATUS_CURSOR (A_LOC_IN_DIR VARCHAR2, A_FILE_NAME VARCHAR2) IS
+   SELECT *
+   FROM UTULFILESTATUS
+   WHERE DIRECTORY_NAME = A_LOC_IN_DIR
+   AND FILE_NAME = A_FILE_NAME;
+L_UTULFILESTATUS_REC L_UTULFILESTATUS_CURSOR%ROWTYPE;
+
+BEGIN
+
+   L_NOERROR := FALSE;
+   L_SQLERRM := '';
+   L_PARSING_OK := TRUE;
+
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   P_LOC_IN_DIR :=  A_LOC_DIR || '_' || 'IN';
+   P_LOC_LOG_DIR := A_LOC_DIR || '_' || 'LOG';
+   P_LOC_OUT_DIR := A_LOC_DIR || '_' || 'OUT';
+   P_LOC_ERROR_DIR := A_LOC_DIR || '_' || 'ERR';
+   P_FILE_NAME   := A_FILE_NAME;
+   A_EOF_OK := FALSE;
+   A_FILE_EXIST := FALSE;
+
+   TRACE ('P_LOC_IN_DIR:'||P_LOC_IN_DIR, UL_TRACE_LOW);
+   TRACE ('P_LOC_LOG_DIR:'||P_LOC_LOG_DIR, UL_TRACE_LOW);
+   TRACE ('P_LOC_OUT_DIR:'||P_LOC_OUT_DIR, UL_TRACE_LOW);
+   TRACE ('P_LOC_ERROR_DIR:'||P_LOC_ERROR_DIR, UL_TRACE_LOW);
+   TRACE ('P_FILE_NAME:'||P_FILE_NAME, UL_TRACE_LOW);
+
+   
+   SAVEPOINT UNILINK;
+   L_SYSDATE := CURRENT_TIMESTAMP;
+
+   
+   L_UTULFILESTATUS_REC.PROCESSED := '0';
+   OPEN L_UTULFILESTATUS_CURSOR(P_LOC_IN_DIR, P_FILE_NAME);
+   FETCH L_UTULFILESTATUS_CURSOR INTO L_UTULFILESTATUS_REC;
+   CLOSE L_UTULFILESTATUS_CURSOR;
+   IF L_UTULFILESTATUS_REC.PROCESSED <> '0' THEN
+      TRACE ('File already processed '||P_LOC_IN_DIR||':'||P_FILE_NAME||
+             ' on '||L_UTULFILESTATUS_REC.PROCESS_DATE, UL_TRACE_NORMAL);
+      
+      L_NOERROR := TRUE;
+      RAISE STPERROR;
+   END IF;
+
+   
+   TRACE ('Logfile in'||P_LOC_LOG_DIR||':'||P_FILE_NAME||'.log', UL_TRACE_LOW);
+   IF P_UL_TRACE_ON = '1' THEN
+      P_LOG_FILE_HANDLE := UTL_FILE.FOPEN (P_LOC_LOG_DIR,
+                                           P_FILE_NAME||'.log', 'W');
+   END IF;
+
+   
+   
+   
+   TRACE ('Read file in'||P_LOC_IN_DIR||':'||P_FILE_NAME, UL_TRACE_LOW);
+   BEGIN
+      L_IN_FILE_HANDLE := UTL_FILE.FOPEN (P_LOC_IN_DIR, P_FILE_NAME, 'R');
+   EXCEPTION
+   WHEN UTL_FILE.INVALID_OPERATION THEN
+      
+      TRACE ('Read file not present or locked by OS', UL_TRACE_NORMAL);
+      A_FILE_EXIST := TRUE;
+      A_EOF_OK := FALSE;
+
+      
+      IF UTL_FILE.IS_OPEN (P_LOG_FILE_HANDLE) THEN
+         UTL_FILE.FCLOSE (P_LOG_FILE_HANDLE);
+      END IF;
+
+      
+      L_NOERROR := TRUE;
+      RAISE STPERROR;
+   END;
+
+   L_NEW_FILESIZE := 0;
+
+   
+   
+   
+   
+   L_LINE_NR := 0;
+   L_LAST_LINE := ' ';
+   L_PENULTIMATE_LINE := ' ';
+
+   LOOP
+      BEGIN
+         UTL_FILE.GET_LINE(L_IN_FILE_HANDLE, L_BUFF);
+         IF L_LINE_NR > 0 THEN
+            L_PENULTIMATE_LINE := L_LAST_LINE;
+            L_PENULTIMATE_LINE_NR := L_LINE_NR;
+         END IF;
+         L_LAST_LINE := L_BUFF;
+         L_LINE_NR := L_LINE_NR + 1;
+         TRACE ('Read line'||L_LINE_NR, UL_TRACE_NONE);
+         
+         L_NEW_FILESIZE := NVL(L_NEW_FILESIZE,0) + NVL(LENGTH(L_BUFF),0);
+         INSERT INTO UTULIN (UNILINK_ID, FILE_NAME, READ_ON, READ_ON_TZ, LINE_NBR, TEXT_LINE)
+         VALUES (P_UNILINK_ID, A_FILE_NAME, L_SYSDATE, L_SYSDATE, L_LINE_NR, L_BUFF);
+         L_LAST_LINE_NR := L_LINE_NR;
+      EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+         TRACE ('Finished Reading file at line '||L_LINE_NR, UL_TRACE_NORMAL);
+         TRACE ('Penultimate line='||L_PENULTIMATE_LINE, UL_TRACE_LOW);
+         TRACE ('Last line='||L_LAST_LINE, UL_TRACE_LOW);
+         EXIT;
+      WHEN DUP_VAL_ON_INDEX THEN
+         TRACE ('File already in utulin (not removed)', UL_TRACE_ALERT);
+         L_SQLERRM := 'File already in utulin (not removed)';
+         RAISE STPERROR;
+      WHEN OTHERS THEN
+         TRACE ('Oracle error:'||SUBSTR(SQLERRM,1,200), UL_TRACE_ALERT);
+         RAISE;
+      END;
+   END LOOP;
+
+   
+   
+   
+   TRACE ('Check if EOF detected. Mode used :'||P_EOF_MODE, UL_TRACE_NORMAL);
+   IF P_EOF_MODE = 'OS' AND L_LINE_NR > 0 THEN
+      
+      A_FILE_EXIST := TRUE;
+      A_EOF_OK     := TRUE;
+      TRACE ('EOF detected', UL_TRACE_NORMAL);
+   ELSIF P_EOF_MODE = 'EOF_STRING' AND L_LINE_NR > 0  THEN
+      A_FILE_EXIST := TRUE;
+      
+      
+
+         
+      L_EOF_ON_LAST_LINE        := INSTR(
+                                          TO_CHAR(REPLACE(L_LAST_LINE, CHR(0),'')) ,
+                                          TO_CHAR(REPLACE(P_EQUL_REC.EOF_STRING, CHR(0), ''))
+                                         ) <> 0;
+                              
+      L_EOF_ON_PENULTIMATE_LINE := INSTR(
+                                          TO_CHAR(REPLACE(L_PENULTIMATE_LINE, CHR(0),'')) ,
+                                          TO_CHAR(REPLACE(P_EQUL_REC.EOF_STRING, CHR(0), ''))
+                                         ) <> 0;
+
+      
+      IF (L_EOF_ON_LAST_LINE ) THEN
+         A_EOF_OK := TRUE;
+         
+         DELETE FROM UTULIN
+         WHERE UNILINK_ID = P_UNILINK_ID
+         AND FILE_NAME = P_FILE_NAME
+         AND LINE_NBR = L_LAST_LINE_NR;
+
+         TRACE ('EOF detected on last line using '||P_EQUL_REC.EOF_STRING, UL_TRACE_NORMAL);
+      ELSIF (L_EOF_ON_PENULTIMATE_LINE) THEN
+         
+         
+         
+         A_EOF_OK := TRUE;
+         
+         DELETE FROM UTULIN
+         WHERE UNILINK_ID = P_UNILINK_ID
+         AND FILE_NAME = P_FILE_NAME
+         AND LINE_NBR >= L_PENULTIMATE_LINE_NR;
+
+         TRACE ('EOF detected on penultimate line using '||P_EQUL_REC.EOF_STRING, UL_TRACE_NORMAL);
+      ELSE
+         A_EOF_OK := FALSE;
+         TRACE ('EOF not detected using '||P_EQUL_REC.EOF_STRING, UL_TRACE_NORMAL);
+         BEGIN
+            ROLLBACK TO SAVEPOINT UNILINK;
+         EXCEPTION
+         WHEN OTHERS THEN
+            
+            NULL;
+         END;
+      END IF;
+
+   ELSIF P_EOF_MODE = 'EOF_FLAGFILE'  AND L_LINE_NR > 0 THEN
+      A_FILE_EXIST := TRUE;
+      BEGIN
+         L_RDY_FILE_HANDLE := UTL_FILE.FOPEN (P_LOC_IN_DIR, A_FILE_NAME||'.rdy', 'R');
+         UTL_FILE.GET_LINE(L_RDY_FILE_HANDLE, L_BUFF);
+         IF L_BUFF = ' ' THEN
+            RAISE STPERROR;
+         END IF;
+         IF UTL_FILE.IS_OPEN (L_RDY_FILE_HANDLE) THEN
+            UTL_FILE.FCLOSE (L_RDY_FILE_HANDLE);
+            A_EOF_OK := TRUE;
+            TRACE ('EOF detected using '||A_FILE_NAME||'.rdy', UL_TRACE_NORMAL);
+         ELSE
+            TRACE ('EOF not detected using '||A_FILE_NAME||'.rdy', UL_TRACE_NORMAL);
+            A_EOF_OK := FALSE;
+            BEGIN
+               ROLLBACK TO SAVEPOINT UNILINK;
+            EXCEPTION
+            WHEN OTHERS THEN
+               
+               NULL;
+            END;
+         END IF;
+      EXCEPTION
+      WHEN OTHERS THEN
+         TRACE ('EOF not detected using '||A_FILE_NAME||'.rdy', UL_TRACE_NORMAL);
+         A_EOF_OK := FALSE;
+         BEGIN
+            ROLLBACK TO SAVEPOINT UNILINK;
+         EXCEPTION
+         WHEN OTHERS THEN
+            
+            NULL;
+         END;
+
+         IF UTL_FILE.IS_OPEN (L_RDY_FILE_HANDLE) THEN
+            UTL_FILE.FCLOSE (L_RDY_FILE_HANDLE);
+         END IF;
+      END;
+
+   ELSIF P_EOF_MODE = 'EOF_FILESIZE'  AND L_LINE_NR > 0 THEN
+      A_FILE_EXIST := TRUE;
+      IF L_NEW_FILESIZE <> NVL(L_UTULFILESTATUS_REC.FILE_SIZE,0) THEN
+         A_EOF_OK := FALSE;
+         TRACE ('EOF not detected prev_size= '||NVL(L_UTULFILESTATUS_REC.FILE_SIZE,0)||
+                ' new size='||L_NEW_FILESIZE, UL_TRACE_NORMAL);
+
+         BEGIN
+            ROLLBACK TO SAVEPOINT UNILINK;
+         EXCEPTION
+         WHEN OTHERS THEN
+            
+            NULL;
+         END;
+
+         
+         BEGIN
+            INSERT INTO UTULFILESTATUS
+            (DIRECTORY_NAME, FILE_NAME, FILE_SIZE, PROCESS_DATE, PROCESS_DATE_TZ, PARSE_RETURN, PROCESSED )
+            VALUES
+            (P_LOC_IN_DIR, P_FILE_NAME, L_NEW_FILESIZE, NULL, NULL, NULL, '0');
+         EXCEPTION
+         WHEN DUP_VAL_ON_INDEX THEN
+            UPDATE UTULFILESTATUS
+            SET FILE_SIZE = L_NEW_FILESIZE
+            WHERE DIRECTORY_NAME = P_LOC_IN_DIR
+            AND FILE_NAME = A_FILE_NAME;
+         END;
+
+      ELSE
+         TRACE ('EOF detected prev_size='||NVL(L_UTULFILESTATUS_REC.FILE_SIZE,0)||
+                ' new size='||L_NEW_FILESIZE, UL_TRACE_NORMAL);
+
+         DELETE FROM UTULFILESTATUS
+         WHERE DIRECTORY_NAME = P_LOC_IN_DIR
+         AND FILE_NAME = A_FILE_NAME;
+
+         A_EOF_OK := TRUE;
+      END IF;
+
+   ELSIF L_LINE_NR > 0 THEN
+      
+      
+
+      
+      BEGIN
+         ROLLBACK TO SAVEPOINT UNILINK;
+      EXCEPTION
+      WHEN OTHERS THEN
+         
+         NULL;
+      END;
+
+      
+      L_SQLERRM := 'Major error: Invalid end-of-file detection mode used:'||P_EOF_MODE;
+      TRACE (L_SQLERRM , UL_TRACE_ALERT);
+      L_NOERROR := FALSE;
+      RAISE STPERROR;
+
+
+
+   END IF;
+
+   
+   
+   
+   IF A_TO_PARSE  AND L_LINE_NR > 0 THEN
+      TRACE ('Will be parsed if EOF detected', UL_TRACE_LOW);
+      IF A_FILE_EXIST AND A_EOF_OK THEN
+         TRACE ('Ready to parse', UL_TRACE_LOW);
+         IF NOT(L_NEW_FILESIZE <= 1 AND L_LAST_LINE= ' ') AND L_LINE_NR > 0 THEN
+            TRACE ('Call custom function'||A_CF, UL_TRACE_LOW);
+            L_RET_CODE := UNAPIGEN.DBERR_SUCCESS;
+            IF INSTR(A_CF, '.')<>0 THEN
+               L_SQL_STRING := 'BEGIN :l_retcode := '
+                               || A_CF ||'; END;';
+            ELSE
+               L_SQL_STRING := 'BEGIN :l_retcode := UNILINK.'
+                               || A_CF ||'; END;';
+            END IF;
+            BEGIN
+
+               L_DYN_CURSOR :=  DBMS_SQL.OPEN_CURSOR;
+               DBMS_SQL.PARSE(L_DYN_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+               DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':l_retcode', L_CF_RET_CODE);
+               L_RESULT := DBMS_SQL.EXECUTE(L_DYN_CURSOR);
+               DBMS_SQL.VARIABLE_VALUE(L_DYN_CURSOR, ':l_retcode', L_CF_RET_CODE);
+               DBMS_SQL.CLOSE_CURSOR(L_DYN_CURSOR);
+               TRACE ('Call custom function returned'||L_CF_RET_CODE, UL_TRACE_LOW);
+
+            EXCEPTION
+            WHEN OTHERS THEN
+               L_SQLERRM := SUBSTR(SQLERRM,1,200);
+               
+               BEGIN
+                  ROLLBACK TO SAVEPOINT UNILINK;
+               EXCEPTION
+               WHEN OTHERS THEN
+                  
+                  NULL;
+               END;
+               TRACE ('Calling custom function failed'||L_SQLERRM, UL_TRACE_ALERT);
+               COPYINFILETOERROR;
+
+               IF DBMS_SQL.IS_OPEN(L_DYN_CURSOR) THEN
+                  DBMS_SQL.CLOSE_CURSOR(L_DYN_CURSOR);
+               END IF;
+               L_PARSING_OK := FALSE;
+
+            END;
+
+            IF L_CF_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+               
+               BEGIN
+                  ROLLBACK TO SAVEPOINT UNILINK;
+               EXCEPTION
+               WHEN OTHERS THEN
+                  
+                  NULL;
+               END;
+               L_RET_CODE := WRITETOLOG(A_CF, 'Call custom function returned'||L_CF_RET_CODE);
+               COPYINFILETOERROR;
+               L_PARSING_OK := FALSE;
+            END IF;
+
+            IF INSTR(A_AFTER_PROCESS, 'CLEAR')<>0 THEN
+               IF UTL_FILE.IS_OPEN (L_IN_FILE_HANDLE) THEN
+                  UTL_FILE.FCLOSE (L_IN_FILE_HANDLE);
+               END IF;
+               TRACE ('Calling Remove file for '||P_LOC_IN_DIR||P_DELIMITER||A_FILE_NAME, UL_TRACE_NORMAL);
+               L_RET_CODE := REMOVEFILE(P_LOC_IN_DIR, P_DELIMITER, A_FILE_NAME);
+
+               IF L_RET_CODE = UNAPIGEN.DBERR_SUCCESS THEN
+                  TRACE ('File Removed', UL_TRACE_NORMAL);
+               ELSE
+                  TRACE ('File Not removed ! ret_code='||L_RET_CODE, UL_TRACE_HIGH);
+               END IF;
+
+               
+               IF P_EOF_MODE = 'EOF_FLAGFILE' THEN
+                  TRACE ('Calling RemoveFile for flagfile '||P_LOC_IN_DIR||P_DELIMITER||A_FILE_NAME||'.rdy', UL_TRACE_NORMAL);
+                  L_RET_CODE := REMOVEFILE(P_LOC_IN_DIR,P_DELIMITER,A_FILE_NAME||'.rdy');
+                  IF L_RET_CODE = UNAPIGEN.DBERR_SUCCESS THEN
+                     TRACE ('File '||P_LOC_IN_DIR||P_DELIMITER||A_FILE_NAME||'.rdy'||' Removed', UL_TRACE_NORMAL);
+                  ELSE
+                     TRACE ('File '||P_LOC_IN_DIR||P_DELIMITER||A_FILE_NAME||'.rdy'||' not removed ! ret_code='||L_RET_CODE, UL_TRACE_HIGH);
+                  END IF;
+               END IF;
+            END IF;
+
+            IF INSTR(A_AFTER_PROCESS, 'LOG')<>0 THEN
+               L_RET_CODE := WRITETOLOG(A_CF, 'File parsing function returned : '||TO_CHAR(L_RET_CODE));
+               BEGIN
+                  INSERT INTO UTULFILESTATUS
+                  (DIRECTORY_NAME, FILE_NAME, FILE_SIZE, PROCESS_DATE, PROCESS_DATE_TZ, PARSE_RETURN, PROCESSED )
+                  VALUES
+                  (P_LOC_IN_DIR, P_FILE_NAME, L_NEW_FILESIZE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, L_CF_RET_CODE, '1');
+               EXCEPTION
+               WHEN DUP_VAL_ON_INDEX THEN
+                  UPDATE UTULFILESTATUS
+                  SET FILE_SIZE = L_NEW_FILESIZE,
+                      PROCESS_DATE = CURRENT_TIMESTAMP,
+                      PROCESS_DATE_TZ = CURRENT_TIMESTAMP,
+            PARSE_RETURN = L_CF_RET_CODE,
+                      PROCESSED = '1'
+                  WHERE DIRECTORY_NAME = P_LOC_IN_DIR
+                  AND FILE_NAME = A_FILE_NAME;
+               END;
+               L_RET_CODE := WRITETOLOG(A_CF, P_LOC_IN_DIR||P_DELIMITER|| P_FILE_NAME||':parsed successfully');
+
+            END IF;
+
+         ELSE
+            TRACE ('Not parsed (empty file)', UL_TRACE_NORMAL);
+            TRACE ('New file size :'||TO_CHAR(L_NEW_FILESIZE), UL_TRACE_NORMAL);
+            TRACE ('l_line_nr :'||TO_CHAR(L_LINE_NR), UL_TRACE_NORMAL);
+         END IF;
+      ELSE
+         TRACE ('Not parsed (EOF not detected or FILE doesn''t exist)', UL_TRACE_NORMAL);
+      END IF;
+   END IF;
+
+   
+   
+   
+   IF UTL_FILE.IS_OPEN (L_IN_FILE_HANDLE) THEN
+      UTL_FILE.FCLOSE (L_IN_FILE_HANDLE);
+   END IF;
+
+   
+   
+   
+   IF UTL_FILE.IS_OPEN (P_LOG_FILE_HANDLE) THEN
+      UTL_FILE.FCLOSE (P_LOG_FILE_HANDLE);
+   END IF;
+   TRACE ('Processing file:'||A_FILE_NAME||' finished', UL_TRACE_NORMAL);
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN UTL_FILE.INVALID_PATH THEN
+   BEGIN
+      ROLLBACK TO SAVEPOINT UNILINK;
+   EXCEPTION
+   WHEN OTHERS THEN
+      
+      UNAPIGEN.U4ROLLBACK;
+   END;
+   IF UTL_FILE.IS_OPEN (L_IN_FILE_HANDLE) THEN
+      UTL_FILE.FCLOSE (L_IN_FILE_HANDLE);
+   END IF;
+   IF UTL_FILE.IS_OPEN (P_LOG_FILE_HANDLE) THEN
+      UTL_FILE.FCLOSE (P_LOG_FILE_HANDLE);
+   END IF;
+   P_ERROR_MESSAGE := SUBSTR(A_FILE_NAME,1,40) ||':Invalid path';
+   TRACE (P_ERROR_MESSAGE, UL_TRACE_ALERT);
+   COPYINFILETOERROR;
+   UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_GENFAIL;
+   INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME,
+                       ERROR_MSG)
+   VALUES (UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+           'Unilink', P_ERROR_MESSAGE);
+   UNAPIGEN.U4COMMIT;
+   RETURN(UNAPIGEN.P_TXN_ERROR);
+
+WHEN UTL_FILE.INVALID_MODE THEN
+   BEGIN
+      ROLLBACK TO SAVEPOINT UNILINK;
+   EXCEPTION
+   WHEN OTHERS THEN
+      
+      UNAPIGEN.U4ROLLBACK;
+   END;
+   IF UTL_FILE.IS_OPEN (L_IN_FILE_HANDLE) THEN
+      UTL_FILE.FCLOSE (L_IN_FILE_HANDLE);
+   END IF;
+   IF UTL_FILE.IS_OPEN (P_LOG_FILE_HANDLE) THEN
+      UTL_FILE.FCLOSE (P_LOG_FILE_HANDLE);
+   END IF;
+   P_ERROR_MESSAGE := SUBSTR(A_FILE_NAME,1,40) ||':Invalid mode';
+   TRACE (P_ERROR_MESSAGE, UL_TRACE_ALERT);
+   COPYINFILETOERROR;
+   UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_GENFAIL;
+   INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME,
+                       ERROR_MSG)
+   VALUES (UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+           'Unilink', P_ERROR_MESSAGE);
+   UNAPIGEN.U4COMMIT;
+   RETURN(UNAPIGEN.P_TXN_ERROR);
+
+WHEN UTL_FILE.INVALID_FILEHANDLE THEN
+   BEGIN
+      ROLLBACK TO SAVEPOINT UNILINK;
+   EXCEPTION
+   WHEN OTHERS THEN
+      
+      UNAPIGEN.U4ROLLBACK;
+   END;
+   IF UTL_FILE.IS_OPEN (L_IN_FILE_HANDLE) THEN
+      UTL_FILE.FCLOSE (L_IN_FILE_HANDLE);
+   END IF;
+   P_ERROR_MESSAGE := SUBSTR(A_FILE_NAME,1,40) ||'Invalid filehandle';
+   TRACE (P_ERROR_MESSAGE, UL_TRACE_ALERT);
+   COPYINFILETOERROR;
+   UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_GENFAIL;
+   INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME,
+                       ERROR_MSG)
+   VALUES (UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+           'Unilink', P_ERROR_MESSAGE);
+   UNAPIGEN.U4COMMIT;
+   RETURN(UNAPIGEN.P_TXN_ERROR);
+
+WHEN UTL_FILE.INVALID_OPERATION THEN
+   BEGIN
+      ROLLBACK TO SAVEPOINT UNILINK;
+   EXCEPTION
+   WHEN OTHERS THEN
+      
+      UNAPIGEN.U4ROLLBACK;
+   END;
+   IF UTL_FILE.IS_OPEN (L_IN_FILE_HANDLE) THEN
+      UTL_FILE.FCLOSE (L_IN_FILE_HANDLE);
+   END IF;
+   IF UTL_FILE.IS_OPEN (P_LOG_FILE_HANDLE) THEN
+      UTL_FILE.FCLOSE (P_LOG_FILE_HANDLE);
+   END IF;
+   P_ERROR_MESSAGE := SUBSTR(A_FILE_NAME,1,40) ||':Invalid operation';
+   TRACE (P_ERROR_MESSAGE, UL_TRACE_ALERT);
+   COPYINFILETOERROR;
+   UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_GENFAIL;
+   INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME,
+                       ERROR_MSG)
+   VALUES (UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+           'Unilink', P_ERROR_MESSAGE);
+   UNAPIGEN.U4COMMIT;
+   RETURN(UNAPIGEN.P_TXN_ERROR);
+
+WHEN UTL_FILE.READ_ERROR THEN
+   BEGIN
+      ROLLBACK TO SAVEPOINT UNILINK;
+   EXCEPTION
+   WHEN OTHERS THEN
+      
+      UNAPIGEN.U4ROLLBACK;
+   END;
+   IF UTL_FILE.IS_OPEN (L_IN_FILE_HANDLE) THEN
+      UTL_FILE.FCLOSE (L_IN_FILE_HANDLE);
+   END IF;
+   IF UTL_FILE.IS_OPEN (P_LOG_FILE_HANDLE) THEN
+      UTL_FILE.FCLOSE (P_LOG_FILE_HANDLE);
+   END IF;
+   P_ERROR_MESSAGE := SUBSTR(A_FILE_NAME,1,40) ||':Read error';
+   TRACE (P_ERROR_MESSAGE, UL_TRACE_ALERT);
+   COPYINFILETOERROR;
+   UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_GENFAIL;
+   INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME,
+                       ERROR_MSG)
+   VALUES (UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+           'Unilink', P_ERROR_MESSAGE);
+   UNAPIGEN.U4COMMIT;
+   RETURN(UNAPIGEN.P_TXN_ERROR);
+
+WHEN UTL_FILE.WRITE_ERROR THEN
+   BEGIN
+      ROLLBACK TO SAVEPOINT UNILINK;
+   EXCEPTION
+   WHEN OTHERS THEN
+      
+      UNAPIGEN.U4ROLLBACK;
+   END;
+   IF UTL_FILE.IS_OPEN (L_IN_FILE_HANDLE) THEN
+      UTL_FILE.FCLOSE (L_IN_FILE_HANDLE);
+   END IF;
+   IF UTL_FILE.IS_OPEN (P_LOG_FILE_HANDLE) THEN
+      UTL_FILE.FCLOSE (P_LOG_FILE_HANDLE);
+   END IF;
+   P_ERROR_MESSAGE := SUBSTR(A_FILE_NAME,1,40) ||':Write error';
+   TRACE (P_ERROR_MESSAGE, UL_TRACE_ALERT);
+   COPYINFILETOERROR;
+   UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_GENFAIL;
+   INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME,
+                       ERROR_MSG)
+   VALUES (UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+           'Unilink', P_ERROR_MESSAGE);
+   UNAPIGEN.U4COMMIT;
+   RETURN(UNAPIGEN.P_TXN_ERROR);
+
+WHEN UTL_FILE.INTERNAL_ERROR THEN
+   BEGIN
+      ROLLBACK TO SAVEPOINT UNILINK;
+   EXCEPTION
+   WHEN OTHERS THEN
+      
+      UNAPIGEN.U4ROLLBACK;
+   END;
+   IF UTL_FILE.IS_OPEN (L_IN_FILE_HANDLE) THEN
+      UTL_FILE.FCLOSE (L_IN_FILE_HANDLE);
+   END IF;
+   IF UTL_FILE.IS_OPEN (P_LOG_FILE_HANDLE) THEN
+      UTL_FILE.FCLOSE (P_LOG_FILE_HANDLE);
+   END IF;
+   P_ERROR_MESSAGE := SUBSTR(A_FILE_NAME,1,40) ||':Internal error';
+   TRACE (P_ERROR_MESSAGE, UL_TRACE_ALERT);
+   COPYINFILETOERROR;
+   UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_GENFAIL;
+   INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME,
+                       ERROR_MSG)
+   VALUES (UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+           'Unilink', P_ERROR_MESSAGE);
+   UNAPIGEN.U4COMMIT;
+   RETURN(UNAPIGEN.P_TXN_ERROR);
+
+WHEN OTHERS THEN
+   IF L_NOERROR THEN
+      
+      
+      IF UTL_FILE.IS_OPEN (L_IN_FILE_HANDLE) THEN
+         UTL_FILE.FCLOSE (L_IN_FILE_HANDLE);
+      END IF;
+      IF UTL_FILE.IS_OPEN (P_LOG_FILE_HANDLE) THEN
+         UTL_FILE.FCLOSE (P_LOG_FILE_HANDLE);
+      END IF;
+      UNAPIGEN.U4COMMIT;
+      RETURN (UNAPIGEN.DBERR_SUCCESS);
+   ELSE
+      BEGIN
+         ROLLBACK TO SAVEPOINT UNILINK;
+      EXCEPTION
+      WHEN OTHERS THEN
+         
+         UNAPIGEN.U4ROLLBACK;
+      END;
+      IF UTL_FILE.IS_OPEN (L_IN_FILE_HANDLE) THEN
+         UTL_FILE.FCLOSE (L_IN_FILE_HANDLE);
+      END IF;
+      IF UTL_FILE.IS_OPEN (P_LOG_FILE_HANDLE) THEN
+         UTL_FILE.FCLOSE (P_LOG_FILE_HANDLE);
+      END IF;
+      P_ERROR_MESSAGE := SUBSTR(A_FILE_NAME,1,40) ||SQLCODE;
+      TRACE (P_ERROR_MESSAGE, UL_TRACE_ALERT);
+      COPYINFILETOERROR;
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_GENFAIL;
+
+      IF SQLCODE <> 1 THEN
+         L_SQLERRM := SQLERRM;
+         INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME,
+                             ERROR_MSG)
+         VALUES (UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+                 'Unilink', L_SQLERRM);
+      ELSIF L_SQLERRM IS NOT NULL THEN
+         INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME,
+                             ERROR_MSG)
+         VALUES (UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+                 'Unilink', L_SQLERRM);
+      END IF;
+      UNAPIGEN.U4COMMIT;
+      RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR, 'ProcessOneFile'));
+   END IF;
+END PROCESSONEFILE;
+
+FUNCTION PROCESSFILES             
+RETURN NUMBER IS
+
+L_EOF_OK               BOOLEAN;
+L_FILE_EXIST           BOOLEAN;
+L_COUNTER              VARCHAR2(20);
+L_NEXT_CNT             VARCHAR2(20);
+L_FIRST_CNT            VARCHAR2(20);
+L_CNT_FILE_NAME        VARCHAR2(255);
+
+L_POS_FIRST_TILDE      INTEGER;
+L_POS_SECOND_TILDE     INTEGER;
+L_BEFORE_FIRST_TILDE   VARCHAR2(255);
+L_AFTER_SECOND_TILDE   VARCHAR2(255);
+
+L_EQ                   VARCHAR2(20);
+L_LOC_DIR              VARCHAR2(255);
+L_FILE_NAME            VARCHAR2(255);
+L_CF                   VARCHAR2(255);
+L_AFTER_PROCESS        VARCHAR2(255);
+L_UNILINK_ID           VARCHAR2(255);
+
+L_NR_OF_FILES          NUMBER;
+L_FILES_TAB            UNAPIGEN.VC255_TABLE_TYPE;
+
+L_NOT_LOCKED            NUMBER := 1;
+
+BEGIN
+   
+   
+   
+   
+   
+   
+   
+   L_EQ            := P_EQUL_REC.EQ;
+   L_LOC_DIR       := P_EQUL_REC.LOC_DIR;
+   L_FILE_NAME     := P_EQUL_REC.FILE_NAME;
+   L_CF            := P_EQUL_REC.CF;
+   L_AFTER_PROCESS := P_EQUL_REC.AFTER_PROCESS;
+   TRACE ('eq:'||L_EQ, UL_TRACE_LOW);
+   TRACE ('loc_dir:'||L_LOC_DIR, UL_TRACE_LOW);
+   TRACE ('file_name:'||L_FILE_NAME, UL_TRACE_LOW);
+   TRACE ('cf:'||L_CF, UL_TRACE_LOW);
+   TRACE ('after_process:'||L_AFTER_PROCESS, UL_TRACE_LOW);
+
+   IF L_FILE_NAME <> '*' THEN
+      
+      
+      
+      TRACE ('Fix file name processed:'||L_FILE_NAME, UL_TRACE_NORMAL);
+      L_RET_CODE := PROCESSONEFILE(L_LOC_DIR, L_FILE_NAME, TRUE, L_CF,
+                                   L_AFTER_PROCESS,  L_EOF_OK, L_FILE_EXIST);
+      IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         TRACE ('Processing File('||L_FILE_NAME||') Failed:'|| L_RET_CODE,
+                 UL_TRACE_HIGH);
+      END IF;
+      RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+   ELSE
+      
+      
+      
+      
+
+      TRACE ('GetDirectory File used: in directory '||L_LOC_DIR || P_DELIMITER || 'in', UL_TRACE_NORMAL);
+      TRACE ('GetDirectory File used: temp directory '||L_LOC_DIR || P_DELIMITER || 'in', UL_TRACE_NORMAL);
+
+      L_RET_CODE := UNAPIUL.GETDIRECTORY
+                      (L_LOC_DIR || '_IN',    
+                       L_FILES_TAB,           
+                       L_NR_OF_FILES,
+                       L_NOT_LOCKED);         
+
+
+      IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         TRACE ('GetDirectory Failed:'|| L_RET_CODE, UL_TRACE_HIGH);
+
+      ELSE
+         
+         
+         
+         
+         
+         
+
+         TRACE ('GetDirectory File used: number of files returned :'||TO_CHAR(L_NR_OF_FILES), UL_TRACE_NORMAL);
+
+         FOR L_FILE_NR IN 1..L_NR_OF_FILES LOOP
+            IF SUBSTR(L_FILES_TAB(L_FILE_NR), 1, 1)='.' THEN
+               TRACE ('File('||L_FILES_TAB(L_FILE_NR)||') ignored:'|| L_RET_CODE,
+                      UL_TRACE_NORMAL);
+            ELSE
+
+               L_RET_CODE := PROCESSONEFILE(L_LOC_DIR, L_FILES_TAB(L_FILE_NR), TRUE, L_CF,
+                                            L_AFTER_PROCESS,  L_EOF_OK, L_FILE_EXIST);
+               IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+                  TRACE ('Processing File('||L_FILES_TAB(L_FILE_NR)||') Failed:'|| L_RET_CODE,
+                         UL_TRACE_HIGH);
+               END IF;
+            END IF;
+         END LOOP;
+      END IF;
+      RETURN(UNAPIGEN.DBERR_SUCCESS);
+   END IF;
+END PROCESSFILES;
+
+FUNCTION EXECUTEONEFILE
+(A_FILE             IN    VARCHAR2 DEFAULT '') 
+RETURN NUMBER IS
+
+L_DYN_CURSOR       INTEGER;
+L_CF_RET_CODE      INTEGER;
+
+BEGIN
+   UNAPIUL.P_FILE_NAME := A_FILE;
+
+   TRACE ('Call custom function'||P_EQUL_REC.CF||' for file '||UNAPIUL.P_FILE_NAME, UL_TRACE_LOW);
+   L_RET_CODE := UNAPIGEN.DBERR_SUCCESS;
+   L_SQL_STRING := 'BEGIN :l_retcode := UNILINK.'
+                   || P_EQUL_REC.CF ||'; END;';
+   BEGIN
+
+      L_DYN_CURSOR :=  DBMS_SQL.OPEN_CURSOR;
+      DBMS_SQL.PARSE(L_DYN_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+      DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':l_retcode', L_CF_RET_CODE);
+      L_RESULT := DBMS_SQL.EXECUTE(L_DYN_CURSOR);
+      DBMS_SQL.VARIABLE_VALUE(L_DYN_CURSOR, ':l_retcode', L_CF_RET_CODE);
+      DBMS_SQL.CLOSE_CURSOR(L_DYN_CURSOR);
+      TRACE ('Call custom function returned'||L_CF_RET_CODE, UL_TRACE_LOW);
+
+   EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SUBSTR(SQLERRM,1,200);
+      
+      TRACE ('Calling custom function failed '||L_SQLERRM, UL_TRACE_ALERT);
+
+      IF DBMS_SQL.IS_OPEN(L_DYN_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR(L_DYN_CURSOR);
+      END IF;
+
+   END;
+
+   IF L_CF_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+      TRACE ( 'Call custom function returned '||L_CF_RET_CODE, UL_TRACE_ALERT);
+   END IF;
+   RETURN(L_CF_RET_CODE);
+
+END EXECUTEONEFILE;
+
+FUNCTION UNILINK                               
+(A_UNILINK_ID       IN    VARCHAR2,            
+ A_READ_FILE        IN    CHAR,                
+ A_EOF_DETECTION    IN    VARCHAR2,            
+ A_DELIMITER        IN    CHAR,                
+ A_TRACE_LEVEL      IN    NUMBER,              
+ A_UL_TRACE_ON      IN    CHAR,                
+ A_UL_TRACE_LOC_DIR IN    VARCHAR2,            
+ A_FILE             IN    VARCHAR2 DEFAULT '', 
+ A_TZ               IN    VARCHAR2 DEFAULT 'SERVER') 
+RETURN NUMBER IS
+
+L_UL_REC                 L_UL_CURSOR%ROWTYPE;
+L_EQ_REC                 L_EQ_CURSOR%ROWTYPE;
+L_EOF_OK                 BOOLEAN;
+L_FILE_EXIST             BOOLEAN;
+L_DBA_NAME               VARCHAR2(40);
+L_NUMERIC_CHARACTERS     VARCHAR2(2);
+L_DATEFORMAT             VARCHAR2(255);
+L_UP                     NUMBER(5);
+L_USER_PROFILE           VARCHAR2(40);
+L_LANGUAGE               VARCHAR2(20);
+L_TK                     VARCHAR2(20);
+L_LOCKNAME               VARCHAR2(128);
+L_LOCKHANDLE             VARCHAR2(200);
+L_LOCKID                 NUMBER;
+L_LOCKED                 BOOLEAN;
+L_SQLERRM2               VARCHAR2(255);
+L_LOG_DIR_EXISTS         BOOLEAN;
+L_LOG_DIR_NAME           VARCHAR2(30);
+L_FILEPATH               VARCHAR2(255);
+L_PARAMETER              VARCHAR2(2000);
+
+CURSOR C_LOCKID(A_LOCKNAME VARCHAR2) IS
+   SELECT LOCKID
+   FROM SYS.DBMS_LOCK_ALLOCATED
+   WHERE NAME = A_LOCKNAME;
+
+CURSOR L_UNILINKID_FILES_CURSOR(A_UNILINK_ID VARCHAR2) IS
+   SELECT DISTINCT FILE_NAME
+   FROM UTULIN
+   WHERE UNILINK_ID = A_UNILINK_ID;
+
+BEGIN
+
+   L_SQLERRM := NULL;
+
+   
+   
+   
+   
+   P_LOG_FILE_HANDLE := NULL;
+   P_OUT_FILE_HANDLE := NULL;
+   P_TRC_FILE_HANDLE := NULL;
+
+   
+   
+   
+   L_DATEFORMAT := 'DDfx/fxMMfx/fxRR HH24fx:fxMIfx:fxSS';
+   OPEN C_SYSTEM ('JOBS_DATE_FORMAT');
+   FETCH C_SYSTEM INTO L_DATEFORMAT;
+   CLOSE C_SYSTEM;
+
+   OPEN C_SYSTEM ('DBA_NAME');
+   FETCH C_SYSTEM INTO L_DBA_NAME;
+   IF C_SYSTEM%NOTFOUND THEN
+      CLOSE C_SYSTEM;
+      L_SQLERRM := 'DBA_NAME system default not defined ';
+      RAISE STPERROR;
+   END IF;
+   CLOSE C_SYSTEM;
+   L_NUMERIC_CHARACTERS := 'DB';
+
+   L_RET_CODE := UNAPIGEN.SETCONNECTION('Unilink',
+                                        L_DBA_NAME, 
+                                        '',
+                                        'Unilink', 
+                                        L_NUMERIC_CHARACTERS, 
+                                        L_DATEFORMAT,
+               A_TZ,
+                                        L_UP,
+                                        L_USER_PROFILE,
+                                        L_LANGUAGE,
+                                        L_TK);
+   IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+      L_SQLERRM := 'SetConnection failed ' || TO_CHAR(L_RET_CODE);
+      TRACE (L_SQLERRM, UL_TRACE_LOW);
+      IF L_RET_CODE = UNAPIGEN.DBERR_NOTAUTHORISED THEN
+         L_SQLERRM2 := UNAPIAUT.P_NOT_AUTHORISED;
+         TRACE (L_SQLERRM2, UL_TRACE_LOW);
+      END IF;      
+      RAISE STPERROR;
+   END IF;
+
+	L_PARAMETER := 'UNILINK_ID='|| A_UNILINK_ID ;
+   L_RET_CODE := UNCUSTOMSETCONNECTION.SETCUSTOMCONNECTIONPARAMETER(L_PARAMETER) ;
+	IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+	      L_SQLERRM := 'SetCustomConnectionParameter failed ' || TO_CHAR(L_RET_CODE);
+	      TRACE (L_SQLERRM, UL_TRACE_LOW);
+	      IF L_RET_CODE = UNAPIGEN.DBERR_NOTAUTHORISED THEN
+	         L_SQLERRM2 := UNAPIAUT.P_NOT_AUTHORISED;
+	         TRACE (L_SQLERRM2, UL_TRACE_LOW);
+	      END IF;      
+	      RAISE STPERROR;
+   END IF;
+
+   
+   
+   
+   
+   
+   
+   
+   
+   P_UNILINK_ID := NVL(A_UNILINK_ID, 'UNILINK');
+   P_TRACE_LEVEL := A_TRACE_LEVEL;
+   P_EOF_MODE := A_EOF_DETECTION;
+   P_UL_TRACE_ON := A_UL_TRACE_ON;
+   P_UL_TRACE_LOC_DIR := A_UL_TRACE_LOC_DIR;
+
+   IF A_DELIMITER IS NOT NULL THEN
+      P_DELIMITER := A_DELIMITER;
+   END IF;
+   
+   
+
+   
+   L_LOG_DIR_EXISTS := FALSE;
+   OPEN L_DIRECTORY(P_UL_TRACE_LOC_DIR);
+   FETCH L_DIRECTORY
+   INTO L_FILEPATH;
+   IF L_DIRECTORY%NOTFOUND THEN
+      L_LOG_DIR_EXISTS := FALSE;
+   ELSE
+      L_LOG_DIR_EXISTS := TRUE;
+   END IF;
+   CLOSE L_DIRECTORY;
+
+   IF NOT L_LOG_DIR_EXISTS THEN
+
+      OPEN L_SEARCHDIRECTORY4PATH(P_UL_TRACE_LOC_DIR);
+      FETCH L_SEARCHDIRECTORY4PATH
+      INTO L_LOG_DIR_NAME;
+      IF L_SEARCHDIRECTORY4PATH%NOTFOUND THEN
+         L_LOG_DIR_EXISTS := FALSE;
+      ELSE
+         L_LOG_DIR_EXISTS := TRUE;
+         P_UL_TRACE_LOC_DIR := L_LOG_DIR_NAME;
+      END IF;
+      CLOSE L_SEARCHDIRECTORY4PATH;
+      
+      IF NOT L_LOG_DIR_EXISTS THEN
+         
+         IF SUBSTR(P_UL_TRACE_LOC_DIR,-1)= A_DELIMITER THEN
+
+            OPEN L_SEARCHDIRECTORY4PATH(SUBSTR(P_UL_TRACE_LOC_DIR,-1));
+            FETCH L_SEARCHDIRECTORY4PATH
+            INTO L_LOG_DIR_NAME;
+            IF L_SEARCHDIRECTORY4PATH%NOTFOUND THEN
+               L_LOG_DIR_EXISTS := FALSE;
+            ELSE
+               L_LOG_DIR_EXISTS := TRUE;
+               P_UL_TRACE_LOC_DIR := L_LOG_DIR_NAME;
+            END IF;
+            CLOSE L_SEARCHDIRECTORY4PATH;
+         END IF;
+      END IF;
+   END IF;
+   
+
+
+
+   
+
+   TRACE ('P_TRACE_LEVEL:'||P_TRACE_LEVEL, UL_TRACE_LOW);
+   TRACE ('P_UNILINK_ID:'||P_UNILINK_ID, UL_TRACE_LOW);
+   TRACE ('P_DELIMITER:'||P_DELIMITER, UL_TRACE_LOW);
+   TRACE ('P_EOF_MODE:'||P_EOF_MODE, UL_TRACE_LOW);
+   TRACE ('P_UL_TRACE_ON:'||P_UL_TRACE_ON, UL_TRACE_LOW);
+   TRACE ('Global trace directory :'||P_UL_TRACE_LOC_DIR, UL_TRACE_LOW);
+   TRACE ('Global trace file :'||P_UNILINK_ID||'.log', UL_TRACE_LOW);
+   TRACE ('Read_file(1=>read from file, 0=> just process utulin):'||A_READ_FILE, UL_TRACE_LOW);
+      
+   IF A_READ_FILE = '1' THEN
+      IF A_FILE IS NULL THEN
+         OPEN L_UL_CURSOR(P_UNILINK_ID);
+         LOOP
+
+            FETCH L_UL_CURSOR INTO L_UL_REC;
+            
+            
+            
+            
+            
+            EXIT WHEN L_UL_CURSOR%NOTFOUND;
+            P_EQUL_REC.EQ := L_UL_REC.EQ;
+            P_EQUL_REC.LAB := L_UL_REC.LAB;
+            P_EQUL_REC.LOC_DIR := L_UL_REC.LOC_DIR;
+            
+            
+            
+            
+            P_EQUL_REC.FILE_NAME := L_UL_REC.FILE_NAME;
+            P_EQUL_REC.CF := L_UL_REC.CF;
+            P_EQUL_REC.AFTER_PROCESS := L_UL_REC.AFTER_PROCESS;
+            P_EQUL_REC.EOF_STRING := NVL(L_UL_REC.EOF_STRING,'<EOF>');
+            P_UL_TRACE_LOC_DIR := NVL(A_UL_TRACE_LOC_DIR, P_EQUL_REC.LOC_DIR || '_' || 'LOG');
+
+            
+            
+            
+            L_RET_CODE :=  PROCESSFILES;
+            IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+               UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+               RAISE STPERROR;
+            END IF;
+         END LOOP;
+         CLOSE L_UL_CURSOR;
+
+      ELSE
+         OPEN L_EQ_CURSOR(P_UNILINK_ID);
+         FETCH L_EQ_CURSOR INTO L_EQ_REC;
+         P_EQUL_REC.EQ := L_EQ_REC.EQ;
+         P_EQUL_REC.LOC_DIR := L_EQ_REC.LOC_DIR;
+         
+         
+         
+         
+         P_EQUL_REC.FILE_NAME := L_EQ_REC.FILE_NAME;
+         P_EQUL_REC.CF := L_EQ_REC.CF;
+         P_EQUL_REC.AFTER_PROCESS := L_EQ_REC.AFTER_PROCESS;
+         P_EQUL_REC.EOF_STRING := L_EQ_REC.EOF_STRING;
+         P_UL_TRACE_LOC_DIR := NVL(A_UL_TRACE_LOC_DIR, P_EQUL_REC.LOC_DIR || '_' || 'LOG');
+         
+         
+         
+         
+         
+         
+         L_LOCKED := FALSE;
+
+         L_LOCKNAME := 'U4UNILINK-'||P_UNILINK_ID||'-'||SUBSTR(A_FILE,-(LEAST(100,LENGTH(A_FILE))),100);
+
+         OPEN C_LOCKID(L_LOCKNAME);
+         FETCH C_LOCKID
+         INTO L_LOCKID;
+
+         IF C_LOCKID%NOTFOUND THEN
+            DBMS_LOCK.ALLOCATE_UNIQUE(L_LOCKNAME, L_LOCKHANDLE, 60);
+
+            
+            CLOSE C_LOCKID;
+            OPEN C_LOCKID(L_LOCKNAME);
+            FETCH C_LOCKID
+            INTO L_LOCKID;
+            IF C_LOCKID%NOTFOUND THEN
+               CLOSE C_LOCKID;
+               UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJECT;
+               RAISE STPERROR;
+            END IF;
+         END IF;
+         CLOSE C_LOCKID;
+
+
+            
+            
+            
+            
+            
+            
+            L_RET_CODE := DBMS_LOCK.REQUEST(TO_CHAR(L_LOCKID), DBMS_LOCK.X_MODE,
+                                            0.01, FALSE);
+            IF L_RET_CODE = UNAPIGEN.DBERR_SUCCESS THEN
+               L_LOCKED := TRUE;
+
+               L_RET_CODE :=  PROCESSONEFILE(P_EQUL_REC.LOC_DIR, A_FILE, TRUE,
+                                             P_EQUL_REC.CF, P_EQUL_REC.AFTER_PROCESS, L_EOF_OK, L_FILE_EXIST);
+               
+               
+               L_RESULT := DBMS_LOCK.RELEASE(TO_CHAR(L_LOCKID));
+               IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+                  INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+                  VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+                        'Unilink', 'Major Error : Releasing lock '||L_LOCKNAME||':('||TO_CHAR(L_LOCKID)||
+                        ')returned '||TO_CHAR(L_RESULT));
+                 UNAPIGEN.U4COMMIT;
+               END IF;
+               L_LOCKED := FALSE;
+               IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+                  UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+                  RAISE STPERROR;
+               END IF;
+
+               
+               
+               
+               
+               UNAPIGEN.U4COMMIT;
+            ELSE
+               IF L_RET_CODE <> 1 THEN
+                  INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+                  VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+                         'Unilink', 'Major Error : Requesting lock '||L_LOCKNAME||':('||TO_CHAR(L_LOCKID)||
+                                  ') returned '||TO_CHAR(L_RET_CODE));
+                  UNAPIGEN.U4COMMIT;
+               END IF;
+            END IF;
+
+         CLOSE L_EQ_CURSOR;
+      END IF;
+   ELSE
+      
+      TRACE ('NO ASCII file to read', UL_TRACE_LOW);
+      IF A_FILE IS NULL THEN
+         OPEN L_UL_CURSOR(P_UNILINK_ID);
+         LOOP
+
+            FETCH L_UL_CURSOR INTO L_UL_REC;
+            
+            
+            
+            
+            
+            EXIT WHEN L_UL_CURSOR%NOTFOUND;
+            P_EQUL_REC.EQ := L_UL_REC.EQ;
+            P_EQUL_REC.LOC_DIR := L_UL_REC.LOC_DIR;
+            P_EQUL_REC.FILE_NAME := L_UL_REC.FILE_NAME;
+            P_EQUL_REC.CF := L_UL_REC.CF;
+            P_EQUL_REC.AFTER_PROCESS := L_UL_REC.AFTER_PROCESS;
+            P_EQUL_REC.EOF_STRING := NVL(L_UL_REC.EOF_STRING,'<EOF>');
+            P_UL_TRACE_LOC_DIR := NVL(A_UL_TRACE_LOC_DIR, P_EQUL_REC.LOC_DIR || '_' || 'LOG');
+
+            
+            
+            
+            FOR L_FILES_REC IN L_UNILINKID_FILES_CURSOR(P_UNILINK_ID) LOOP
+               L_RET_CODE :=  EXECUTEONEFILE(L_FILES_REC.FILE_NAME);
+               IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+                  UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+                  RAISE STPERROR;
+               END IF;
+            END LOOP;
+         END LOOP;
+         CLOSE L_UL_CURSOR;
+
+      ELSE
+         OPEN L_EQ_CURSOR(P_UNILINK_ID);
+         FETCH L_EQ_CURSOR INTO L_EQ_REC;
+         P_EQUL_REC.EQ := L_EQ_REC.EQ;
+         P_EQUL_REC.LOC_DIR := L_EQ_REC.LOC_DIR;
+         P_EQUL_REC.FILE_NAME := L_EQ_REC.FILE_NAME;
+         P_EQUL_REC.CF := L_EQ_REC.CF;
+         P_EQUL_REC.AFTER_PROCESS := L_EQ_REC.AFTER_PROCESS;
+         P_EQUL_REC.EOF_STRING := L_EQ_REC.EOF_STRING;
+         P_UL_TRACE_LOC_DIR := NVL(A_UL_TRACE_LOC_DIR, P_EQUL_REC.LOC_DIR || '_' || 'LOG');
+         L_RET_CODE :=  EXECUTEONEFILE(A_FILE);
+
+         IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+            UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+            RAISE STPERROR;
+         END IF;
+
+         CLOSE L_EQ_CURSOR;
+      END IF;
+
+      
+   END IF;
+
+   IF UTL_FILE.IS_OPEN (P_TRC_FILE_HANDLE) THEN
+      UTL_FILE.FCLOSE (P_TRC_FILE_HANDLE);
+      
+      
+   END IF;
+
+   
+   
+   UTL_FILE.FCLOSE_ALL;
+
+   RETURN (UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   UNAPIGEN.U4ROLLBACK;
+   IF L_UL_CURSOR%ISOPEN THEN
+      CLOSE L_UL_CURSOR;
+   END IF;
+   IF L_EQ_CURSOR%ISOPEN THEN
+      CLOSE L_EQ_CURSOR;
+   END IF;
+   IF C_LOCKID%ISOPEN THEN
+      CLOSE C_LOCKID;
+   END IF;
+   IF SQLCODE <> 1 THEN
+      L_SQLERRM := SQLERRM;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME,
+                          ERROR_MSG)
+      VALUES (UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+              'Unilink', L_SQLERRM);
+      TRACE ('Unilink major error:'||SUBSTR(SQLERRM,1,150), UL_TRACE_HIGH);
+   ELSIF L_SQLERRM IS NOT NULL THEN
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME,
+                          ERROR_MSG)
+      VALUES (UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+              'Unilink', L_SQLERRM);
+      TRACE ('Unilink major error:'||SUBSTR(L_SQLERRM,1,150), UL_TRACE_HIGH);
+   END IF;
+   IF L_SQLERRM2 IS NOT NULL THEN
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME,
+                          ERROR_MSG)
+      VALUES (UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+              'Unilink', L_SQLERRM2);
+      TRACE ('Unilink major error:'||SUBSTR(L_SQLERRM2,1,150), UL_TRACE_HIGH);
+   END IF;
+   UNAPIGEN.U4COMMIT;
+
+   
+   UTL_FILE.FCLOSE_ALL;
+   
+   
+   
+   IF L_LOCKED THEN
+      L_RET_CODE := DBMS_LOCK.RELEASE(TO_CHAR(L_LOCKID));
+      IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+         VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+                'Unilink', 'Major error : Releasing lock '||L_LOCKNAME||':('||TO_CHAR(L_LOCKID)||
+                ')returned '||TO_CHAR(L_RET_CODE));
+         UNAPIGEN.U4COMMIT;
+      END IF;
+   END IF;
+   RETURN(UNAPIGEN.DBERR_GENFAIL);
+END UNILINK;
+
+
+
+
+
+FUNCTION UNILINK                    
+(A_EQ               IN    VARCHAR2, 
+ A_DELIMITER        IN    CHAR,     
+ A_TRACE_LEVEL      IN    NUMBER,   
+ A_FILE             IN    VARCHAR2) 
+RETURN NUMBER IS
+
+L_UL_TRACE_ON       CHAR(1);
+L_UL_TRACE_LEVEL    NUMBER;
+
+BEGIN
+ P_TRACE_LEVEL := A_TRACE_LEVEL;
+ IF A_TRACE_LEVEL < 5 THEN
+    L_UL_TRACE_ON := '1';
+    L_UL_TRACE_LEVEL := A_TRACE_LEVEL;
+ ELSE
+    L_UL_TRACE_ON := '0';
+    L_UL_TRACE_LEVEL := 5;
+ END IF;
+ RETURN(UNAPIUL.UNILINK(A_EQ, '1', 'OS', A_DELIMITER, L_UL_TRACE_LEVEL, L_UL_TRACE_ON, '',A_FILE));
+END UNILINK;
+
+PROCEDURE TRACE                     
+(A_TEXT_LINE   IN VARCHAR2,         
+ A_TRACE_LEVEL IN NUMBER)           
+IS
+
+BEGIN
+   IF A_TRACE_LEVEL >= NVL(P_TRACE_LEVEL,5) THEN
+
+      DBMS_OUTPUT.PUT_LINE(A_TRACE_LEVEL||' - '||SUBSTR(A_TEXT_LINE,1,200));
+      IF LENGTH(A_TEXT_LINE)> 200 THEN
+         DBMS_OUTPUT.PUT_LINE(A_TRACE_LEVEL||' - '||SUBSTR(A_TEXT_LINE,201,200));
+      END IF;
+
+      BEGIN
+         IF P_UL_TRACE_LOC_DIR IS NOT NULL THEN
+            IF NOT UTL_FILE.IS_OPEN (P_TRC_FILE_HANDLE) THEN
+               P_TRC_FILE_HANDLE := UTL_FILE.FOPEN (P_UL_TRACE_LOC_DIR, P_UNILINK_ID||'.log', 'W');
+            END IF;
+            UTL_FILE.PUT_LINE(P_TRC_FILE_HANDLE,A_TEXT_LINE);
+         END IF;
+
+      EXCEPTION
+      WHEN UTL_FILE.INVALID_MODE THEN
+         IF UTL_FILE.IS_OPEN (P_TRC_FILE_HANDLE) THEN
+            UTL_FILE.FCLOSE (P_TRC_FILE_HANDLE);
+         END IF;
+         DBMS_OUTPUT.PUT_LINE('Invalid mode');
+
+      WHEN UTL_FILE.INVALID_FILEHANDLE THEN
+         IF UTL_FILE.IS_OPEN (P_TRC_FILE_HANDLE) THEN
+            UTL_FILE.FCLOSE (P_TRC_FILE_HANDLE);
+         END IF;
+         DBMS_OUTPUT.PUT_LINE('Invalid filehandle');
+
+      WHEN UTL_FILE.INVALID_OPERATION THEN
+         IF UTL_FILE.IS_OPEN (P_TRC_FILE_HANDLE) THEN
+            UTL_FILE.FCLOSE (P_TRC_FILE_HANDLE);
+         END IF;
+         DBMS_OUTPUT.PUT_LINE('Invalid operation');
+
+      WHEN UTL_FILE.READ_ERROR THEN
+         IF UTL_FILE.IS_OPEN (P_TRC_FILE_HANDLE) THEN
+            UTL_FILE.FCLOSE (P_TRC_FILE_HANDLE);
+         END IF;
+         DBMS_OUTPUT.PUT_LINE('Read error');
+
+      WHEN UTL_FILE.WRITE_ERROR THEN
+         IF UTL_FILE.IS_OPEN (P_TRC_FILE_HANDLE) THEN
+            UTL_FILE.FCLOSE (P_TRC_FILE_HANDLE);
+         END IF;
+         DBMS_OUTPUT.PUT_LINE('Write error');
+
+      WHEN UTL_FILE.INTERNAL_ERROR THEN
+         IF UTL_FILE.IS_OPEN (P_TRC_FILE_HANDLE) THEN
+            UTL_FILE.FCLOSE (P_TRC_FILE_HANDLE);
+         END IF;
+         DBMS_OUTPUT.PUT_LINE('Internal error');
+
+      WHEN OTHERS THEN
+         IF UTL_FILE.IS_OPEN (P_TRC_FILE_HANDLE) THEN
+            UTL_FILE.FCLOSE (P_TRC_FILE_HANDLE);
+         END IF;
+         DBMS_OUTPUT.PUT_LINE('General error'||SQLCODE);
+      END;
+   END IF;
+END TRACE;
+
+
+
+
+FUNCTION GETULTEXTLIST                             
+(A_FILE_NAME    IN     VARCHAR2,                   
+ A_READ_ON      OUT    UNAPIGEN.DATE_TABLE_TYPE,   
+ A_LINE_NBR     OUT    UNAPIGEN.NUM_TABLE_TYPE,    
+ A_TEXT_LINE    OUT    UNAPIGEN.VC2000_TABLE_TYPE, 
+ A_NR_OF_ROWS   IN OUT NUMBER,                     
+ A_NEXT_ROWS    IN     NUMBER)                     
+RETURN NUMBER IS
+
+L_READ_ON              TIMESTAMP WITH TIME ZONE;
+L_LINE_NBR             NUMBER;
+L_TEXT_LINE            VARCHAR2(2000);
+
+BEGIN
+
+   IF NVL(A_NR_OF_ROWS,0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN(UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+
+   IF NVL(A_NEXT_ROWS, 0) NOT IN (-1, 0, 1) THEN
+      RETURN(UNAPIGEN.DBERR_NEXTROWS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = -1 THEN
+      IF L_UTULIN_CURSOR%ISOPEN  THEN
+         CLOSE L_UTULIN_CURSOR;
+      END IF;
+      RETURN (UNAPIGEN.DBERR_SUCCESS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = 1 THEN
+      IF NOT L_UTULIN_CURSOR%ISOPEN THEN
+         RETURN(UNAPIGEN.DBERR_NOCURSOR);
+      END IF;
+   END IF;
+
+   
+   IF NVL(A_NEXT_ROWS,0) = 0 THEN
+
+      IF NOT L_UTULIN_CURSOR%ISOPEN THEN
+         OPEN L_UTULIN_CURSOR(A_FILE_NAME);
+      END IF;
+
+   END IF;
+
+   FETCH L_UTULIN_CURSOR
+   INTO L_READ_ON, L_LINE_NBR, L_TEXT_LINE;
+   L_FETCHED_ROWS := 0;
+
+   LOOP
+      EXIT WHEN L_UTULIN_CURSOR%NOTFOUND OR L_FETCHED_ROWS >= A_NR_OF_ROWS;
+
+      L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+
+      A_READ_ON(L_FETCHED_ROWS) := L_READ_ON;
+      A_LINE_NBR(L_FETCHED_ROWS) := L_LINE_NBR;
+      A_TEXT_LINE(L_FETCHED_ROWS) := L_TEXT_LINE;
+
+      IF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+         FETCH L_UTULIN_CURSOR
+         INTO L_READ_ON, L_LINE_NBR, L_TEXT_LINE;
+      END IF;
+   END LOOP;
+
+   
+   IF L_FETCHED_ROWS = 0 THEN
+       CLOSE L_UTULIN_CURSOR;
+       RETURN(UNAPIGEN.DBERR_NORECORDS);
+   ELSIF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+       CLOSE L_UTULIN_CURSOR;
+       A_NR_OF_ROWS := L_FETCHED_ROWS;
+   END IF;
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+             'GetULTextList', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      IF L_UTULIN_CURSOR%ISOPEN THEN
+         CLOSE L_UTULIN_CURSOR;
+      END IF;
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END GETULTEXTLIST;
+
+FUNCTION DELETEULTEXT                              
+(A_FILE_NAME    IN     VARCHAR2)                   
+RETURN NUMBER IS
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <>
+      UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   DELETE FROM UTULIN
+   WHERE UNILINK_ID = P_UNILINK_ID
+   AND FILE_NAME = NVL(A_FILE_NAME, UNAPIUL.P_FILE_NAME);
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   RETURN (UNAPIGEN.DBERR_SUCCESS);
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('DeleteULText',SQLERRM);
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR, 'DeleteULText'));
+END DELETEULTEXT;
+
+
+
+
+
+
+PROCEDURE WRITETOLOGNOREMOTEAPICALL      
+(A_API_NAME     IN        VARCHAR2,    
+ A_LOG_MSG    IN        VARCHAR2)    
+IS
+PRAGMA AUTONOMOUS_TRANSACTION;
+
+BEGIN
+   
+   INSERT INTO UTULLOG
+   (UNILINK_ID, EQ, LOC_DIR, FILE_NAME, API_NAME, LOGDATE, LOGDATE_TZ, LOG_MSG)
+   VALUES
+   (P_UNILINK_ID, P_EQUL_REC.EQ, P_EQUL_REC.LOC_DIR, P_FILE_NAME,
+    A_API_NAME, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, SUBSTR(A_LOG_MSG,1,255));
+
+   IF LENGTH(A_LOG_MSG)>255 THEN
+      INSERT INTO UTULLOG
+      (UNILINK_ID, EQ, LOC_DIR, FILE_NAME, API_NAME, LOGDATE, LOGDATE_TZ, LOG_MSG)
+      VALUES
+      (P_UNILINK_ID, P_EQUL_REC.EQ, P_EQUL_REC.LOC_DIR, P_FILE_NAME,
+       A_API_NAME, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, SUBSTR(A_LOG_MSG,256,255));
+   END IF;
+   COMMIT; 
+END WRITETOLOGNOREMOTEAPICALL;
+
+FUNCTION WRITETOLOG                   
+(A_API_NAME    IN     VARCHAR2,       
+ A_LOG_MSG     IN     VARCHAR2)       
+RETURN NUMBER IS
+BEGIN
+
+   IF P_UL_TRACE_ON = '1' THEN
+      IF UNAPIGEN.P_REMOTE = '0' THEN
+         WRITETOLOGNOREMOTEAPICALL(A_API_NAME, A_LOG_MSG);
+      ELSE   
+         
+         INSERT INTO UTULLOG
+         (UNILINK_ID, EQ, LOC_DIR, FILE_NAME, API_NAME, LOGDATE, LOGDATE_TZ, LOG_MSG)
+         VALUES
+         (P_UNILINK_ID, P_EQUL_REC.EQ, P_EQUL_REC.LOC_DIR, P_FILE_NAME,
+          A_API_NAME, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, SUBSTR(A_LOG_MSG,1,255));
+
+         IF LENGTH(A_LOG_MSG)>255 THEN
+            INSERT INTO UTULLOG
+            (UNILINK_ID, EQ, LOC_DIR, FILE_NAME, API_NAME, LOGDATE, LOGDATE_TZ, LOG_MSG)
+            VALUES
+            (P_UNILINK_ID, P_EQUL_REC.EQ, P_EQUL_REC.LOC_DIR, P_FILE_NAME,
+             A_API_NAME, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, SUBSTR(A_LOG_MSG,256,255));
+         END IF;
+      END IF;
+      
+      
+      IF UTL_FILE.IS_OPEN (P_LOG_FILE_HANDLE) THEN
+         UTL_FILE.PUT_LINE (P_LOG_FILE_HANDLE, A_LOG_MSG);
+      END IF;
+   END IF;
+
+   RETURN (UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('WriteToLog',SQLERRM);
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR, 'WriteToLog'));
+END WRITETOLOG;
+
+FUNCTION OPENOUTPUTFILE                       
+(A_FILE_NAME    IN     VARCHAR2)              
+RETURN NUMBER IS
+BEGIN
+   IF UTL_FILE.IS_OPEN (P_OUT_FILE_HANDLE) THEN
+      UTL_FILE.FCLOSE (P_OUT_FILE_HANDLE);
+   END IF;
+   P_OUT_FILE_HANDLE := UTL_FILE.FOPEN (P_LOC_OUT_DIR, A_FILE_NAME, 'W');
+   RETURN (UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF UTL_FILE.IS_OPEN (P_OUT_FILE_HANDLE) THEN
+      UTL_FILE.FCLOSE (P_OUT_FILE_HANDLE);
+   END IF;
+   RETURN (UNAPIGEN.DBERR_GENFAIL);
+END OPENOUTPUTFILE;
+
+FUNCTION CLOSEOUTPUTFILE         
+RETURN NUMBER IS
+BEGIN
+   IF UTL_FILE.IS_OPEN (P_OUT_FILE_HANDLE) THEN
+      UTL_FILE.FCLOSE (P_OUT_FILE_HANDLE);
+   END IF;
+   RETURN (UNAPIGEN.DBERR_SUCCESS);
+EXCEPTION
+WHEN OTHERS THEN
+   RETURN (UNAPIGEN.DBERR_GENFAIL);
+END CLOSEOUTPUTFILE;
+
+FUNCTION WRITETOOUTPUTFILE         
+(A_TEXT_LINE  IN VARCHAR2)         
+RETURN NUMBER IS
+BEGIN
+   IF UTL_FILE.IS_OPEN (P_OUT_FILE_HANDLE) THEN
+      UTL_FILE.PUT_LINE(P_OUT_FILE_HANDLE,A_TEXT_LINE);
+      RETURN (UNAPIGEN.DBERR_SUCCESS);
+   ELSE
+      RETURN (UNAPIGEN.DBERR_NOOBJECT);
+   END IF;
+EXCEPTION
+WHEN OTHERS THEN
+   IF UTL_FILE.IS_OPEN (P_OUT_FILE_HANDLE) THEN
+      UTL_FILE.FCLOSE (P_OUT_FILE_HANDLE);
+   END IF;
+   IF SQLCODE <> 1 THEN
+      L_SQLERRM := SUBSTR(SQLERRM,1,255);
+
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+             'WriteToOutputFile', L_SQLERRM);
+   END IF;
+   RETURN (UNAPIGEN.DBERR_GENFAIL);
+END WRITETOOUTPUTFILE;
+
+FUNCTION STARTUNILINK         
+(A_UNILINK_ID       IN    VARCHAR2, 
+ A_READ_FILE        IN    CHAR,     
+ A_EOF_DETECTION    IN    VARCHAR2, 
+ A_DELIMITER        IN    CHAR,     
+ A_TRACE_LEVEL      IN    NUMBER,   
+ A_UL_TRACE_ON      IN    CHAR,     
+ A_UL_TRACE_LOC_DIR IN    VARCHAR2,  
+ A_TZ IN    VARCHAR2 DEFAULT 'SERVER') 
+RETURN NUMBER IS
+
+L_JOB            VARCHAR2(30); 
+L_ENABLED         VARCHAR2(5);
+L_ACTION         VARCHAR2(4000);
+L_INTERVAL       VARCHAR2(40);
+L_SETTING_VALUE  VARCHAR2(40);
+L_FOUND          BOOLEAN;
+L_LEAVE_LOOP     BOOLEAN;
+L_ATTEMPTS       INTEGER;
+L_UNILINK_ID     VARCHAR2(20);
+L_ISDBAUSER      INTEGER;
+L_SESSION_TIMEZONE   VARCHAR2(64);
+
+BEGIN
+      SELECT SESSIONTIMEZONE
+        INTO L_SESSION_TIMEZONE
+        FROM DUAL;
+      EXECUTE IMMEDIATE 'ALTER SESSION SET time_zone = DBTIMEZONE';
+
+   
+   
+   
+   
+   
+   
+   OPEN L_JOBS_CURSOR(''''||NVL(A_UNILINK_ID,'UNILINK')||'''');
+   FETCH L_JOBS_CURSOR INTO L_JOB,L_ENABLED,L_ACTION ;
+   L_FOUND := L_JOBS_CURSOR%FOUND;
+   CLOSE L_JOBS_CURSOR;
+
+   L_ISDBAUSER := UNAPIGEN.ISEXTERNALDBAUSER();
+   
+   IF L_FOUND THEN
+      
+      
+      IF  L_ENABLED= 'FALSE' THEN
+         IF (UNAPIGEN.ISUSERAUTHORISED(UNAPIGEN.P_CURRENT_UP, UNAPIGEN.P_USER, 'database', 'startstopjobs') <> UNAPIGEN.DBERR_SUCCESS) AND 
+            L_ISDBAUSER <> UNAPIGEN.DBERR_SUCCESS THEN
+            
+            EXECUTE IMMEDIATE 'ALTER SESSION SET time_zone = ''' || L_SESSION_TIMEZONE || '''';
+            RETURN(UNAPIGEN.DBERR_EVMGRSTARTNOTAUTHORISED);
+         END IF;
+         
+         
+         
+         DBMS_SCHEDULER.ENABLE(L_JOB); 
+      END IF;
+
+
+   ELSE
+      
+      
+      IF (UNAPIGEN.ISUSERAUTHORISED(UNAPIGEN.P_CURRENT_UP, UNAPIGEN.P_USER, 'database', 'startstopjobs') <> UNAPIGEN.DBERR_SUCCESS) AND 
+         L_ISDBAUSER <> UNAPIGEN.DBERR_SUCCESS THEN
+         
+         EXECUTE IMMEDIATE 'ALTER SESSION SET time_zone = ''' || L_SESSION_TIMEZONE || '''';
+         RETURN(UNAPIGEN.DBERR_EVMGRSTARTNOTAUTHORISED);
+      END IF;
+
+      BEGIN
+         SELECT SETTING_VALUE
+         INTO L_SETTING_VALUE
+         FROM UTSYSTEM
+         WHERE SETTING_NAME = 'UL_POLLING_INTERVAL';
+
+         L_INTERVAL := L_SETTING_VALUE;
+
+      EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+         
+         L_INTERVAL := '5*60' ;
+         L_SQLERRM := 'utsystem.setting_name(POLLING_INTERVAL) not found => Forced to 5 minutes';
+         INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+         VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+                   'StartUnilink', L_SQLERRM);
+      WHEN OTHERS THEN
+         
+         L_INTERVAL := '5*60' ;
+         L_SQLERRM := SUBSTR(SQLERRM,1,255);
+         INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+         VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+                'StartUnilink', L_SQLERRM);
+      END;
+
+      
+      
+      
+      L_SQL_STRING := 'DECLARE l_ret_code INTEGER; BEGIN l_ret_code:= UNAPIUL.Unilink('''||
+                      A_UNILINK_ID ||''',''' || A_READ_FILE || ''',''' ||
+                      A_EOF_DETECTION ||''',''' || A_DELIMITER ||''',' ||
+                      TO_CHAR(A_TRACE_LEVEL)||',''' ||
+                      A_UL_TRACE_ON || ''',''' ||
+                      A_UL_TRACE_LOC_DIR || ''', '''', ''' ||  A_TZ ||'''); END;';       
+         L_JOB := DBMS_SCHEDULER.GENERATE_JOB_NAME ('UNI_J_Unilink');
+         DBMS_SCHEDULER.CREATE_JOB(
+             JOB_NAME            =>  '"' ||UNAPIGEN.P_DBA_NAME||'".'||L_JOB,
+             JOB_CLASS           => 'UNI_JC_OTHER_JOBS',
+             JOB_TYPE            =>  'PLSQL_BLOCK',
+             JOB_ACTION          =>  L_SQL_STRING,
+             START_DATE          =>   CURRENT_TIMESTAMP+ ((1/24)/60),
+             
+             
+             REPEAT_INTERVAL     =>  UNAPIEV.SQLTRANSLATEDJOBINTERVAL(L_INTERVAL, 'seconds'),             
+             ENABLED             => TRUE
+        );   
+   END IF;
+  DBMS_SCHEDULER.SET_ATTRIBUTE (
+                    NAME           => L_JOB,
+                    ATTRIBUTE      => 'restartable',
+                    VALUE          => TRUE);
+   UNAPIGEN.U4COMMIT;
+
+   
+   
+   
+   
+   
+   L_LEAVE_LOOP := FALSE;
+   L_ATTEMPTS := 0;
+   WHILE NOT L_LEAVE_LOOP LOOP
+      L_ATTEMPTS := L_ATTEMPTS + 1;
+      OPEN L_JOBS_CURSOR(''''||NVL(A_UNILINK_ID,'UNILINK')||'''');
+      FETCH L_JOBS_CURSOR INTO L_JOB,L_ENABLED,L_ACTION ;
+      L_FOUND := L_JOBS_CURSOR%FOUND;
+      CLOSE L_JOBS_CURSOR;
+      IF L_FOUND THEN
+         L_LEAVE_LOOP := TRUE;
+      ELSE
+         IF L_ATTEMPTS >= 30 THEN
+            L_SQLERRM := 'Unilink not started ! (timeout after 60 seconds)';
+            RAISE STPERROR;
+         ELSE
+            DBMS_LOCK.SLEEP(2);
+         END IF;
+      END IF;
+   END LOOP;
+   
+   EXECUTE IMMEDIATE 'ALTER SESSION SET time_zone = ''' || L_SESSION_TIMEZONE || '''';
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   
+   EXECUTE IMMEDIATE 'ALTER SESSION SET time_zone = ''' || L_SESSION_TIMEZONE || '''';
+   IF SQLCODE <> 1 THEN
+      L_SQLERRM := SQLERRM;
+   END IF;
+   INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+   VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+                     'StartUnilink' , L_SQLERRM );
+   UNAPIGEN.U4COMMIT;
+   IF L_JOBS_CURSOR%ISOPEN THEN
+      CLOSE L_JOBS_CURSOR;
+   END IF;
+   IF C_SYSTEM%ISOPEN THEN
+      CLOSE C_SYSTEM;
+   END IF;
+   RETURN(UNAPIGEN.DBERR_GENFAIL);
+END STARTUNILINK;
+
+FUNCTION STOPUNILINK                
+(A_UNILINK_ID       IN    VARCHAR2) 
+RETURN NUMBER IS
+
+L_JOB            VARCHAR2(30); 
+L_ENABLED         VARCHAR2(5);
+L_ACTION         VARCHAR2(4000);
+L_INTERVAL       NUMBER;
+L_SETTING_VALUE  VARCHAR2(40);
+L_FOUND          BOOLEAN;
+L_LEAVE_LOOP     BOOLEAN;
+L_ATTEMPTS       INTEGER;
+L_UNILINK_ID     VARCHAR2(20);
+L_ISDBAUSER      INTEGER;
+L_SESSION_TIMEZONE   VARCHAR2(64);
+
+BEGIN
+      SELECT SESSIONTIMEZONE
+        INTO L_SESSION_TIMEZONE
+        FROM DUAL;
+      EXECUTE IMMEDIATE 'ALTER SESSION SET time_zone = DBTIMEZONE';
+
+   
+   
+   
+   
+   
+   
+   OPEN L_JOBS_CURSOR(''''||NVL(A_UNILINK_ID,'UNILINK')||'''');
+   FETCH L_JOBS_CURSOR INTO L_JOB,L_ENABLED,L_ACTION ;
+   L_FOUND := L_JOBS_CURSOR%FOUND;
+   CLOSE L_JOBS_CURSOR;
+
+   L_ISDBAUSER := UNAPIGEN.ISEXTERNALDBAUSER();
+
+   IF L_FOUND THEN
+      
+      
+      IF (UNAPIGEN.ISUSERAUTHORISED(UNAPIGEN.P_CURRENT_UP, UNAPIGEN.P_USER, 'database', 'startstopjobs') <> UNAPIGEN.DBERR_SUCCESS) AND 
+         L_ISDBAUSER <> UNAPIGEN.DBERR_SUCCESS THEN
+        
+        EXECUTE IMMEDIATE 'ALTER SESSION SET time_zone = ''' || L_SESSION_TIMEZONE || '''';
+        RETURN(UNAPIGEN.DBERR_EVMGRSTARTNOTAUTHORISED);
+      END IF;
+      
+      
+      
+      DBMS_SCHEDULER.DROP_JOB(L_JOB);
+   END IF;
+
+   UNAPIGEN.U4COMMIT;
+
+   
+   
+   
+   
+   
+   L_LEAVE_LOOP := FALSE;
+   L_ATTEMPTS := 0;
+   WHILE NOT L_LEAVE_LOOP LOOP
+      L_ATTEMPTS := L_ATTEMPTS + 1;
+      OPEN L_JOBS_CURSOR(''''||NVL(A_UNILINK_ID,'UNILINK')||'''');
+      FETCH L_JOBS_CURSOR INTO L_JOB,L_ENABLED,L_ACTION ;
+      L_FOUND := L_JOBS_CURSOR%FOUND;
+      CLOSE L_JOBS_CURSOR;
+      IF NOT L_FOUND THEN
+         L_LEAVE_LOOP := TRUE;
+      ELSE
+         IF L_ATTEMPTS >= 30 THEN
+            L_SQLERRM := 'Unilink not stopped ! (timeout after 60 seconds)';
+            RAISE STPERROR;
+         ELSE
+            DBMS_LOCK.SLEEP(2);
+         END IF;
+      END IF;
+   END LOOP;
+    
+    EXECUTE IMMEDIATE 'ALTER SESSION SET time_zone = ''' || L_SESSION_TIMEZONE || '''';
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+    
+    EXECUTE IMMEDIATE 'ALTER SESSION SET time_zone = ''' || L_SESSION_TIMEZONE || '''';
+   IF SQLCODE <> 1 THEN
+      L_SQLERRM := SQLERRM;
+   END IF;
+   INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+   VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+                     'StopUnilink' , L_SQLERRM );
+   UNAPIGEN.U4COMMIT;
+   IF L_JOBS_CURSOR%ISOPEN THEN
+      CLOSE L_JOBS_CURSOR;
+   END IF;
+   IF C_SYSTEM%ISOPEN THEN
+      CLOSE C_SYSTEM;
+   END IF;
+   RETURN(UNAPIGEN.DBERR_GENFAIL);
+END STOPUNILINK;
+
+FUNCTION CHANGEULINTERVAL          
+(A_UNILINK_ID      IN    VARCHAR2, 
+ A_INTERVAL        IN    VARCHAR2) 
+RETURN NUMBER IS
+
+
+
+
+L_JOB            VARCHAR2(30); 
+L_ENABLED         VARCHAR2(5);
+L_ACTION         VARCHAR2(4000);
+L_INTERVAL       VARCHAR2(40);
+L_SETTING_VALUE  VARCHAR2(40);
+L_FOUND          BOOLEAN;
+L_LEAVE_LOOP     BOOLEAN;
+L_ATTEMPTS       INTEGER;
+L_UNILINK_ID     VARCHAR2(20);
+L_ISDBAUSER      INTEGER;
+
+BEGIN
+
+   
+   
+   
+   
+   
+   
+   OPEN L_JOBS_CURSOR(''''||NVL(A_UNILINK_ID,'UNILINK')||'''');
+   FETCH L_JOBS_CURSOR INTO L_JOB,L_ENABLED,L_ACTION ;
+   L_FOUND := L_JOBS_CURSOR%FOUND;
+   CLOSE L_JOBS_CURSOR;
+
+   L_ISDBAUSER := UNAPIGEN.ISEXTERNALDBAUSER();
+
+   IF L_FOUND THEN
+
+      
+      
+      IF (UNAPIGEN.ISUSERAUTHORISED(UNAPIGEN.P_CURRENT_UP, UNAPIGEN.P_USER, 'database', 'startstopjobs') <> UNAPIGEN.DBERR_SUCCESS) AND 
+         L_ISDBAUSER <> UNAPIGEN.DBERR_SUCCESS THEN
+         RETURN(UNAPIGEN.DBERR_EVMGRSTARTNOTAUTHORISED);
+      END IF;
+
+      
+      
+      
+    DBMS_SCHEDULER.SET_ATTRIBUTE (
+      NAME            => L_JOB,
+      ATTRIBUTE        => 'repeat_interval',
+      VALUE            =>  'FREQ = SECONDLY; INTERVAL = ' || A_INTERVAL
+       );
+
+   END IF;
+
+   UNAPIGEN.U4COMMIT;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      L_SQLERRM := SQLERRM;
+   END IF;
+   INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+   VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+                     'ChangeULInterval' , L_SQLERRM );
+   UNAPIGEN.U4COMMIT;
+   IF L_JOBS_CURSOR%ISOPEN THEN
+      CLOSE L_JOBS_CURSOR;
+   END IF;
+   IF C_SYSTEM%ISOPEN THEN
+      CLOSE C_SYSTEM;
+   END IF;
+   RETURN(UNAPIGEN.DBERR_GENFAIL);
+END CHANGEULINTERVAL;
+
+
+
+
+
+FUNCTION RMFILE(FILETODELETE IN VARCHAR2) RETURN VARCHAR2
+AS
+LANGUAGE JAVA
+NAME 'UNAPIFILE.rmfile(java.lang.String) return String';
+
+FUNCTION REMOVEFILE
+(A_FILEPATH  IN VARCHAR2)  
+RETURN NUMBER IS
+
+L_RET_STRING      VARCHAR2(2000);
+L_SQLERRM         VARCHAR2(255);
+L_SQLERRM2        VARCHAR2(255);
+
+BEGIN
+
+   IF A_FILEPATH IS NULL THEN
+      L_SQLERRM := 'a_filepath argument is empty';
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_GENFAIL;
+      RAISE STPERROR;   
+   END IF;
+
+   L_RET_STRING := RMFILE (A_FILEPATH) ;
+   IF L_RET_STRING <> 'OK' THEN
+      
+      L_SQLERRM := SUBSTR('rmfile for:'||A_FILEPATH||', returned:'||L_RET_STRING, 1, 255);
+      L_SQLERRM2 := SUBSTR(L_RET_STRING, 255 - LENGTH('rmfile for:'||A_FILEPATH||', returned:')+1, 255);
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_GENFAIL;
+      RAISE STPERROR;
+   END IF;
+   RETURN (UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      L_SQLERRM := SQLERRM;
+   END IF;
+   IF L_SQLERRM IS NOT NULL THEN
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+                        'RemoveFile' , L_SQLERRM );
+      UNAPIGEN.U4COMMIT;
+   END IF;
+   IF L_SQLERRM2 IS NOT NULL THEN
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+                        'RemoveFile' , L_SQLERRM2 );
+      UNAPIGEN.U4COMMIT;
+   END IF;
+   RETURN(UNAPIGEN.DBERR_GENFAIL);
+END REMOVEFILE;
+
+FUNCTION REMOVEFILE                              
+(A_DIRECTORY    IN          VARCHAR2,            
+ A_DELIMITER    IN          CHAR,                
+ A_FILE         IN          VARCHAR2)            
+RETURN NUMBER IS
+
+L_RET_STRING      VARCHAR2(2000);
+L_FILEPATH        VARCHAR2(255);
+L_SQLERRM         VARCHAR2(255);
+L_SQLERRM2        VARCHAR2(255);
+
+BEGIN
+
+   
+   IF A_DIRECTORY IS NULL THEN
+      L_SQLERRM := 'a_directory argument is empty';
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_GENFAIL;
+      RAISE STPERROR;   
+   END IF;
+
+   IF A_DELIMITER IS NULL THEN
+      L_SQLERRM := 'a_delimiter argument is empty';
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_GENFAIL;
+      RAISE STPERROR;   
+   END IF;
+
+   IF A_FILE IS NULL THEN
+      L_SQLERRM := 'a_file argument is empty';
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_GENFAIL;
+      RAISE STPERROR;   
+   END IF;
+   
+   
+   OPEN L_DIRECTORY(A_DIRECTORY);
+   FETCH L_DIRECTORY
+   INTO L_FILEPATH;
+   IF L_DIRECTORY%NOTFOUND THEN
+      CLOSE L_DIRECTORY;
+      L_SQLERRM := 'no corresponding directory found in Oracle for '||A_DIRECTORY;
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_GENFAIL;
+      RAISE STPERROR;   
+   END IF;
+   CLOSE L_DIRECTORY;
+   
+   
+   
+   IF SUBSTR(L_FILEPATH,-1)= A_DELIMITER THEN
+      L_FILEPATH := L_FILEPATH || A_FILE;
+   ELSE
+      L_FILEPATH := L_FILEPATH || A_DELIMITER || A_FILE;
+   END IF;
+
+   L_RET_STRING := RMFILE (L_FILEPATH) ;
+   IF L_RET_STRING <> 'OK' THEN
+      
+      L_SQLERRM := SUBSTR('rmfile for:'||L_FILEPATH||', returned:'||L_RET_STRING, 1, 255);
+      L_SQLERRM2 := SUBSTR(L_RET_STRING, 255 - LENGTH('rmfile for:'||L_FILEPATH||', returned:')+1, 255);
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_GENFAIL;
+      RAISE STPERROR;
+   END IF;
+   RETURN (UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      L_SQLERRM := SQLERRM;
+   END IF;
+   IF L_DIRECTORY%ISOPEN THEN
+      CLOSE L_DIRECTORY;
+   END IF;
+   IF L_SQLERRM IS NOT NULL THEN
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+                        'RemoveFile' , L_SQLERRM );
+      UNAPIGEN.U4COMMIT;
+   END IF;
+   IF L_SQLERRM2 IS NOT NULL THEN
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+                        'RemoveFile' , L_SQLERRM2 );
+      UNAPIGEN.U4COMMIT;
+   END IF;
+   RETURN(UNAPIGEN.DBERR_GENFAIL);
+END REMOVEFILE;
+
+
+
+
+
+
+
+
+
+
+FUNCTION DIRLIST(DBASCHEMA IN VARCHAR2, DIRTOSCAN IN VARCHAR2, LISTOFFILESINDIR OUT VC255_NESTEDTABLE_TYPE) RETURN VARCHAR2
+AS
+LANGUAGE JAVA
+NAME 'UNAPIFILE.dirlist(java.lang.String, java.lang.String, oracle.sql.ARRAY[]) return String';
+
+FUNCTION GETDIRECTORY                                
+(A_DIRPATH      IN    VARCHAR2,                     
+ A_FILES        OUT   UNAPIGEN.VC255_TABLE_TYPE,    
+ A_NR_OF_ROWS   OUT   NUMBER,                       
+ A_NOT_LOCKED   IN    NUMBER DEFAULT 1 )                        
+RETURN NUMBER IS
+
+   L_SQLERRM         VARCHAR2(255);
+   L_FILEPATH        VARCHAR2(255);
+   L_SQLERRM2        VARCHAR2(255);
+   L_RET_STRING      VARCHAR2(2000);
+   L_FILES_TAB       VC255_NESTEDTABLE_TYPE;
+   L_COUNT           INTEGER;
+   L_DBA_NAME        VARCHAR2(20);
+
+   FUNCTION FILELOKEDOS(AL_DIR  IN VARCHAR2, 
+                        AL_FILE IN VARCHAR2) 
+   RETURN BOOLEAN IS
+      L_FILE_HANDLE    UTL_FILE.FILE_TYPE;
+
+   BEGIN
+      
+      
+      L_FILE_HANDLE := UTL_FILE.FOPEN (AL_DIR, AL_FILE , 'a');
+
+      UTL_FILE.FCLOSE (L_FILE_HANDLE);
+      
+      RETURN(FALSE);
+
+   EXCEPTION
+      WHEN UTL_FILE.INVALID_OPERATION THEN
+         
+         RETURN(TRUE);
+   END;
+
+BEGIN
+
+   
+   IF A_DIRPATH IS NULL THEN
+      L_SQLERRM := 'a_dirpath argument is empty';
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_GENFAIL;
+      RAISE STPERROR;
+   END IF;
+
+   
+   OPEN L_DIRECTORY(A_DIRPATH);
+   FETCH L_DIRECTORY
+   INTO L_FILEPATH;
+   IF L_DIRECTORY%NOTFOUND THEN
+      
+      L_FILEPATH := A_DIRPATH;
+   END IF;
+   CLOSE L_DIRECTORY;
+
+   BEGIN
+      SELECT SETTING_VALUE
+      INTO L_DBA_NAME
+      FROM UTSYSTEM
+      WHERE SETTING_NAME = 'DBA_NAME';
+   EXCEPTION
+   WHEN NO_DATA_FOUND THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_SYSDEFAULTS;
+      RAISE STPERROR;
+   END;
+
+   L_RET_STRING := DIRLIST (L_DBA_NAME, L_FILEPATH, L_FILES_TAB) ;
+   
+   IF L_RET_STRING <> 'OK' THEN
+      
+      L_SQLERRM := SUBSTR('dirlist for:'||L_FILEPATH||', returned:'||L_RET_STRING, 1, 255);
+      L_SQLERRM2 := SUBSTR(L_RET_STRING, 255 - LENGTH('dirlist for:'||L_FILEPATH||', retuned:')+1, 255);
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_GENFAIL;
+      A_NR_OF_ROWS := 0;
+      RAISE STPERROR;
+   ELSE
+  
+      
+      L_COUNT := 0;
+      FOR L_ROW IN 1..L_FILES_TAB.COUNT LOOP
+        IF L_FILES_TAB(L_ROW) IS NOT NULL THEN
+          IF NOT FILELOKEDOS(A_DIRPATH, L_FILES_TAB(L_ROW))
+          THEN
+            A_FILES(L_COUNT +1) := L_FILES_TAB(L_ROW);
+            L_COUNT := L_COUNT + 1;
+          END IF;
+        ELSE
+           EXIT;
+        END IF;
+      END LOOP;
+      A_NR_OF_ROWS := L_COUNT;
+   END IF;
+      
+   RETURN (UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      L_SQLERRM := SQLERRM;
+   END IF;
+   IF L_SQLERRM IS NOT NULL THEN
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+                        'GetDirectory' , L_SQLERRM );
+      UNAPIGEN.U4COMMIT;
+   END IF;
+   IF L_SQLERRM2 IS NOT NULL THEN
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+                        'GetDirectory' , L_SQLERRM2 );
+      UNAPIGEN.U4COMMIT;
+   END IF;
+   RETURN(UNAPIGEN.DBERR_GENFAIL);
+END GETDIRECTORY;
+FUNCTION MVFILE(FILETOMOVE IN VARCHAR2,FILEDESTINATION IN VARCHAR2) RETURN VARCHAR2
+AS
+LANGUAGE JAVA
+NAME 'UNAPIFILE.mvfile(java.lang.String, java.lang.String) return String';
+
+FUNCTION MOVEFILE
+(A_FILEPATH_TO_MOVE       IN VARCHAR2,  
+ A_FILEPATH_DESTINATION   IN VARCHAR2)  
+RETURN NUMBER IS
+
+L_RET_STRING      VARCHAR2(2000);
+L_SQLERRM         VARCHAR2(255);
+L_SQLERRM2        VARCHAR2(255);
+
+BEGIN
+
+   IF A_FILEPATH_TO_MOVE IS NULL THEN
+      L_SQLERRM := 'a_filepath_to_move argument is empty';
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_GENFAIL;
+      RAISE STPERROR;   
+   END IF;
+
+   IF A_FILEPATH_DESTINATION IS NULL THEN
+      L_SQLERRM := 'a_filepath_destination argument is empty';
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_GENFAIL;
+      RAISE STPERROR;   
+   END IF;
+
+   L_RET_STRING := MVFILE (A_FILEPATH_TO_MOVE, A_FILEPATH_DESTINATION) ;
+   IF L_RET_STRING <> 'OK' THEN
+      
+      L_SQLERRM := SUBSTR('mvfile for:'||A_FILEPATH_TO_MOVE||' to:'||A_FILEPATH_DESTINATION||', returned:'||L_RET_STRING, 1, 255);
+      L_SQLERRM2 := SUBSTR(L_RET_STRING, 255 - LENGTH('mvfile for:'||A_FILEPATH_TO_MOVE||' to:'||A_FILEPATH_DESTINATION||', returned:')+1, 255);
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_GENFAIL;
+      RAISE STPERROR;
+   END IF;
+   RETURN (UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      L_SQLERRM := SQLERRM;
+   END IF;
+   IF L_SQLERRM IS NOT NULL THEN
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+                        'MoveFile' , L_SQLERRM );
+      UNAPIGEN.U4COMMIT;
+   END IF;
+   IF L_SQLERRM2 IS NOT NULL THEN
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+                        'MoveFile' , L_SQLERRM2 );
+      UNAPIGEN.U4COMMIT;
+   END IF;
+   RETURN(UNAPIGEN.DBERR_GENFAIL);
+END MOVEFILE;
+
+BEGIN
+
+P_UNILINK_ID := 'Unilink';
+
+END UNAPIUL;

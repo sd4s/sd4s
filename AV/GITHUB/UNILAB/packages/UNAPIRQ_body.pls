@@ -1,0 +1,4189 @@
+PACKAGE BODY unapirq AS
+
+TYPE BOOLEAN_TABLE_TYPE IS TABLE OF BOOLEAN INDEX BY BINARY_INTEGER;
+P_SELECTRQ_CURSOR        INTEGER;
+P_SELECTRQGK_CURSOR      INTEGER;
+P_SELECTRQPROP_CURSOR    INTEGER;
+
+L_SQLERRM         VARCHAR2(255);
+L_SQL_STRING      VARCHAR2(4000);
+L_WHERE_CLAUSE    VARCHAR2(3000);
+L_EVENT_TP        UTEV.EV_TP%TYPE;
+L_RET_CODE        NUMBER;
+L_RESULT          NUMBER;
+L_FETCHED_ROWS    NUMBER;
+L_EV_SEQ_NR       NUMBER;
+L_EV_DETAILS      VARCHAR2(255);
+STPERROR          EXCEPTION;
+
+FUNCTION GETVERSION
+   RETURN VARCHAR2
+IS
+BEGIN
+   RETURN('06.07.00.00_00.13');
+EXCEPTION
+   WHEN OTHERS THEN
+      RETURN (NULL);
+END GETVERSION;
+
+FUNCTION SAVEREQUEST
+(A_RQ                    IN     VARCHAR2,       
+ A_RT                    IN     VARCHAR2,       
+ A_RT_VERSION            IN     VARCHAR2,       
+ A_DESCRIPTION           IN     VARCHAR2,       
+ A_DESCR_DOC             IN     VARCHAR2,       
+ A_DESCR_DOC_VERSION     IN     VARCHAR2,       
+ A_SAMPLING_DATE         IN     DATE,           
+ A_CREATION_DATE         IN     DATE,           
+ A_CREATED_BY            IN     VARCHAR2,       
+ A_EXEC_START_DATE       IN     DATE,           
+ A_EXEC_END_DATE         IN     DATE,           
+ A_DUE_DATE              IN     DATE,           
+ A_PRIORITY              IN     NUMBER,         
+ A_LABEL_FORMAT          IN     VARCHAR2,       
+ A_DATE1                 IN     DATE,           
+ A_DATE2                 IN     DATE,           
+ A_DATE3                 IN     DATE,           
+ A_DATE4                 IN     DATE,           
+ A_DATE5                 IN     DATE,           
+ A_ALLOW_ANY_ST          IN     CHAR,           
+ A_ALLOW_NEW_SC          IN     CHAR,           
+ A_RESPONSIBLE           IN     VARCHAR2,       
+ A_SC_COUNTER            IN     NUMBER,         
+ A_RQ_CLASS              IN     VARCHAR2,       
+ A_LOG_HS                IN     CHAR,           
+ A_LOG_HS_DETAILS        IN     CHAR,           
+ A_LC                    IN     VARCHAR2,       
+ A_LC_VERSION            IN     VARCHAR2,       
+ A_MODIFY_REASON         IN     VARCHAR2)       
+RETURN NUMBER IS
+
+L_LC                  VARCHAR2(2);
+L_LC_VERSION          VARCHAR2(20);
+L_SS                  VARCHAR2(2);
+L_LOG_HS              CHAR(1);
+L_LOG_HS_DETAILS      CHAR(1);
+L_ALLOW_MODIFY        CHAR(1);
+L_ACTIVE              CHAR(1);
+L_INSERT              BOOLEAN;
+L_DELAYED_TILL        TIMESTAMP WITH TIME ZONE;
+L_CURRENT_TIMESTAMP             TIMESTAMP WITH TIME ZONE;
+L_REF_DATE            TIMESTAMP WITH TIME ZONE;
+L_HS_DETAILS_SEQ_NR   INTEGER;
+L_RT_VERSION          VARCHAR2(20);
+L_SAVERQ_EVENT_TP     UTEV.EV_TP%TYPE;
+
+CURSOR L_RQOLD_CURSOR (A_RQ IN VARCHAR2) IS
+   SELECT A.*
+   FROM UDRQ A
+   WHERE A.RQ = A_RQ;
+L_RQOLD_REC UDRQ%ROWTYPE;
+L_RQNEW_REC UDRQ%ROWTYPE;
+
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <>
+      UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_RQ, ' ') = ' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_LOG_HS, ' ') NOT IN ('1','0') THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_LOGHS;
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_ALLOW_ANY_ST, ' ') NOT IN ('1','0') THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_ALLOWANYST;
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_ALLOW_NEW_SC, ' ') NOT IN ('1','0') THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_ALLOWNEWSC;
+      RAISE STPERROR;
+   END IF;
+
+   L_CURRENT_TIMESTAMP := CURRENT_TIMESTAMP;
+   L_RT_VERSION := A_RT_VERSION;
+   L_RET_CODE := UNAPIAUT.GETRQAUTHORISATION(A_RQ, L_RT_VERSION, L_LC, L_LC_VERSION, L_SS,
+                                             L_ALLOW_MODIFY, L_ACTIVE, L_LOG_HS, L_LOG_HS_DETAILS);
+   IF L_RET_CODE = UNAPIGEN.DBERR_NOOBJECT THEN
+      L_INSERT := TRUE;
+   ELSIF L_RET_CODE = UNAPIGEN.DBERR_SUCCESS THEN
+      L_INSERT := FALSE;
+   ELSE
+      UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+      RAISE STPERROR;
+   END IF;
+
+   IF L_INSERT THEN                
+      IF NVL(A_LC, ' ') <> ' ' THEN
+         L_LC := A_LC;
+      END IF;
+      IF NVL(A_LC_VERSION, ' ') <> ' ' THEN
+         L_LC_VERSION := A_LC_VERSION;
+      END IF;
+
+      
+      
+      INSERT INTO UTRQ(RQ, RT, RT_VERSION, DESCRIPTION, SAMPLING_DATE, SAMPLING_DATE_TZ, 
+                       CREATION_DATE, CREATION_DATE_TZ, CREATED_BY,
+                       DUE_DATE, DUE_DATE_TZ, PRIORITY, LABEL_FORMAT, 
+                       DATE1, DATE1_TZ, DATE2, DATE2_TZ, DATE3, DATE3_TZ, DATE4, DATE4_TZ,
+                       DATE5, DATE5_TZ, ALLOW_ANY_ST, ALLOW_NEW_SC,
+                       RESPONSIBLE, RQ_CLASS, LOG_HS, LOG_HS_DETAILS, 
+                       ALLOW_MODIFY, ACTIVE, LC, LC_VERSION)
+      VALUES(A_RQ, A_RT, L_RT_VERSION, A_DESCRIPTION, A_SAMPLING_DATE, A_SAMPLING_DATE,
+             A_CREATION_DATE, A_CREATION_DATE, A_CREATED_BY,
+             A_DUE_DATE, A_DUE_DATE, A_PRIORITY, A_LABEL_FORMAT,
+             A_DATE1, A_DATE1, A_DATE2, A_DATE2, A_DATE3, A_DATE3, A_DATE4, A_DATE4,
+             A_DATE5, A_DATE5, A_ALLOW_ANY_ST, A_ALLOW_NEW_SC,
+             A_RESPONSIBLE, A_RQ_CLASS, A_LOG_HS, A_LOG_HS_DETAILS, 
+             '#', '0', L_LC, L_LC_VERSION);
+       UNAPIAUT.UPDATELCINAUTHORISATIONBUFFER('rq', A_RQ , '', L_LC, L_LC_VERSION);                 
+      L_EVENT_TP := 'RequestCreated';
+      L_SAVERQ_EVENT_TP :='RequestCreated';
+   ELSE                             
+      
+      
+      
+      OPEN L_RQOLD_CURSOR(A_RQ);
+      FETCH L_RQOLD_CURSOR
+      INTO L_RQOLD_REC;
+      CLOSE L_RQOLD_CURSOR;
+      L_RQNEW_REC := L_RQOLD_REC;
+
+      
+      
+      
+
+      UPDATE UTRQ
+      SET DESCRIPTION      = A_DESCRIPTION,
+          SAMPLING_DATE    = A_SAMPLING_DATE,
+          SAMPLING_DATE_TZ =  DECODE(A_SAMPLING_DATE, SAMPLING_DATE_TZ, SAMPLING_DATE_TZ, A_SAMPLING_DATE),
+          CREATED_BY       = A_CREATED_BY,
+          DUE_DATE         = A_DUE_DATE,
+          DUE_DATE_TZ      =  DECODE(A_DUE_DATE, DUE_DATE_TZ, DUE_DATE_TZ, A_DUE_DATE),
+          PRIORITY         = A_PRIORITY,
+          LABEL_FORMAT     = A_LABEL_FORMAT,
+          DATE1            = A_DATE1,
+          DATE1_TZ         =  DECODE(A_DATE1, DATE1_TZ, DATE1_TZ, A_DATE1),
+          DATE2            = A_DATE2,
+          DATE2_TZ         =  DECODE(A_DATE2, DATE2_TZ, DATE2_TZ, A_DATE2),
+          DATE3            = A_DATE3,
+          DATE3_TZ         =  DECODE(A_DATE3, DATE3_TZ, DATE3_TZ, A_DATE3),
+          DATE4            = A_DATE4,
+          DATE4_TZ         =  DECODE(A_DATE4, DATE4_TZ, DATE4_TZ, A_DATE4),
+          DATE5            = A_DATE5,
+          DATE5_TZ         =  DECODE(A_DATE5, DATE5_TZ, DATE5_TZ, A_DATE5),
+          ALLOW_ANY_ST     = A_ALLOW_ANY_ST,
+          ALLOW_NEW_SC     = A_ALLOW_NEW_SC,
+          RESPONSIBLE      = A_RESPONSIBLE,
+          RQ_CLASS         = A_RQ_CLASS,
+          LOG_HS           = A_LOG_HS,
+          LOG_HS_DETAILS   = A_LOG_HS_DETAILS,
+          ALLOW_MODIFY     = '#'
+      WHERE RQ = A_RQ
+      RETURNING DESCRIPTION, SAMPLING_DATE, SAMPLING_DATE_TZ, CREATED_BY, DUE_DATE, DUE_DATE_TZ, PRIORITY, LABEL_FORMAT, 
+                DATE1, DATE1_TZ, DATE2, DATE2_TZ, DATE3, DATE3_TZ, DATE4, DATE4_TZ, DATE5, DATE5_TZ, 
+      ALLOW_ANY_ST, ALLOW_NEW_SC, RESPONSIBLE,
+                RQ_CLASS, LOG_HS, LOG_HS_DETAILS, ALLOW_MODIFY
+      INTO L_RQNEW_REC.DESCRIPTION, L_RQNEW_REC.SAMPLING_DATE, L_RQNEW_REC.SAMPLING_DATE_TZ, L_RQNEW_REC.CREATED_BY, 
+           L_RQNEW_REC.DUE_DATE, L_RQNEW_REC.DUE_DATE_TZ, L_RQNEW_REC.PRIORITY, L_RQNEW_REC.LABEL_FORMAT, 
+           L_RQNEW_REC.DATE1, L_RQNEW_REC.DATE1_TZ, L_RQNEW_REC.DATE2, L_RQNEW_REC.DATE2_TZ, L_RQNEW_REC.DATE3,
+      L_RQNEW_REC.DATE3, L_RQNEW_REC.DATE4, L_RQNEW_REC.DATE4_TZ, L_RQNEW_REC.DATE5,  
+           L_RQNEW_REC.DATE5_TZ, L_RQNEW_REC.ALLOW_ANY_ST, L_RQNEW_REC.ALLOW_NEW_SC, 
+           L_RQNEW_REC.RESPONSIBLE, L_RQNEW_REC.RQ_CLASS, L_RQNEW_REC.LOG_HS, 
+           L_RQNEW_REC.LOG_HS_DETAILS, L_RQNEW_REC.ALLOW_MODIFY;
+      L_EVENT_TP := 'RequestUpdated';
+      L_SAVERQ_EVENT_TP :='RequestUpdated';
+   END IF;
+
+   
+   
+   
+   L_RET_CODE := UNAPIRQ.UPDATELINKEDRQII
+                   (A_RQ, NULL, '1', A_RT, L_RT_VERSION, A_DESCRIPTION,
+                    A_DESCR_DOC, A_DESCR_DOC_VERSION,
+                    A_SAMPLING_DATE, A_CREATION_DATE,
+                    A_CREATED_BY, A_EXEC_START_DATE, A_EXEC_END_DATE,
+                    A_DUE_DATE, A_PRIORITY, A_LABEL_FORMAT, A_DATE1,
+                    A_DATE2, A_DATE3, A_DATE4, A_DATE5,
+                    A_ALLOW_ANY_ST, A_ALLOW_NEW_SC, A_RESPONSIBLE,
+                    A_RQ_CLASS);
+
+   IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+      UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+      RAISE STPERROR;
+   END IF;
+
+   L_EV_SEQ_NR := -1;
+   L_EV_DETAILS := 'rt_version=' || L_RT_VERSION;
+   L_RESULT := UNAPIEV.INSERTEVENT('SaveRequest', UNAPIGEN.P_EVMGR_NAME, 'rq', A_RQ, L_LC, 
+                                   L_LC_VERSION, L_SS, L_SAVERQ_EVENT_TP, L_EV_DETAILS, L_EV_SEQ_NR);
+   IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS  THEN
+      UNAPIGEN.P_TXN_ERROR := L_RESULT;
+      RAISE STPERROR;
+   END IF;
+
+   
+   
+   
+   IF NVL(L_LOG_HS, ' ') <> A_LOG_HS THEN
+      IF A_LOG_HS = '1' THEN
+         INSERT INTO UTRQHS(RQ, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+         VALUES(A_RQ, UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, 'History switched ON', 
+                'Audit trail is turned on.', 
+                L_CURRENT_TIMESTAMP, L_CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+      ELSE
+         INSERT INTO UTRQHS(RQ, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+         VALUES(A_RQ, UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, 'History switched OFF', 
+                'Audit trail is turned off.', 
+                L_CURRENT_TIMESTAMP, L_CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+      END IF;
+   END IF;
+
+   
+   
+   
+   L_HS_DETAILS_SEQ_NR := 0;
+   IF NVL(L_LOG_HS_DETAILS, ' ') <> A_LOG_HS_DETAILS THEN
+      IF A_LOG_HS_DETAILS = '1' THEN
+         L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+         INSERT INTO UTRQHSDETAILS(RQ, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+         VALUES(A_RQ, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR, 
+                'Audit trail is turned on.');
+      ELSE
+         L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+         INSERT INTO UTRQHSDETAILS(RQ, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+         VALUES(A_RQ, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR, 
+                'Audit trail is turned off.');
+      END IF;
+   END IF;
+
+   IF NVL(L_LOG_HS, ' ') = '1' THEN
+      IF L_SAVERQ_EVENT_TP = 'RequestCreated' THEN
+         INSERT INTO UTRQHS(RQ, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+         VALUES(A_RQ, UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, L_SAVERQ_EVENT_TP, 
+                'request "'||A_RQ||'" is created.', 
+                L_CURRENT_TIMESTAMP, L_CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+      ELSE
+         INSERT INTO UTRQHS(RQ, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+         VALUES(A_RQ, UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, L_SAVERQ_EVENT_TP, 
+                'request "'||A_RQ||'" is updated.', 
+                L_CURRENT_TIMESTAMP, L_CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+      END IF;
+   END IF;
+
+   IF NVL(L_LOG_HS_DETAILS, ' ') = '1' THEN
+      IF L_SAVERQ_EVENT_TP = 'RequestCreated' THEN
+         L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+         INSERT INTO UTRQHSDETAILS(RQ, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+         VALUES(A_RQ, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR, 
+                'request "'||A_RQ||'" is created.');
+      ELSE
+         L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+         INSERT INTO UTRQHSDETAILS(RQ, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+         VALUES(A_RQ, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR, 
+                'request "'||A_RQ||'" is updated.');
+         UNAPIHSDETAILS.ADDRQHSDETAILS(L_RQOLD_REC, L_RQNEW_REC, UNAPIGEN.P_TR_SEQ, 
+                                       L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR); 
+      END IF;
+   END IF;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('SaveRequest', SQLERRM);
+   END IF;
+   IF L_RQOLD_CURSOR%ISOPEN THEN
+      CLOSE L_RQOLD_CURSOR;
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR, 'SaveRequest'));
+END SAVEREQUEST;
+
+FUNCTION UPDATELINKEDRQII                  
+(A_RQ                    IN     VARCHAR2,       
+ A_RQ_STD_PROPERTY       IN     VARCHAR2,       
+ A_RQ_CREATION           IN     CHAR,           
+ A_RT                    IN     VARCHAR2,       
+ A_RT_VERSION            IN     VARCHAR2,       
+ A_DESCRIPTION           IN     VARCHAR2,       
+ A_DESCR_DOC             IN     VARCHAR2,       
+ A_DESCR_DOC_VERSION     IN     VARCHAR2,       
+ A_SAMPLING_DATE         IN     DATE,           
+ A_CREATION_DATE         IN     DATE,           
+ A_CREATED_BY            IN     VARCHAR2,       
+ A_EXEC_START_DATE       IN     DATE,           
+ A_EXEC_END_DATE         IN     DATE,           
+ A_DUE_DATE              IN     DATE,           
+ A_PRIORITY              IN     NUMBER,         
+ A_LABEL_FORMAT          IN     VARCHAR2,       
+ A_DATE1                 IN     DATE,           
+ A_DATE2                 IN     DATE,           
+ A_DATE3                 IN     DATE,           
+ A_DATE4                 IN     DATE,           
+ A_DATE5                 IN     DATE,           
+ A_ALLOW_ANY_ST          IN     CHAR,           
+ A_ALLOW_NEW_SC          IN     CHAR,           
+ A_RESPONSIBLE           IN     VARCHAR2,       
+ A_RQ_CLASS              IN     VARCHAR2)       
+RETURN NUMBER 
+
+IS
+
+L_UPDATE              BOOLEAN;
+L_ENTER_LOOP          BOOLEAN;
+L_DATE_FORMAT         VARCHAR2(40);
+L_RQ_STD_PROPERTY     VARCHAR2(2000);
+L_IIVALUE_F           NUMBER;
+L_IIVALUE_S           VARCHAR2(40);
+L_DATEVALID           VARCHAR2(80);
+L_ERRM                VARCHAR2(255);
+L_II_LOG_HS           CHAR(1);
+L_II_LOG_HS_DETAILS   CHAR(1);
+L_IC_LOG_HS           CHAR(1);
+L_IC_LOG_HS_DETAILS   CHAR(1);
+L_HS_DETAILS_SEQ_NR   INTEGER;
+L_PREV_RQ             VARCHAR2(20);
+L_PREV_IC             VARCHAR2(20);
+L_PREV_ICNODE         NUMBER;
+L_SAMPLING_DATE       TIMESTAMP WITH TIME ZONE;
+L_CREATION_DATE       TIMESTAMP WITH TIME ZONE;
+L_EXEC_START_DATE     TIMESTAMP WITH TIME ZONE;
+L_EXEC_END_DATE       TIMESTAMP WITH TIME ZONE;
+L_DUE_DATE            TIMESTAMP WITH TIME ZONE;
+L_DATE1               TIMESTAMP WITH TIME ZONE;
+L_DATE2               TIMESTAMP WITH TIME ZONE;
+L_DATE3               TIMESTAMP WITH TIME ZONE;
+L_DATE4               TIMESTAMP WITH TIME ZONE;
+L_DATE5               TIMESTAMP WITH TIME ZONE;
+L_POSITION            INTEGER;
+L_PROPERTY_RQ         BOOLEAN;
+
+CURSOR L_RQII_CURSOR(A_RQ VARCHAR2, A_RQ_STD_PROPERTY VARCHAR2) IS
+   SELECT RQII.*, IE.IEVALUE, IE.FORMAT, IE.DATA_TP
+   FROM UTRQII RQII, UTRQIC RQIC, UTIE IE
+   WHERE RQII.RQ = A_RQ
+     AND RQII.RQ = RQIC.RQ
+     AND RQII.IC = RQIC.IC
+     AND RQII.ICNODE = RQIC.ICNODE
+     AND RQII.II = IE.IE
+     AND RQII.IE_VERSION = IE.VERSION
+     AND IE.DEF_VAL_TP = 'S'
+     AND IE.IEVALUE = NVL(A_RQ_STD_PROPERTY, IE.IEVALUE)
+     AND (IE.IE, IE.VERSION) NOT IN 
+        (SELECT C.IE, UNAPIGEN.VALIDATEVERSION('ie', C.IE, C.IE_VERSION) IE_VERSION 
+         FROM UTIPIE C
+         WHERE C.IP = RQII.IC
+           AND C.VERSION = RQIC.IP_VERSION
+           AND C.IE = RQII.II
+           AND UNAPIGEN.VALIDATEVERSION('ie', C.IE, C.IE_VERSION) = RQII.IE_VERSION
+           AND (C.DEF_VAL_TP<>'F' OR C.IEVALUE IS NOT NULL))
+   UNION 
+   SELECT RQII.*, IPIE.IEVALUE, IE.FORMAT, IE.DATA_TP
+   FROM UTRQII RQII, UTRQIC RQIC, UTIPIE IPIE, UTIE IE
+   WHERE RQII.RQ = A_RQ
+     AND RQII.RQ = RQIC.RQ
+     AND RQII.IC = RQIC.IC
+     AND RQII.ICNODE = RQIC.ICNODE     
+     AND RQIC.IC = IPIE.IP
+     AND RQIC.IP_VERSION = IPIE.VERSION
+     AND RQII.II = IE.IE
+     AND RQII.IE_VERSION = IE.VERSION
+     AND IPIE.IE = IE.IE
+     AND UNAPIGEN.VALIDATEVERSION('ie', IPIE.IE, IPIE.IE_VERSION) = IE.VERSION
+     AND IPIE.DEF_VAL_TP = 'S'
+     AND IPIE.IEVALUE = NVL(A_RQ_STD_PROPERTY, IPIE.IEVALUE);
+
+CURSOR L_RQIIOLD_CURSOR (A_RQ IN VARCHAR2, 
+                         A_IC IN VARCHAR2, A_ICNODE IN NUMBER,
+                         A_II IN VARCHAR2, A_IINODE IN NUMBER) IS
+   SELECT A.*
+   FROM UDRQII A
+   WHERE A.RQ = A_RQ
+     AND A.IC = A_IC
+     AND A.ICNODE = A_ICNODE
+     AND A.II = A_II
+     AND A.IINODE = A_IINODE;
+L_RQIIOLD_REC UDRQII%ROWTYPE;
+L_RQIINEW_REC UDRQII%ROWTYPE;
+
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <>
+      UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_RQ, ' ') = ' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   
+   
+   
+   
+   L_ENTER_LOOP := FALSE;
+   L_HS_DETAILS_SEQ_NR := 0;
+   L_PREV_RQ := NULL;
+   L_PREV_IC := NULL;
+   L_PREV_ICNODE := NULL;
+
+   L_SAMPLING_DATE := A_SAMPLING_DATE;
+   L_CREATION_DATE := A_CREATION_DATE;
+   L_EXEC_START_DATE := A_EXEC_START_DATE;
+   L_EXEC_END_DATE := A_EXEC_END_DATE;
+   L_DUE_DATE := A_DUE_DATE;
+   L_DATE1 := A_DATE1;
+   L_DATE2 := A_DATE2;
+   L_DATE3 := A_DATE3;
+   L_DATE4 := A_DATE4;
+   L_DATE5 := A_DATE5;
+
+   FOR L_RQII_REC IN L_RQII_CURSOR(A_RQ, A_RQ_STD_PROPERTY) LOOP
+
+      L_ENTER_LOOP := TRUE;
+      L_UPDATE := TRUE;
+      L_PROPERTY_RQ := TRUE;
+         L_POSITION := INSTR(L_RQII_REC.IEVALUE,'@',1,1);
+      IF L_POSITION > 0 THEN
+         IF SUBSTR(L_RQII_REC.IEVALUE,0,L_POSITION-1) = 'RT' THEN
+            L_PROPERTY_RQ := FALSE;
+         END IF;
+         L_RQII_REC.IEVALUE := SUBSTR(L_RQII_REC.IEVALUE, L_POSITION+1);
+      END IF;
+
+      
+      IF UNAPIGEN.P_RNDSUITESESSION = '1' THEN
+         L_DATE_FORMAT := 'YYYY-MM-DD"T"HH24:MI:SS.FF1TZH:TZM';
+      ELSIF NVL(LENGTH(L_RQII_REC.FORMAT),0)>1 THEN   
+         L_DATE_FORMAT  := SUBSTR(L_RQII_REC.FORMAT,2);
+      END IF;            
+
+      
+      IF L_PROPERTY_RQ THEN
+      IF L_RQII_REC.IEVALUE = 'rq' THEN
+         L_RQ_STD_PROPERTY := A_RQ;
+      ELSIF L_RQII_REC.IEVALUE = 'rt' THEN
+         IF A_RQ_CREATION = '1' THEN
+            L_UPDATE := FALSE;
+         ELSE
+            L_RQ_STD_PROPERTY := A_RT;
+         END IF;
+      ELSIF L_RQII_REC.IEVALUE = 'description' THEN
+         L_RQ_STD_PROPERTY := A_DESCRIPTION;
+      ELSIF L_RQII_REC.IEVALUE = 'descr_doc' THEN
+         L_RQ_STD_PROPERTY := A_DESCR_DOC;
+      ELSIF L_RQII_REC.IEVALUE = 'sampling_date' THEN
+         L_RQ_STD_PROPERTY := TO_CHAR(L_SAMPLING_DATE, L_DATE_FORMAT);
+      ELSIF L_RQII_REC.IEVALUE = 'creation_date' THEN
+         L_RQ_STD_PROPERTY := TO_CHAR(L_CREATION_DATE, L_DATE_FORMAT);
+      ELSIF L_RQII_REC.IEVALUE = 'created_by' THEN
+         L_RQ_STD_PROPERTY := A_CREATED_BY;
+      ELSIF L_RQII_REC.IEVALUE = 'exec_start_date' THEN
+         L_RQ_STD_PROPERTY := TO_CHAR(L_EXEC_START_DATE, L_DATE_FORMAT);
+      ELSIF L_RQII_REC.IEVALUE = 'exec_end_date' THEN
+         L_RQ_STD_PROPERTY := TO_CHAR(L_EXEC_END_DATE, L_DATE_FORMAT);
+      ELSIF L_RQII_REC.IEVALUE = 'due_date' THEN
+         L_RQ_STD_PROPERTY := TO_CHAR(L_DUE_DATE, L_DATE_FORMAT);
+      ELSIF L_RQII_REC.IEVALUE = 'priority' THEN
+         L_RQ_STD_PROPERTY := A_PRIORITY;
+      ELSIF L_RQII_REC.IEVALUE = 'label_format' THEN
+         L_RQ_STD_PROPERTY := A_LABEL_FORMAT;
+      ELSIF L_RQII_REC.IEVALUE = 'date1' THEN
+         L_RQ_STD_PROPERTY := TO_CHAR(L_DATE1, L_DATE_FORMAT);
+      ELSIF L_RQII_REC.IEVALUE = 'date2' THEN
+         L_RQ_STD_PROPERTY := TO_CHAR(L_DATE2, L_DATE_FORMAT);
+      ELSIF L_RQII_REC.IEVALUE = 'date3' THEN
+         L_RQ_STD_PROPERTY := TO_CHAR(L_DATE3, L_DATE_FORMAT);
+      ELSIF L_RQII_REC.IEVALUE = 'date4' THEN
+         L_RQ_STD_PROPERTY := TO_CHAR(L_DATE4, L_DATE_FORMAT);
+      ELSIF L_RQII_REC.IEVALUE = 'date5' THEN
+         L_RQ_STD_PROPERTY := TO_CHAR(L_DATE5, L_DATE_FORMAT);
+      ELSIF L_RQII_REC.IEVALUE = 'allow_any_st' THEN
+         L_RQ_STD_PROPERTY := A_ALLOW_ANY_ST;
+      ELSIF L_RQII_REC.IEVALUE = 'allow_new_sc' THEN
+         L_RQ_STD_PROPERTY := A_ALLOW_NEW_SC;
+      ELSIF L_RQII_REC.IEVALUE = 'responsible' THEN
+         L_RQ_STD_PROPERTY := A_RESPONSIBLE;
+      ELSIF L_RQII_REC.IEVALUE = 'rq_class' THEN
+         L_RQ_STD_PROPERTY := A_RQ_CLASS;
+      ELSE
+         L_SQLERRM := L_RQII_REC.IEVALUE || ' is not a valid sample standard property for info field '||L_RQII_REC.II||
+                      ' in info profile '||L_RQII_REC.IC ||' rq=' ||L_RQII_REC.RQ || '#icnode=' ||
+                            TO_CHAR(L_RQII_REC.ICNODE) || '#iinode=' || TO_CHAR(L_RQII_REC.IINODE);
+         RAISE STPERROR;
+      END IF;
+
+      ELSE
+          L_UPDATE := FALSE; 
+      END IF;
+
+     
+      IF L_UPDATE THEN
+         
+         
+         
+         IF L_RQII_REC.DATA_TP = 'A' THEN                      
+            
+            IF SUBSTR(L_RQII_REC.FORMAT,1,1)='C' THEN
+               IF LENGTH(L_RQII_REC.FORMAT)>1 THEN
+                  L_RQ_STD_PROPERTY := SUBSTR(L_RQ_STD_PROPERTY,1,SUBSTR(L_RQII_REC.FORMAT,2));
+               ELSE
+                  NULL;
+               END IF;
+            
+            ELSIF SUBSTR(L_RQII_REC.FORMAT,1,1)='D' THEN
+               IF UNAPIGEN.P_RNDSUITESESSION = '1' THEN 
+                  
+                  NULL;
+               ELSE
+                  L_DATEVALID := L_RQ_STD_PROPERTY||'@'||SUBSTR(L_RQII_REC.FORMAT,2); 
+                  L_RET_CODE := UNAPIGEN.DATEVALID(L_DATEVALID, L_ERRM);
+                  IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+                     INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+                     VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+                            'UpdateLinkedRqii', 
+                            'Warning#DateValid returned '||L_RET_CODE || ' for info field '||L_RQII_REC.II||
+                            ' with value '||L_RQ_STD_PROPERTY||'@'||SUBSTR(L_RQII_REC.FORMAT,2) );
+                  END IF;
+               END IF;
+            ELSE
+               L_IIVALUE_F := NULL;
+               BEGIN
+                  L_IIVALUE_F := TO_NUMBER(L_RQ_STD_PROPERTY);
+               EXCEPTION
+               WHEN VALUE_ERROR THEN
+                  INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+                  VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+                         'UpdateLinkedRqii',
+                         'Warning#Value could not be converted to a float for info field '||L_RQII_REC.II||
+                         ' using format '||L_RQII_REC.FORMAT||' with value '||L_RQ_STD_PROPERTY);
+               END;
+               L_IIVALUE_S := '';
+               L_RET_CODE := UNAPIGEN.FORMATRESULT(L_IIVALUE_F, L_RQII_REC.FORMAT, L_IIVALUE_S);
+               IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+                  INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+                  VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+                         'UpdateLinkedRqii', 
+                         'Warning#FormatResult returned '||L_RET_CODE || ' for info field '||L_RQII_REC.II||
+                         ' using format '||L_RQII_REC.FORMAT||' with value '||L_RQ_STD_PROPERTY );
+               END IF;
+              L_RQ_STD_PROPERTY := L_IIVALUE_S;         
+            END IF;
+         ELSIF L_RQII_REC.DATA_TP IN ('D','M') THEN            
+            IF UNAPIGEN.P_RNDSUITESESSION = '1' THEN 
+               
+               NULL;
+            ELSE
+               L_DATEVALID := L_RQ_STD_PROPERTY||'@'||SUBSTR(L_RQII_REC.FORMAT,2); 
+               L_RET_CODE := UNAPIGEN.DATEVALID(L_DATEVALID, L_ERRM);
+               IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+                  INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+                  VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+                         'UpdateLinkedRqii', 
+                         'Warning#DateValid returned '||L_RET_CODE || ' for info field '||L_RQII_REC.II||
+                         ' with value '||L_RQ_STD_PROPERTY||'@'||SUBSTR(L_RQII_REC.FORMAT,2) );
+               END IF;
+            END IF;
+         ELSIF L_RQII_REC.DATA_TP IN ('I','F') THEN            
+            L_IIVALUE_F := NULL;
+            BEGIN
+               L_IIVALUE_F := TO_NUMBER(L_RQ_STD_PROPERTY);
+            EXCEPTION
+            WHEN VALUE_ERROR THEN
+               INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+               VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+                      'UpdateLinkedRqii',
+                      'Warning#Value could not be converted to a float for info field '||L_RQII_REC.II||
+                      ' using format '||L_RQII_REC.FORMAT||' with value '||L_RQ_STD_PROPERTY);
+            END;
+            L_IIVALUE_S := '';
+            L_RET_CODE := UNAPIGEN.FORMATRESULT(L_IIVALUE_F, L_RQII_REC.FORMAT, L_IIVALUE_S);
+            IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+                  INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+                  VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+                         'UpdateLinkedRqii', 
+                         'Warning#FormatResult returned '||L_RET_CODE || ' for info field '||L_RQII_REC.II||
+                         ' using format '||L_RQII_REC.FORMAT||' with value '||L_RQ_STD_PROPERTY );
+            END IF;
+            L_RQ_STD_PROPERTY := L_IIVALUE_S;         
+         END IF;
+      END IF;
+
+      IF L_UPDATE THEN
+         
+         
+         
+         OPEN L_RQIIOLD_CURSOR(L_RQII_REC.RQ, 
+                               L_RQII_REC.IC, L_RQII_REC.ICNODE,
+                               L_RQII_REC.II, L_RQII_REC.IINODE);
+         FETCH L_RQIIOLD_CURSOR
+         INTO L_RQIIOLD_REC;
+         CLOSE L_RQIIOLD_CURSOR;
+         L_RQIINEW_REC := L_RQIIOLD_REC;
+
+         
+         
+         
+         UPDATE UTRQII 
+         SET IIVALUE = L_RQ_STD_PROPERTY
+         WHERE RQ     = L_RQII_REC.RQ 
+           AND IC     = L_RQII_REC.IC 
+           AND ICNODE = L_RQII_REC.ICNODE
+           AND II     = L_RQII_REC.II 
+           AND IINODE = L_RQII_REC.IINODE
+         RETURNING IIVALUE, LOG_HS, LOG_HS_DETAILS
+         INTO L_RQIINEW_REC.IIVALUE, L_II_LOG_HS, L_II_LOG_HS_DETAILS;
+
+         BEGIN
+            SELECT LOG_HS, LOG_HS_DETAILS
+            INTO L_IC_LOG_HS, L_IC_LOG_HS_DETAILS
+            FROM UTRQIC
+            WHERE RQ     = L_RQII_REC.RQ
+              AND IC     = L_RQII_REC.IC
+              AND ICNODE = L_RQII_REC.ICNODE;
+         EXCEPTION
+         WHEN NO_DATA_FOUND THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJECT;
+            RAISE STPERROR;
+         END;
+
+         
+         
+         
+         L_EV_SEQ_NR := -1;
+         L_EVENT_TP  := 'RqInfoFieldValueChanged';
+         L_EV_DETAILS := 'rq=' || A_RQ || 
+                         '#ic=' || L_RQII_REC.IC ||
+                         '#icnode=' || TO_CHAR(L_RQII_REC.ICNODE) || 
+                         '#iinode=' || TO_CHAR(L_RQII_REC.IINODE) || 
+                         '#old_value=' || SUBSTR(L_RQIIOLD_REC.IIVALUE, 1,40) || 
+                         '#new_value=' || SUBSTR(L_RQIINEW_REC.IIVALUE, 1,40)  ||
+                         '#ie_version=' || L_RQII_REC.IE_VERSION;
+         L_RESULT := UNAPIEV.INSERTINFOFIELDEVENT('SaveRqIiValue', UNAPIGEN.P_EVMGR_NAME,
+                                                  'rqii', L_RQII_REC.II, L_RQII_REC.LC, L_RQII_REC.LC_VERSION, 
+                                                  L_RQII_REC.SS, L_EVENT_TP, L_EV_DETAILS, L_EV_SEQ_NR);
+         IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+            UNAPIGEN.P_TXN_ERROR := L_RESULT;
+            RAISE STPERROR;
+         END IF;
+
+         
+         IF L_EV_SEQ_NR = -1 THEN
+            L_RET_CODE := UNAPIGEN.GETNEXTEVENTSEQNR(L_EV_SEQ_NR);
+            IF L_RET_CODE <> 0 THEN
+               UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+               RAISE STPERROR;
+            END IF;
+         END IF;
+         
+         IF NVL(L_II_LOG_HS, ' ') = '1' THEN
+            L_EVENT_TP := 'RqInfoFieldValueChanged';
+            INSERT INTO UTRQICHS(RQ, IC, ICNODE, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, 
+                                 LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+            VALUES(A_RQ, L_RQII_REC.IC, L_RQII_REC.ICNODE, UNAPIGEN.P_USER, 
+                   UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+                   'info field "'||L_RQII_REC.II||'" is updated.',
+                   CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+
+            IF NVL((L_RQIIOLD_REC.IIVALUE <> L_RQIINEW_REC.IIVALUE), TRUE) AND NOT(L_RQIIOLD_REC.IIVALUE IS NULL AND L_RQIINEW_REC.IIVALUE IS NULL)  THEN 
+               INSERT INTO UTRQICHS(RQ, IC, ICNODE, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, 
+                                    LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+               VALUES(A_RQ, L_RQII_REC.IC, L_RQII_REC.ICNODE, UNAPIGEN.P_USER, 
+                      UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+                      'info field "'||L_RQII_REC.II||'" is updated: property <iivalue> changed value from "'||SUBSTR(L_RQIIOLD_REC.IIVALUE,1,40)||'" to "'||SUBSTR(L_RQIINEW_REC.IIVALUE,1,40)||'".',
+                      CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+            END IF;
+         END IF;
+                  
+         IF NVL(L_IC_LOG_HS, ' ') = '1' THEN
+            L_EVENT_TP  := 'RqInfoFieldValuesChanged';
+            INSERT INTO UTRQICHS(RQ, IC, ICNODE, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, 
+                                 LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+            VALUES(A_RQ, L_RQII_REC.IC, L_RQII_REC.ICNODE, UNAPIGEN.P_USER, 
+                   UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+                   'info card "'||L_RQII_REC.IC||'" info field values are updated.',
+                   CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+         END IF;
+
+         IF NVL(L_II_LOG_HS_DETAILS, ' ') = '1' THEN
+            L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+            INSERT INTO UTRQICHSDETAILS(RQ, IC, ICNODE, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+            VALUES(A_RQ, L_RQII_REC.IC, L_RQII_REC.ICNODE, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, 
+                   L_HS_DETAILS_SEQ_NR, 'info field "'||L_RQII_REC.II||'" is updated.');
+                   
+            UNAPIHSDETAILS.ADDRQIIHSDETAILS(L_RQIIOLD_REC, L_RQIINEW_REC, UNAPIGEN.P_TR_SEQ, 
+                                            L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR); 
+         END IF;
+         
+         IF NVL(L_IC_LOG_HS_DETAILS, ' ') = '1' THEN
+            L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+            INSERT INTO UTRQICHSDETAILS(RQ, IC, ICNODE, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+            VALUES(A_RQ, L_RQII_REC.IC, L_RQII_REC.ICNODE, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, 
+                   L_HS_DETAILS_SEQ_NR, 'info card "'||L_RQII_REC.IC||'" info field values are updated.');
+         END IF;
+      END IF;
+   END LOOP;
+      
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('UpdateLinkedRqii', SQLERRM);
+   ELSIF L_SQLERRM IS NOT NULL THEN
+      UNAPIGEN.LOGERROR('UpdateLinkedRqii', L_SQLERRM);   
+   END IF;
+   IF L_RQIIOLD_CURSOR%ISOPEN THEN
+      CLOSE L_RQIIOLD_CURSOR;
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR, 'UpdateLinkedRqii'));
+END UPDATELINKEDRQII;
+
+FUNCTION GETREQUEST
+(A_RQ                    OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_RT                    OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_RT_VERSION            OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_DESCRIPTION           OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_DESCR_DOC             OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_DESCR_DOC_VERSION     OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_SAMPLING_DATE         OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_CREATION_DATE         OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_CREATED_BY            OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_EXEC_START_DATE       OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_EXEC_END_DATE         OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_DUE_DATE              OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_PRIORITY              OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_LABEL_FORMAT          OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_DATE1                 OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_DATE2                 OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_DATE3                 OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_DATE4                 OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_DATE5                 OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_ALLOW_ANY_ST          OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_ALLOW_NEW_SC          OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_RESPONSIBLE           OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_SC_COUNTER            OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_RQ_CLASS              OUT     UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LOG_HS                OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LOG_HS_DETAILS        OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_ALLOW_MODIFY          OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_AR                    OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_ACTIVE                OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LC                    OUT     UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LC_VERSION            OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_SS                    OUT     UNAPIGEN.VC2_TABLE_TYPE,   
+ A_NR_OF_ROWS            IN OUT  NUMBER,                    
+ A_WHERE_CLAUSE          IN      VARCHAR2)                  
+RETURN NUMBER IS
+
+L_RQ                VARCHAR2(20);
+L_RT                VARCHAR2(20);
+L_RT_VERSION        VARCHAR2(20);
+L_DESCRIPTION       VARCHAR2(40);
+L_DESCR_DOC         VARCHAR2(40);
+L_DESCR_DOC_VERSION VARCHAR2(20);
+L_SAMPLING_DATE     TIMESTAMP WITH TIME ZONE;
+L_CREATION_DATE     TIMESTAMP WITH TIME ZONE;
+L_CREATED_BY        VARCHAR2(20);
+L_EXEC_START_DATE   TIMESTAMP WITH TIME ZONE;
+L_EXEC_END_DATE     TIMESTAMP WITH TIME ZONE;
+L_DUE_DATE          TIMESTAMP WITH TIME ZONE;
+L_PRIORITY          NUMBER(3);
+L_LABEL_FORMAT      VARCHAR2(20);
+L_DATE1             TIMESTAMP WITH TIME ZONE;
+L_DATE2             TIMESTAMP WITH TIME ZONE;
+L_DATE3             TIMESTAMP WITH TIME ZONE;
+L_DATE4             TIMESTAMP WITH TIME ZONE;
+L_DATE5             TIMESTAMP WITH TIME ZONE;
+L_ALLOW_ANY_ST      CHAR(1);
+L_ALLOW_NEW_SC      CHAR(1);
+L_RESPONSIBLE       VARCHAR2(20);
+L_SC_COUNTER        NUMBER;
+L_RQ_CLASS          VARCHAR2(2);
+L_LOG_HS            CHAR(1);
+L_LOG_HS_DETAILS    CHAR(1);
+L_ALLOW_MODIFY      CHAR(1);
+L_AR                CHAR(1);
+L_ACTIVE            CHAR(1);
+L_LC                VARCHAR2(2);
+L_LC_VERSION        VARCHAR2(20);
+L_SS                VARCHAR2(2);
+L_RQ_CURSOR         INTEGER;
+
+BEGIN
+
+   IF NVL(A_NR_OF_ROWS,0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN(UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+
+   IF NVL(A_WHERE_CLAUSE, ' ') = ' ' THEN
+      RETURN(UNAPIGEN.DBERR_WHERECLAUSE);
+   ELSIF
+      UPPER(SUBSTR(A_WHERE_CLAUSE,1,6)) <> 'WHERE ' THEN
+      L_WHERE_CLAUSE := 'WHERE rq = ''' || REPLACE(A_WHERE_CLAUSE, '''', '''''') || 
+                        ''' ORDER BY rq';
+   ELSE
+      L_WHERE_CLAUSE := A_WHERE_CLAUSE; 
+   END IF;
+
+   L_RQ_CURSOR := DBMS_SQL.OPEN_CURSOR;
+   L_SQL_STRING := 'SELECT rq, rt, rt_version, description, descr_doc, descr_doc_version, sampling_date, '||
+                   'creation_date, created_by, exec_start_date, ' ||
+                   'exec_end_date, due_date, priority, label_format, ' ||
+                   'date1, date2, date3, date4, date5, allow_any_st, '||
+                   'allow_new_sc, responsible, sc_counter, rq_class, log_hs, log_hs_details, ' ||
+                   'allow_modify, active, lc, lc_version, ss, ar ' ||
+                   'FROM dd' || UNAPIGEN.P_DD || '.uvrq ' || L_WHERE_CLAUSE;
+
+   DBMS_SQL.PARSE(L_RQ_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 1, L_RQ, 20);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 2, L_RT, 20);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 3, L_RT_VERSION, 20);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 4, L_DESCRIPTION, 40);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 5, L_DESCR_DOC, 40);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 6, L_DESCR_DOC_VERSION, 20);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 7, L_SAMPLING_DATE);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 8, L_CREATION_DATE);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 9, L_CREATED_BY, 20);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 10, L_EXEC_START_DATE);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 11, L_EXEC_END_DATE);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 12, L_DUE_DATE);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 13, L_PRIORITY);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 14, L_LABEL_FORMAT, 20);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 15, L_DATE1);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 16, L_DATE2);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 17, L_DATE3);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 18, L_DATE4);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 19, L_DATE5);
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_RQ_CURSOR, 20, L_ALLOW_ANY_ST, 1);
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_RQ_CURSOR, 21, L_ALLOW_NEW_SC, 1);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 22, L_RESPONSIBLE, 20);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 23, L_SC_COUNTER);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 24, L_RQ_CLASS, 2);
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_RQ_CURSOR, 25, L_LOG_HS, 1);
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_RQ_CURSOR, 26, L_LOG_HS_DETAILS, 1);
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_RQ_CURSOR, 27, L_ALLOW_MODIFY, 1);
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_RQ_CURSOR, 28, L_ACTIVE, 1);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 29, L_LC, 2);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 30, L_LC_VERSION, 20);
+   DBMS_SQL.DEFINE_COLUMN(L_RQ_CURSOR, 31, L_SS, 2);
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_RQ_CURSOR, 32, L_AR, 1);
+   L_RESULT := DBMS_SQL.EXECUTE_AND_FETCH(L_RQ_CURSOR);
+   L_FETCHED_ROWS := 0;
+
+   LOOP
+      EXIT WHEN L_RESULT = 0 OR L_FETCHED_ROWS >= A_NR_OF_ROWS;
+
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 1, L_RQ);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 2, L_RT);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 3, L_RT_VERSION);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 4, L_DESCRIPTION);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 5, L_DESCR_DOC);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 6, L_DESCR_DOC_VERSION);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 7, L_SAMPLING_DATE);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 8, L_CREATION_DATE);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 9, L_CREATED_BY);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 10, L_EXEC_START_DATE);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 11, L_EXEC_END_DATE);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 12, L_DUE_DATE);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 13, L_PRIORITY);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 14, L_LABEL_FORMAT);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 15, L_DATE1);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 16, L_DATE2);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 17, L_DATE3);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 18, L_DATE4);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 19, L_DATE5);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_RQ_CURSOR, 20, L_ALLOW_ANY_ST);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_RQ_CURSOR, 21, L_ALLOW_NEW_SC);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 22, L_RESPONSIBLE);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 23, L_SC_COUNTER);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 24, L_RQ_CLASS);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_RQ_CURSOR, 25, L_LOG_HS);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_RQ_CURSOR, 26, L_LOG_HS_DETAILS);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_RQ_CURSOR, 27, L_ALLOW_MODIFY);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_RQ_CURSOR, 28, L_ACTIVE);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 29, L_LC);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 30, L_LC_VERSION);
+      DBMS_SQL.COLUMN_VALUE(L_RQ_CURSOR, 31, L_SS);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_RQ_CURSOR, 32, L_AR);
+
+      L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+
+      A_RQ(L_FETCHED_ROWS) := L_RQ;
+      A_RT(L_FETCHED_ROWS) := L_RT;
+      A_RT_VERSION(L_FETCHED_ROWS) := L_RT_VERSION;
+      A_DESCRIPTION(L_FETCHED_ROWS) := L_DESCRIPTION;
+      A_DESCR_DOC(L_FETCHED_ROWS) := L_DESCR_DOC;
+      A_DESCR_DOC_VERSION(L_FETCHED_ROWS) := L_DESCR_DOC_VERSION;
+      A_SAMPLING_DATE(L_FETCHED_ROWS) := L_SAMPLING_DATE;
+      A_CREATION_DATE(L_FETCHED_ROWS) := L_CREATION_DATE;
+      A_CREATED_BY(L_FETCHED_ROWS) := L_CREATED_BY;
+      A_EXEC_START_DATE(L_FETCHED_ROWS) := L_EXEC_START_DATE;
+      A_EXEC_END_DATE(L_FETCHED_ROWS) := L_EXEC_END_DATE;
+      A_DUE_DATE(L_FETCHED_ROWS) := L_DUE_DATE;
+      A_PRIORITY(L_FETCHED_ROWS) := L_PRIORITY;
+      A_LABEL_FORMAT(L_FETCHED_ROWS) := L_LABEL_FORMAT;
+      A_DATE1(L_FETCHED_ROWS) := L_DATE1;
+      A_DATE2(L_FETCHED_ROWS) := L_DATE2;
+      A_DATE3(L_FETCHED_ROWS) := L_DATE3;
+      A_DATE4(L_FETCHED_ROWS) := L_DATE4;
+      A_DATE5(L_FETCHED_ROWS) := L_DATE5;
+      A_ALLOW_ANY_ST(L_FETCHED_ROWS) := L_ALLOW_ANY_ST;
+      A_ALLOW_NEW_SC(L_FETCHED_ROWS) := L_ALLOW_NEW_SC;
+      A_RESPONSIBLE(L_FETCHED_ROWS) := L_RESPONSIBLE;
+      A_SC_COUNTER(L_FETCHED_ROWS) := L_SC_COUNTER;
+      A_RQ_CLASS(L_FETCHED_ROWS) := L_RQ_CLASS;
+      A_LOG_HS(L_FETCHED_ROWS) := L_LOG_HS;
+      A_LOG_HS_DETAILS(L_FETCHED_ROWS) := L_LOG_HS_DETAILS;
+      A_ALLOW_MODIFY(L_FETCHED_ROWS) := L_ALLOW_MODIFY;
+      A_ACTIVE(L_FETCHED_ROWS) := L_ACTIVE;
+      A_LC(L_FETCHED_ROWS) := L_LC;
+      A_LC_VERSION(L_FETCHED_ROWS) := L_LC_VERSION;
+      A_SS(L_FETCHED_ROWS) := L_SS;
+      A_AR(L_FETCHED_ROWS) := L_AR;
+
+      IF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+         L_RESULT := DBMS_SQL.FETCH_ROWS(L_RQ_CURSOR);
+      END IF;
+
+   END LOOP;
+
+   DBMS_SQL.CLOSE_CURSOR(L_RQ_CURSOR);
+
+   IF L_FETCHED_ROWS = 0 THEN
+      L_RET_CODE := UNAPIGEN.DBERR_NORECORDS;
+   ELSE
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+      L_RET_CODE := UNAPIGEN.DBERR_SUCCESS;
+   END IF;
+
+   RETURN(L_RET_CODE);
+
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+             'GetRequest', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      IF DBMS_SQL.IS_OPEN(L_RQ_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR(L_RQ_CURSOR);
+      END IF;
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END GETREQUEST;
+
+FUNCTION SELECTREQUEST 
+(A_COL_ID                IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_TP                IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_VALUE             IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_NR_OF_ROWS        IN      NUMBER,                    
+ A_RQ                    OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_RT                    OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_RT_VERSION            OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_DESCRIPTION           OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_DESCR_DOC             OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_DESCR_DOC_VERSION     OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_SAMPLING_DATE         OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_CREATION_DATE         OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_CREATED_BY            OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_EXEC_START_DATE       OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_EXEC_END_DATE         OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_DUE_DATE              OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_PRIORITY              OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_LABEL_FORMAT          OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_DATE1                 OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_DATE2                 OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_DATE3                 OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_DATE4                 OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_DATE5                 OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_ALLOW_ANY_ST          OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_ALLOW_NEW_SC          OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_RESPONSIBLE           OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_SC_COUNTER            OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_RQ_CLASS              OUT     UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LOG_HS                OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LOG_HS_DETAILS        OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_ALLOW_MODIFY          OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_AR                    OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_ACTIVE                OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LC                    OUT     UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LC_VERSION            OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_SS                    OUT     UNAPIGEN.VC2_TABLE_TYPE,   
+ A_NR_OF_ROWS            IN OUT  NUMBER,                    
+ A_ORDER_BY_CLAUSE       IN      VARCHAR2,                  
+ A_NEXT_ROWS             IN      NUMBER)                    
+RETURN NUMBER IS
+
+L_COL_OPERATOR           UNAPIGEN.VC20_TABLE_TYPE;
+L_COL_ANDOR              UNAPIGEN.VC3_TABLE_TYPE;
+
+BEGIN
+
+FOR L_X IN 1..A_COL_NR_OF_ROWS LOOP
+    L_COL_OPERATOR(L_X) := '=';
+    L_COL_ANDOR(L_X) := 'AND';
+END LOOP;
+
+ RETURN(UNAPIRQ.SELECTREQUEST(A_COL_ID,
+                              A_COL_TP,
+                              A_COL_VALUE,
+                              L_COL_OPERATOR,
+                              L_COL_ANDOR,
+                              A_COL_NR_OF_ROWS,
+                              A_RQ,
+                              A_RT,
+                              A_RT_VERSION,
+                              A_DESCRIPTION,
+                              A_DESCR_DOC,
+                              A_DESCR_DOC_VERSION,
+                              A_SAMPLING_DATE,
+                              A_CREATION_DATE,
+                              A_CREATED_BY,
+                              A_EXEC_START_DATE,
+                              A_EXEC_END_DATE,
+                              A_DUE_DATE,
+                              A_PRIORITY,
+                              A_LABEL_FORMAT,
+                              A_DATE1,
+                              A_DATE2,
+                              A_DATE3,
+                              A_DATE4,
+                              A_DATE5,
+                              A_ALLOW_ANY_ST,
+                              A_ALLOW_NEW_SC,
+                              A_RESPONSIBLE,
+                              A_SC_COUNTER,
+                              A_RQ_CLASS,
+                              A_LOG_HS,
+                              A_LOG_HS_DETAILS,
+                              A_ALLOW_MODIFY,
+                              A_AR,
+                              A_ACTIVE,
+                              A_LC,
+                              A_LC_VERSION,
+                              A_SS,
+                              A_NR_OF_ROWS,
+                              A_ORDER_BY_CLAUSE,
+                              A_NEXT_ROWS));
+
+END SELECTREQUEST;
+
+
+FUNCTION SELECTREQUEST
+(A_COL_ID                IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_TP                IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_VALUE             IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_OPERATOR          IN      UNAPIGEN.VC20_TABLE_TYPE,     
+ A_COL_ANDOR             IN      UNAPIGEN.VC3_TABLE_TYPE,      
+ A_COL_NR_OF_ROWS        IN      NUMBER,                    
+ A_RQ                    OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_RT                    OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_RT_VERSION            OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_DESCRIPTION           OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_DESCR_DOC             OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_DESCR_DOC_VERSION     OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_SAMPLING_DATE         OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_CREATION_DATE         OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_CREATED_BY            OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_EXEC_START_DATE       OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_EXEC_END_DATE         OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_DUE_DATE              OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_PRIORITY              OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_LABEL_FORMAT          OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_DATE1                 OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_DATE2                 OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_DATE3                 OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_DATE4                 OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_DATE5                 OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_ALLOW_ANY_ST          OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_ALLOW_NEW_SC          OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_RESPONSIBLE           OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_SC_COUNTER            OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_RQ_CLASS              OUT     UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LOG_HS                OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LOG_HS_DETAILS        OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_ALLOW_MODIFY          OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_AR                    OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_ACTIVE                OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LC                    OUT     UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LC_VERSION            OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_SS                    OUT     UNAPIGEN.VC2_TABLE_TYPE,   
+ A_NR_OF_ROWS            IN OUT  NUMBER,                    
+ A_ORDER_BY_CLAUSE       IN      VARCHAR2,                  
+ A_NEXT_ROWS             IN      NUMBER)                    
+RETURN NUMBER IS
+
+L_RQ                             VARCHAR2(20);
+L_RT                             VARCHAR2(20);
+L_RT_VERSION                     VARCHAR2(20);
+L_DESCRIPTION                    VARCHAR2(40);
+L_DESCR_DOC                      VARCHAR2(40);
+L_DESCR_DOC_VERSION              VARCHAR2(20);
+L_SAMPLING_DATE                  TIMESTAMP WITH TIME ZONE;
+L_CREATION_DATE                  TIMESTAMP WITH TIME ZONE;
+L_CREATED_BY                     VARCHAR2(20);
+L_EXEC_START_DATE                TIMESTAMP WITH TIME ZONE;
+L_EXEC_END_DATE                  TIMESTAMP WITH TIME ZONE;
+L_DUE_DATE                       TIMESTAMP WITH TIME ZONE;
+L_PRIORITY                       NUMBER(3);
+L_LABEL_FORMAT                   VARCHAR2(20);
+L_DATE1                          TIMESTAMP WITH TIME ZONE;
+L_DATE2                          TIMESTAMP WITH TIME ZONE;
+L_DATE3                          TIMESTAMP WITH TIME ZONE;
+L_DATE4                          TIMESTAMP WITH TIME ZONE;
+L_DATE5                          TIMESTAMP WITH TIME ZONE;
+L_ALLOW_ANY_ST                   CHAR(1);
+L_ALLOW_NEW_SC                   CHAR(1);
+L_RESPONSIBLE                    VARCHAR2(20);
+L_SC_COUNTER                     NUMBER;
+L_RQ_CLASS                       VARCHAR2(2);
+L_LOG_HS                         CHAR(1);
+L_LOG_HS_DETAILS                 CHAR(1);
+L_ALLOW_MODIFY                   CHAR(1);
+L_AR                             CHAR(1);
+L_ACTIVE                         CHAR(1);
+L_LC                             VARCHAR2(2);
+L_LC_VERSION                     VARCHAR2(20);
+L_SS                             VARCHAR2(2);
+L_ORDER_BY_CLAUSE                VARCHAR2(255);
+L_FROM_CLAUSE                    VARCHAR2(255);
+L_NEXT_RTGK_JOIN                 VARCHAR2(4);
+L_NEXT_RQGK_JOIN                 VARCHAR2(4);
+L_NEXT_RQ_JOIN                   VARCHAR2(4);
+L_COLUMN_HANDLED                 BOOLEAN_TABLE_TYPE;
+L_ANYOR_PRESENT                  BOOLEAN;
+L_COL_ANDOR                      VARCHAR2(3);
+L_PREV_COL_TP                    VARCHAR2(40);
+L_PREV_COL_ID                    VARCHAR2(40);
+L_PREV_COL_INDEX                 INTEGER;
+L_WHERE_CLAUSE4JOIN              VARCHAR2(1000);
+L_LENGTH                         INTEGER;
+
+BEGIN
+
+   IF NVL(A_NR_OF_ROWS,0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN(UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+   
+   IF NVL(A_NEXT_ROWS, 0) NOT IN (-1, 0, 1) THEN
+      RETURN(UNAPIGEN.DBERR_NEXTROWS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = -1 THEN
+      IF P_SELECTRQ_CURSOR IS NOT NULL THEN
+         DBMS_SQL.CLOSE_CURSOR(P_SELECTRQ_CURSOR);
+         P_SELECTRQ_CURSOR := NULL;
+      END IF;
+      RETURN (UNAPIGEN.DBERR_SUCCESS);
+   END IF;
+   
+   
+   IF A_NEXT_ROWS = 1 THEN
+      IF P_SELECTRQ_CURSOR IS NULL THEN
+         RETURN(UNAPIGEN.DBERR_NOCURSOR);
+      END IF;
+   END IF;
+
+   
+   IF NVL(A_NEXT_ROWS,0) = 0 THEN
+      P_SELECTION_VAL_TAB.DELETE;
+      L_SQL_STRING := 'SELECT a.rq, a.rt, a.rt_version, a.description, a.descr_doc, a.descr_doc_version, '||
+                      'a.sampling_date, a.creation_date, a.created_by, a.exec_start_date, ' ||
+                      'a.exec_end_date, a.due_date, a.priority, a.label_format, ' ||
+                      'a.date1, a.date2, a.date3, a.date4, a.date5, a.allow_any_st, '||
+                      'a.allow_new_sc, a.responsible, a.sc_counter, a.rq_class, a.log_hs, a.log_hs_details, ' ||
+                      'a.allow_modify, a.active, a.lc, a.lc_version, a.ss, a.ar FROM ';
+                      
+      L_FROM_CLAUSE := 'dd' || UNAPIGEN.P_DD || '.uvrq a';
+                   
+      
+      L_WHERE_CLAUSE4JOIN := '';
+      L_WHERE_CLAUSE := '';
+      L_ANYOR_PRESENT := FALSE;
+      FOR I IN 1..A_COL_NR_OF_ROWS LOOP
+         L_COLUMN_HANDLED(I) := FALSE;
+         IF LTRIM(RTRIM(UPPER(A_COL_ANDOR(I)))) = 'OR' AND
+            NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+            L_ANYOR_PRESENT := TRUE;
+         END IF;
+         
+         
+         IF I<>1 THEN
+            IF NVL(A_COL_TP(I), ' ') = NVL(A_COL_TP(I-1), ' ') AND
+               NVL(A_COL_ID(I), ' ') = NVL(A_COL_ID(I-1), ' ') AND
+               NVL(A_COL_OPERATOR(I), '=') = '=' AND
+               NVL(A_COL_OPERATOR(I-1), '=') = '=' AND
+               NVL(A_COL_ANDOR(I-1), 'AND') =  'AND' AND
+               (NVL(A_COL_VALUE(I), ' ') <> ' ' OR NVL(A_COL_VALUE(I-1), ' ') <> ' ') THEN
+               IF I> 2 AND A_COL_ANDOR(I-2) = 'OR' THEN
+                  L_ANYOR_PRESENT := TRUE;
+               END IF;
+            END IF;
+         END IF;         
+      END LOOP;
+
+      
+      
+      
+      
+      L_NEXT_RTGK_JOIN := 'a';
+      L_NEXT_RQGK_JOIN := 'a';
+      L_NEXT_RQ_JOIN := 'a';
+      FOR I IN REVERSE 1..A_COL_NR_OF_ROWS LOOP
+         IF NVL(LTRIM(A_COL_ID(I)), ' ') = ' ' THEN
+            RETURN(UNAPIGEN.DBERR_SELCOLSINVALID);
+         END IF;
+   
+         
+         L_COL_ANDOR := 'AND';
+         IF I<>1 THEN
+            L_COL_ANDOR := A_COL_ANDOR(I-1);
+         END IF;
+         IF L_COL_ANDOR IS NULL THEN
+            
+            L_COL_ANDOR := 'AND';
+         END IF;
+         IF L_COLUMN_HANDLED(I) = FALSE THEN
+            IF NVL(A_COL_TP(I), ' ') = 'rqgk' THEN 
+               IF NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+                  UNAPIGEN.WHERECLAUSESTRINGBUILDER (A_BASE_TABLE => 'utrq', A_INDEX =>I, A_COL_TP => A_COL_TP(I), A_COL_ID => A_COL_ID(I),
+                                   A_COL_VALUE => A_COL_VALUE(I), A_COL_OPERATOR => A_COL_OPERATOR(I),
+                                   A_COL_ANDOR => L_COL_ANDOR, A_ANYOR_PRESENT => L_ANYOR_PRESENT,
+                                   A_JOINTABLE_PREFIX => 'utrqgk', A_JOINCOLUMN1 => 'rq', A_JOINCOLUMN2 => '', 
+                                   A_PREV_COL_TP => L_PREV_COL_TP, A_PREV_COL_ID => L_PREV_COL_ID, A_PREV_COL_INDEX => L_PREV_COL_INDEX,
+                                   A_NEXTTABLE_TOJOIN => L_NEXT_RQGK_JOIN, A_FROM_CLAUSE => L_FROM_CLAUSE,
+                                   A_WHERE_CLAUSE4JOIN => L_WHERE_CLAUSE4JOIN, A_WHERE_CLAUSE => L_WHERE_CLAUSE,
+                                 A_SQL_VAL_TAB => P_SELECTION_VAL_TAB);                 
+               ELSIF INSTR(A_ORDER_BY_CLAUSE, 't'|| TO_CHAR(I)) <> 0 THEN
+                  L_FROM_CLAUSE := L_FROM_CLAUSE || ', utrqgk' || A_COL_ID(I) || ' t' || I;
+                  L_COL_ANDOR := 'AND'; 
+                  
+                  L_WHERE_CLAUSE4JOIN := L_WHERE_CLAUSE4JOIN ||
+                                    't' || I || '.rq(+) = a.rq ' || L_COL_ANDOR || ' ';
+               END IF;
+               L_COLUMN_HANDLED(I) := TRUE; 
+            ELSIF NVL(A_COL_TP(I), ' ') = 'rtgk' THEN 
+               IF NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+                  UNAPIGEN.WHERECLAUSESTRINGBUILDER (A_BASE_TABLE => 'utrq', A_INDEX =>I, A_COL_TP => A_COL_TP(I), A_COL_ID => A_COL_ID(I),
+                                   A_COL_VALUE => A_COL_VALUE(I), A_COL_OPERATOR => A_COL_OPERATOR(I),
+                                   A_COL_ANDOR => L_COL_ANDOR, A_ANYOR_PRESENT => L_ANYOR_PRESENT,
+                                   A_JOINTABLE_PREFIX => 'utrtgk', A_JOINCOLUMN1 => 'rt', A_JOINCOLUMN2 => 'version', 
+                                   A_PREV_COL_TP => L_PREV_COL_TP, A_PREV_COL_ID => L_PREV_COL_ID, A_PREV_COL_INDEX => L_PREV_COL_INDEX,
+                                   A_NEXTTABLE_TOJOIN => L_NEXT_RTGK_JOIN, A_FROM_CLAUSE => L_FROM_CLAUSE,
+                                   A_WHERE_CLAUSE4JOIN => L_WHERE_CLAUSE4JOIN, A_WHERE_CLAUSE => L_WHERE_CLAUSE,
+                                 A_SQL_VAL_TAB => P_SELECTION_VAL_TAB);                 
+               ELSIF INSTR(A_ORDER_BY_CLAUSE, 't'|| TO_CHAR(I)) <> 0 THEN
+                  L_FROM_CLAUSE := L_FROM_CLAUSE || ', utrtgk' || A_COL_ID(I) || ' t' || I;
+                  L_COL_ANDOR := 'AND'; 
+                  
+                  L_WHERE_CLAUSE4JOIN := L_WHERE_CLAUSE4JOIN ||
+                                       't' || I || '.rt(+) = a.rt AND '||
+                                    't' || I || '.version(+) = a.rt_version ' || L_COL_ANDOR || ' ';
+               END IF;
+               L_COLUMN_HANDLED(I) := TRUE; 
+            ELSE
+               
+               IF NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+                  UNAPIGEN.WHERECLAUSESTRINGBUILDER (A_BASE_TABLE => 'utrq', A_INDEX =>I, A_COL_TP => A_COL_TP(I), A_COL_ID => A_COL_ID(I),
+                                   A_COL_VALUE => A_COL_VALUE(I), A_COL_OPERATOR => A_COL_OPERATOR(I),
+                                   A_COL_ANDOR => L_COL_ANDOR, A_ANYOR_PRESENT => L_ANYOR_PRESENT,
+                                   A_JOINTABLE_PREFIX => '', A_JOINCOLUMN1 => '', A_JOINCOLUMN2 => '', 
+                                   A_PREV_COL_TP => L_PREV_COL_TP, A_PREV_COL_ID => L_PREV_COL_ID, A_PREV_COL_INDEX => L_PREV_COL_INDEX,
+                                   A_NEXTTABLE_TOJOIN => L_NEXT_RQ_JOIN, A_FROM_CLAUSE => L_FROM_CLAUSE,
+                                   A_WHERE_CLAUSE4JOIN => L_WHERE_CLAUSE4JOIN, A_WHERE_CLAUSE => L_WHERE_CLAUSE,
+                                 A_SQL_VAL_TAB => P_SELECTION_VAL_TAB);                  
+               END IF;
+               L_COLUMN_HANDLED(I) := TRUE; 
+            END IF;      
+         END IF;
+      END LOOP;
+      
+      
+      IF SUBSTR(L_WHERE_CLAUSE4JOIN, -4) = 'AND ' THEN
+         L_WHERE_CLAUSE4JOIN := SUBSTR(L_WHERE_CLAUSE4JOIN, 1,
+                                  LENGTH(L_WHERE_CLAUSE4JOIN)-4);
+      END IF;
+      
+      
+      IF SUBSTR(L_WHERE_CLAUSE, -4) = 'AND ' THEN
+         L_WHERE_CLAUSE := SUBSTR(L_WHERE_CLAUSE, 1,
+                                  LENGTH(L_WHERE_CLAUSE)-4);
+      END IF;
+      IF UPPER(SUBSTR(L_WHERE_CLAUSE, -4)) = ' OR ' THEN
+         L_WHERE_CLAUSE := SUBSTR(L_WHERE_CLAUSE, 1,
+                                  LENGTH(L_WHERE_CLAUSE)-3);
+      END IF;
+      
+      IF L_WHERE_CLAUSE4JOIN IS NOT NULL THEN
+         IF L_WHERE_CLAUSE IS NULL THEN
+            L_WHERE_CLAUSE := ' WHERE ' || L_WHERE_CLAUSE4JOIN;
+         ELSE
+            L_WHERE_CLAUSE := ' WHERE (' || L_WHERE_CLAUSE4JOIN || ') AND ('||L_WHERE_CLAUSE||') ';
+         END IF;
+      ELSE
+         IF L_WHERE_CLAUSE IS NOT NULL THEN
+            L_WHERE_CLAUSE := ' WHERE '||L_WHERE_CLAUSE;
+         ELSE
+            L_WHERE_CLAUSE := ' ';
+         END IF;
+      END IF;
+
+      IF NVL(A_ORDER_BY_CLAUSE, ' ') = ' ' THEN
+         L_ORDER_BY_CLAUSE := ' ORDER BY a.rq';
+      ELSE
+         L_ORDER_BY_CLAUSE := A_ORDER_BY_CLAUSE;
+      END IF;
+
+      L_SQL_STRING := L_SQL_STRING || L_FROM_CLAUSE || L_WHERE_CLAUSE || L_ORDER_BY_CLAUSE;
+      P_SELECTION_CLAUSE := L_FROM_CLAUSE || L_WHERE_CLAUSE;
+      IF P_SELECTRQ_CURSOR IS NULL THEN
+         P_SELECTRQ_CURSOR := DBMS_SQL.OPEN_CURSOR;
+      END IF;
+
+      UNAPIAUT.ADDORACLECBOHINT (L_SQL_STRING) ;
+      DBMS_SQL.PARSE(P_SELECTRQ_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+      FOR L_X IN 1..P_SELECTION_VAL_TAB.COUNT() LOOP
+         DBMS_SQL.BIND_VARIABLE(P_SELECTRQ_CURSOR, ':col_val'||L_X , P_SELECTION_VAL_TAB(L_X)); 
+      END LOOP;
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 1, L_RQ, 20);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 2, L_RT, 20);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 3, L_RT_VERSION, 20);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 4, L_DESCRIPTION, 40);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 5, L_DESCR_DOC, 40);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 6, L_DESCR_DOC_VERSION, 20);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 7, L_SAMPLING_DATE);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 8, L_CREATION_DATE);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 9, L_CREATED_BY, 20);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 10, L_EXEC_START_DATE);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 11, L_EXEC_END_DATE);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 12, L_DUE_DATE);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 13, L_PRIORITY);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 14, L_LABEL_FORMAT, 20);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 15, L_DATE1);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 16, L_DATE2);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 17, L_DATE3);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 18, L_DATE4);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 19, L_DATE5);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_SELECTRQ_CURSOR, 20, L_ALLOW_ANY_ST, 1);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_SELECTRQ_CURSOR, 21, L_ALLOW_NEW_SC, 1);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 22, L_RESPONSIBLE, 20);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 23, L_SC_COUNTER);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 24, L_RQ_CLASS, 2);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_SELECTRQ_CURSOR, 25, L_LOG_HS, 1);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_SELECTRQ_CURSOR, 26, L_LOG_HS_DETAILS, 1);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_SELECTRQ_CURSOR, 27, L_ALLOW_MODIFY, 1);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_SELECTRQ_CURSOR, 28, L_ACTIVE, 1);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 29, L_LC, 2);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 30, L_LC_VERSION, 20);
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQ_CURSOR, 31, L_SS, 2);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_SELECTRQ_CURSOR, 32, L_AR, 1);
+      L_RESULT := DBMS_SQL.EXECUTE(P_SELECTRQ_CURSOR);
+
+   END IF;
+   
+   L_RESULT := DBMS_SQL.FETCH_ROWS(P_SELECTRQ_CURSOR);
+   L_FETCHED_ROWS := 0;
+
+   LOOP
+      EXIT WHEN L_RESULT = 0 OR L_FETCHED_ROWS >= A_NR_OF_ROWS;
+
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 1, L_RQ);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 2, L_RT);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 3, L_RT_VERSION);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 4, L_DESCRIPTION);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 5, L_DESCR_DOC);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 6, L_DESCR_DOC_VERSION);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 7, L_SAMPLING_DATE);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 8, L_CREATION_DATE);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 9, L_CREATED_BY);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 10, L_EXEC_START_DATE);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 11, L_EXEC_END_DATE);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 12, L_DUE_DATE);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 13, L_PRIORITY);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 14, L_LABEL_FORMAT);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 15, L_DATE1);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 16, L_DATE2);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 17, L_DATE3);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 18, L_DATE4);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 19, L_DATE5);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_SELECTRQ_CURSOR, 20, L_ALLOW_ANY_ST);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_SELECTRQ_CURSOR, 21, L_ALLOW_NEW_SC);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 22, L_RESPONSIBLE);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 23, L_SC_COUNTER);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 24, L_RQ_CLASS);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_SELECTRQ_CURSOR, 25, L_LOG_HS);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_SELECTRQ_CURSOR, 26, L_LOG_HS_DETAILS);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_SELECTRQ_CURSOR, 27, L_ALLOW_MODIFY);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_SELECTRQ_CURSOR, 28, L_ACTIVE);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 29, L_LC);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 30, L_LC_VERSION);
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQ_CURSOR, 31, L_SS);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_SELECTRQ_CURSOR, 32, L_AR);
+
+      L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+
+      A_RQ(L_FETCHED_ROWS) := L_RQ;
+      A_RT(L_FETCHED_ROWS) := L_RT;
+      A_RT_VERSION(L_FETCHED_ROWS) := L_RT_VERSION;
+      A_DESCRIPTION(L_FETCHED_ROWS) := L_DESCRIPTION;
+      A_DESCR_DOC(L_FETCHED_ROWS) := L_DESCR_DOC;
+      A_DESCR_DOC_VERSION(L_FETCHED_ROWS) := L_DESCR_DOC_VERSION;
+      A_SAMPLING_DATE(L_FETCHED_ROWS) := L_SAMPLING_DATE;
+      A_CREATION_DATE(L_FETCHED_ROWS) := L_CREATION_DATE;
+      A_CREATED_BY(L_FETCHED_ROWS) := L_CREATED_BY;
+      A_EXEC_START_DATE(L_FETCHED_ROWS) := L_EXEC_START_DATE;
+      A_EXEC_END_DATE(L_FETCHED_ROWS) := L_EXEC_END_DATE;
+      A_DUE_DATE(L_FETCHED_ROWS) := L_DUE_DATE;
+      A_PRIORITY(L_FETCHED_ROWS) := L_PRIORITY;
+      A_LABEL_FORMAT(L_FETCHED_ROWS) := L_LABEL_FORMAT;
+      A_DATE1(L_FETCHED_ROWS) := L_DATE1;
+      A_DATE2(L_FETCHED_ROWS) := L_DATE2;
+      A_DATE3(L_FETCHED_ROWS) := L_DATE3;
+      A_DATE4(L_FETCHED_ROWS) := L_DATE4;
+      A_DATE5(L_FETCHED_ROWS) := L_DATE5;
+      A_ALLOW_ANY_ST(L_FETCHED_ROWS) := L_ALLOW_ANY_ST;
+      A_ALLOW_NEW_SC(L_FETCHED_ROWS) := L_ALLOW_NEW_SC;
+      A_RESPONSIBLE(L_FETCHED_ROWS) := L_RESPONSIBLE;
+      A_SC_COUNTER(L_FETCHED_ROWS) := L_SC_COUNTER;
+      A_RQ_CLASS(L_FETCHED_ROWS) := L_RQ_CLASS;
+      A_LOG_HS(L_FETCHED_ROWS) := L_LOG_HS;
+      A_LOG_HS_DETAILS(L_FETCHED_ROWS) := L_LOG_HS_DETAILS;
+      A_ALLOW_MODIFY(L_FETCHED_ROWS) := L_ALLOW_MODIFY;
+      A_ACTIVE(L_FETCHED_ROWS) := L_ACTIVE;
+      A_LC(L_FETCHED_ROWS) := L_LC;
+      A_LC_VERSION(L_FETCHED_ROWS) := L_LC_VERSION;
+      A_SS(L_FETCHED_ROWS) := L_SS;
+      A_AR(L_FETCHED_ROWS) := L_AR;
+
+      IF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+         L_RESULT := DBMS_SQL.FETCH_ROWS(P_SELECTRQ_CURSOR);
+      END IF;
+
+   END LOOP;
+
+   
+   IF (L_FETCHED_ROWS = 0) THEN
+       DBMS_SQL.CLOSE_CURSOR(P_SELECTRQ_CURSOR);
+       P_SELECTRQ_CURSOR := NULL;
+       RETURN(UNAPIGEN.DBERR_NORECORDS);
+   ELSIF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+      DBMS_SQL.CLOSE_CURSOR(P_SELECTRQ_CURSOR);
+      P_SELECTRQ_CURSOR := NULL;
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+   END IF;
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+             'SelectRequest', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      L_LENGTH := 200;
+      FOR L_X IN 1..10 LOOP
+         IF ( LENGTH(L_SQL_STRING) > ((L_LENGTH*(L_X-1))+1) ) THEN
+            INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+            VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+                   'SelectRequest', '(SQL)'||SUBSTR(L_SQL_STRING, (L_LENGTH*(L_X-1))+1, L_LENGTH));             
+         ELSE
+            EXIT;
+         END IF;
+      END LOOP;            
+      UNAPIGEN.U4COMMIT;
+      IF DBMS_SQL.IS_OPEN(P_SELECTRQ_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR(P_SELECTRQ_CURSOR);
+      END IF;
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END SELECTREQUEST;
+
+FUNCTION SELECTRQGKVALUES
+(A_COL_ID           IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_TP           IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_VALUE        IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_NR_OF_ROWS   IN      NUMBER,                    
+ A_GK               IN      VARCHAR2,                  
+ A_VALUE            OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_NR_OF_ROWS       IN OUT  NUMBER,                    
+ A_ORDER_BY_CLAUSE  IN      VARCHAR2,                  
+ A_NEXT_ROWS        IN      NUMBER)                    
+RETURN NUMBER IS
+L_COL_OPERATOR           UNAPIGEN.VC20_TABLE_TYPE;
+L_COL_ANDOR              UNAPIGEN.VC3_TABLE_TYPE;
+BEGIN
+FOR L_X IN 1..A_COL_NR_OF_ROWS LOOP
+    L_COL_OPERATOR(L_X) := '=';
+    L_COL_ANDOR(L_X) := 'AND';
+END LOOP;
+ RETURN(UNAPIRQ.SELECTRQGKVALUES(A_COL_ID,
+                                 A_COL_TP,
+                                 A_COL_VALUE,
+                                 L_COL_OPERATOR,
+                                 L_COL_ANDOR,
+                                 A_COL_NR_OF_ROWS,
+                                 A_GK,
+                                 A_VALUE,
+                                 A_NR_OF_ROWS,
+                                 A_ORDER_BY_CLAUSE,
+                                 A_NEXT_ROWS));
+END SELECTRQGKVALUES;
+
+FUNCTION SELECTRQGKVALUES
+(A_COL_ID           IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_TP           IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_VALUE        IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_OPERATOR     IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_COL_ANDOR        IN      UNAPIGEN.VC3_TABLE_TYPE,   
+ A_COL_NR_OF_ROWS   IN      NUMBER,                    
+ A_GK               IN      VARCHAR2,                  
+ A_VALUE            OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_NR_OF_ROWS       IN OUT  NUMBER,                    
+ A_ORDER_BY_CLAUSE  IN      VARCHAR2,                  
+ A_NEXT_ROWS        IN      NUMBER)                    
+RETURN NUMBER IS
+
+L_VALUE                          VARCHAR2(40);
+L_ORDER_BY_CLAUSE                VARCHAR2(255);
+L_FROM_CLAUSE                    VARCHAR2(500);
+L_NEXT_SCGK_JOIN                 VARCHAR2(4);
+L_NEXT_STGK_JOIN                 VARCHAR2(4);
+L_NEXT_RQGK_JOIN                 VARCHAR2(4);
+L_NEXT_SDGK_JOIN                 VARCHAR2(4);
+L_NEXT_RTGK_JOIN                 VARCHAR2(4);
+L_NEXT_SC_JOIN                   VARCHAR2(4);
+L_NEXT_RQ_JOIN                   VARCHAR2(4);
+L_COLUMN_HANDLED                 BOOLEAN_TABLE_TYPE;
+L_ANYOR_PRESENT                  BOOLEAN;
+L_COL_ANDOR                      VARCHAR2(3);
+L_PREV_COL_TP                    VARCHAR2(40);
+L_PREV_COL_ID                    VARCHAR2(40);
+L_PREV_COL_INDEX                 INTEGER;
+L_WHERE_CLAUSE4JOIN              VARCHAR2(2000);
+L_LENGTH                         INTEGER;
+L_SQL_VAL_TAB                    VC40_NESTEDTABLE_TYPE := VC40_NESTEDTABLE_TYPE();
+
+BEGIN
+
+   IF NVL(A_NR_OF_ROWS,0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN (UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+
+   IF NVL(A_NEXT_ROWS, 0) NOT IN (-1, 0, 1) THEN
+      RETURN(UNAPIGEN.DBERR_NEXTROWS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = -1 THEN
+      IF P_SELECTRQGK_CURSOR IS NOT NULL THEN
+         DBMS_SQL.CLOSE_CURSOR(P_SELECTRQGK_CURSOR);
+         P_SELECTRQGK_CURSOR := NULL;
+      END IF;
+      RETURN (UNAPIGEN.DBERR_SUCCESS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = 1 THEN
+      IF P_SELECTRQGK_CURSOR IS NULL THEN
+         RETURN(UNAPIGEN.DBERR_NOCURSOR);
+      END IF;
+   END IF;
+   
+   
+   IF NVL(A_NEXT_ROWS,0) = 0 THEN
+
+      
+      L_SQL_STRING := 'SELECT DISTINCT b.' || A_GK ||' FROM ';
+      L_FROM_CLAUSE := 'dd' || UNAPIGEN.P_DD || '.uvrq a, utrqgk' || A_GK || ' b';
+
+      
+      L_WHERE_CLAUSE4JOIN := 'a.rq = b.rq AND ';
+      L_WHERE_CLAUSE := '';
+      L_ANYOR_PRESENT := FALSE;
+      FOR I IN 1..A_COL_NR_OF_ROWS LOOP
+         L_COLUMN_HANDLED(I) := FALSE;
+         IF LTRIM(RTRIM(UPPER(A_COL_ANDOR(I)))) = 'OR' AND
+            NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+            L_ANYOR_PRESENT := TRUE;
+         END IF;
+         
+         
+         IF I<>1 THEN
+            IF NVL(A_COL_TP(I), ' ') = NVL(A_COL_TP(I-1), ' ') AND
+               NVL(A_COL_ID(I), ' ') = NVL(A_COL_ID(I-1), ' ') AND
+               NVL(A_COL_OPERATOR(I), '=') = '=' AND
+               NVL(A_COL_OPERATOR(I-1), '=') = '=' AND
+               NVL(A_COL_ANDOR(I-1), 'AND') =  'AND' AND
+               (NVL(A_COL_VALUE(I), ' ') <> ' ' OR NVL(A_COL_VALUE(I-1), ' ') <> ' ') THEN
+               IF I> 2 AND A_COL_ANDOR(I-2) = 'OR' THEN
+                  L_ANYOR_PRESENT := TRUE;
+               END IF;
+            END IF;
+         END IF;         
+      END LOOP;
+
+      
+      
+      
+
+      L_NEXT_SC_JOIN := 'sc';
+      L_NEXT_RQ_JOIN := 'a';
+      L_NEXT_SCGK_JOIN := 'sc';
+      L_NEXT_STGK_JOIN := 'sc';
+      L_NEXT_RQGK_JOIN := 'b';
+      L_NEXT_RTGK_JOIN := 'a';
+      L_NEXT_SDGK_JOIN := 'sc';
+      
+      
+   
+      FOR I IN REVERSE 1..A_COL_NR_OF_ROWS LOOP
+         IF NVL(LTRIM(A_COL_ID(I)), ' ') = ' ' THEN
+            RETURN(UNAPIGEN.DBERR_SELCOLSINVALID);
+         END IF;
+
+         
+         L_COL_ANDOR := 'AND';
+         IF I<>1 THEN
+            L_COL_ANDOR := A_COL_ANDOR(I-1);
+         END IF;
+         IF L_COL_ANDOR IS NULL THEN
+            
+            L_COL_ANDOR := 'AND';
+         END IF;
+
+         IF L_COLUMN_HANDLED(I) = FALSE THEN
+            IF NVL(A_COL_TP(I), ' ') = 'rqgk' THEN 
+               IF NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+                  UNAPIGEN.WHERECLAUSESTRINGBUILDER (A_BASE_TABLE => 'utrq', A_INDEX =>I, A_COL_TP => A_COL_TP(I), A_COL_ID => A_COL_ID(I),
+                                 A_COL_VALUE => A_COL_VALUE(I), A_COL_OPERATOR => A_COL_OPERATOR(I),
+                                 A_COL_ANDOR => L_COL_ANDOR, A_ANYOR_PRESENT => L_ANYOR_PRESENT,
+                                 A_JOINTABLE_PREFIX => 'utrqgk', A_JOINCOLUMN1 => 'rq', A_JOINCOLUMN2 => '', 
+                                 A_PREV_COL_TP => L_PREV_COL_TP, A_PREV_COL_ID => L_PREV_COL_ID, A_PREV_COL_INDEX => L_PREV_COL_INDEX,
+                                 A_NEXTTABLE_TOJOIN => L_NEXT_RQGK_JOIN, A_FROM_CLAUSE => L_FROM_CLAUSE,
+                                 A_WHERE_CLAUSE4JOIN => L_WHERE_CLAUSE4JOIN, A_WHERE_CLAUSE => L_WHERE_CLAUSE,
+                                 A_SQL_VAL_TAB => L_SQL_VAL_TAB);                 
+               END IF;
+               L_COLUMN_HANDLED(I) := TRUE; 
+            ELSIF NVL(A_COL_TP(I), ' ') = 'scgk' THEN 
+               IF NVL(A_COL_VALUE(I), ' ') <> ' ' AND
+                  INSTR(L_FROM_CLAUSE, '.uvsc sc') = 0 THEN
+                  L_FROM_CLAUSE := L_FROM_CLAUSE || ', dd' || UNAPIGEN.P_DD || '.uvsc sc' ;
+                  L_WHERE_CLAUSE4JOIN := L_WHERE_CLAUSE4JOIN || 'sc.rq = b.rq AND ';
+               END IF;
+
+               IF NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+                  UNAPIGEN.WHERECLAUSESTRINGBUILDER (A_BASE_TABLE => 'utsc', A_INDEX =>I, A_COL_TP => A_COL_TP(I), A_COL_ID => A_COL_ID(I),
+                                 A_COL_VALUE => A_COL_VALUE(I), A_COL_OPERATOR => A_COL_OPERATOR(I),
+                                 A_COL_ANDOR => L_COL_ANDOR, A_ANYOR_PRESENT => L_ANYOR_PRESENT,
+                                 A_JOINTABLE_PREFIX => 'utscgk', A_JOINCOLUMN1 => 'sc', A_JOINCOLUMN2 => '', 
+                                 A_PREV_COL_TP => L_PREV_COL_TP, A_PREV_COL_ID => L_PREV_COL_ID, A_PREV_COL_INDEX => L_PREV_COL_INDEX,
+                                 A_NEXTTABLE_TOJOIN => L_NEXT_SCGK_JOIN, A_FROM_CLAUSE => L_FROM_CLAUSE,
+                                 A_WHERE_CLAUSE4JOIN => L_WHERE_CLAUSE4JOIN, A_WHERE_CLAUSE => L_WHERE_CLAUSE,
+                                 A_BASETABLE4GK_ALIAS => 'sc',
+                                 A_SQL_VAL_TAB => L_SQL_VAL_TAB);                 
+               END IF ;
+               L_COLUMN_HANDLED(I) := TRUE; 
+            ELSIF NVL(A_COL_TP(I), ' ') = 'stgk' THEN 
+               IF NVL(A_COL_VALUE(I), ' ') <> ' ' AND
+                  INSTR(L_FROM_CLAUSE, '.uvsc sc') = 0 THEN
+                  L_FROM_CLAUSE := L_FROM_CLAUSE || ', dd' || UNAPIGEN.P_DD || '.uvsc sc' ;
+                  L_WHERE_CLAUSE4JOIN := L_WHERE_CLAUSE4JOIN || 'sc.rq = b.rq AND ';
+               END IF;
+
+               IF NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+                  UNAPIGEN.WHERECLAUSESTRINGBUILDER (A_BASE_TABLE => 'utsc', A_INDEX =>I, A_COL_TP => A_COL_TP(I), A_COL_ID => A_COL_ID(I),
+                                 A_COL_VALUE => A_COL_VALUE(I), A_COL_OPERATOR => A_COL_OPERATOR(I),
+                                 A_COL_ANDOR => L_COL_ANDOR, A_ANYOR_PRESENT => L_ANYOR_PRESENT,
+                                 A_JOINTABLE_PREFIX => 'utstgk', A_JOINCOLUMN1 => 'st', A_JOINCOLUMN2 => 'version', 
+                                 A_PREV_COL_TP => L_PREV_COL_TP, A_PREV_COL_ID => L_PREV_COL_ID, A_PREV_COL_INDEX => L_PREV_COL_INDEX,
+                                 A_NEXTTABLE_TOJOIN => L_NEXT_STGK_JOIN, A_FROM_CLAUSE => L_FROM_CLAUSE,
+                                 A_WHERE_CLAUSE4JOIN => L_WHERE_CLAUSE4JOIN, A_WHERE_CLAUSE => L_WHERE_CLAUSE,
+                                 A_BASETABLE4GK_ALIAS => 'sc',
+                                 A_SQL_VAL_TAB => L_SQL_VAL_TAB);                                    
+               END IF;
+               L_COLUMN_HANDLED(I) := TRUE; 
+            ELSIF NVL(A_COL_TP(I), ' ') = 'rtgk' THEN 
+               IF NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+                  UNAPIGEN.WHERECLAUSESTRINGBUILDER (A_BASE_TABLE => 'utrq', A_INDEX =>I, A_COL_TP => A_COL_TP(I), A_COL_ID => A_COL_ID(I),
+                                 A_COL_VALUE => A_COL_VALUE(I), A_COL_OPERATOR => A_COL_OPERATOR(I),
+                                 A_COL_ANDOR => L_COL_ANDOR, A_ANYOR_PRESENT => L_ANYOR_PRESENT,
+                                 A_JOINTABLE_PREFIX => 'utrtgk', A_JOINCOLUMN1 => 'rt', A_JOINCOLUMN2 => 'version', 
+                                 A_PREV_COL_TP => L_PREV_COL_TP, A_PREV_COL_ID => L_PREV_COL_ID, A_PREV_COL_INDEX => L_PREV_COL_INDEX,
+                                 A_NEXTTABLE_TOJOIN => L_NEXT_RTGK_JOIN, A_FROM_CLAUSE => L_FROM_CLAUSE,
+                                 A_WHERE_CLAUSE4JOIN => L_WHERE_CLAUSE4JOIN, A_WHERE_CLAUSE => L_WHERE_CLAUSE,
+                                 A_SQL_VAL_TAB => L_SQL_VAL_TAB);                  
+               END IF;
+               L_COLUMN_HANDLED(I) := TRUE; 
+            ELSIF NVL(A_COL_TP(I), ' ') = 'sc' THEN 
+               IF NVL(A_COL_VALUE(I), ' ') <> ' ' AND
+                  INSTR(L_FROM_CLAUSE, '.uvsc sc') = 0 THEN
+                  L_FROM_CLAUSE :=  'dd' || UNAPIGEN.P_DD || '.uvsc sc,' || L_FROM_CLAUSE ;
+                  L_WHERE_CLAUSE4JOIN := L_WHERE_CLAUSE4JOIN || 'sc.rq = b.rq AND ';
+               END IF;
+               IF NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+                  UNAPIGEN.WHERECLAUSESTRINGBUILDER (A_BASE_TABLE => 'utrq', A_INDEX =>I, A_COL_TP => A_COL_TP(I), A_COL_ID => A_COL_ID(I),
+                                 A_COL_VALUE => A_COL_VALUE(I), A_COL_OPERATOR => A_COL_OPERATOR(I),
+                                 A_COL_ANDOR => L_COL_ANDOR, A_ANYOR_PRESENT => L_ANYOR_PRESENT,
+                                 A_JOINTABLE_PREFIX => '', A_JOINCOLUMN1 => '', A_JOINCOLUMN2 => '', 
+                                 A_PREV_COL_TP => L_PREV_COL_TP, A_PREV_COL_ID => L_PREV_COL_ID, A_PREV_COL_INDEX => L_PREV_COL_INDEX,
+                                 A_NEXTTABLE_TOJOIN => L_NEXT_SC_JOIN, A_FROM_CLAUSE => L_FROM_CLAUSE,
+                                 A_WHERE_CLAUSE4JOIN => L_WHERE_CLAUSE4JOIN, A_WHERE_CLAUSE => L_WHERE_CLAUSE,
+                                 A_BASETABLE4GK_ALIAS => 'sc',
+                                 A_SQL_VAL_TAB => L_SQL_VAL_TAB);                                                      
+               END IF;
+               L_COLUMN_HANDLED(I) := TRUE; 
+            ELSIF NVL(A_COL_TP(I), ' ') = 'sdgk' THEN 
+               IF NVL(A_COL_VALUE(I), ' ') <> ' ' AND
+                  INSTR(L_FROM_CLAUSE, '.uvsc sc') = 0 THEN
+                  L_FROM_CLAUSE := L_FROM_CLAUSE || ', dd' || UNAPIGEN.P_DD || '.uvsc sc' ;
+                  L_WHERE_CLAUSE4JOIN := L_WHERE_CLAUSE4JOIN || 'sc.rq = b.rq AND ';
+               END IF;
+
+               IF NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+                  UNAPIGEN.WHERECLAUSESTRINGBUILDER (A_BASE_TABLE => 'utsc', A_INDEX =>I, A_COL_TP => A_COL_TP(I), A_COL_ID => A_COL_ID(I),
+                                 A_COL_VALUE => A_COL_VALUE(I), A_COL_OPERATOR => A_COL_OPERATOR(I),
+                                 A_COL_ANDOR => L_COL_ANDOR, A_ANYOR_PRESENT => L_ANYOR_PRESENT,
+                                 A_JOINTABLE_PREFIX => 'utsdgk', A_JOINCOLUMN1 => 'sd', A_JOINCOLUMN2 => '', 
+                                 A_PREV_COL_TP => L_PREV_COL_TP, A_PREV_COL_ID => L_PREV_COL_ID, A_PREV_COL_INDEX => L_PREV_COL_INDEX,
+                                 A_NEXTTABLE_TOJOIN => L_NEXT_SDGK_JOIN, A_FROM_CLAUSE => L_FROM_CLAUSE,
+                                 A_WHERE_CLAUSE4JOIN => L_WHERE_CLAUSE4JOIN, A_WHERE_CLAUSE => L_WHERE_CLAUSE,
+                                 A_BASETABLE4GK_ALIAS => 'sc',
+                                 A_SQL_VAL_TAB => L_SQL_VAL_TAB);                 
+               END IF;
+               L_COLUMN_HANDLED(I) := TRUE; 
+            ELSE 
+               IF NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+                  UNAPIGEN.WHERECLAUSESTRINGBUILDER (A_BASE_TABLE => 'utrq', A_INDEX =>I, A_COL_TP => A_COL_TP(I), A_COL_ID => A_COL_ID(I),
+                                 A_COL_VALUE => A_COL_VALUE(I), A_COL_OPERATOR => A_COL_OPERATOR(I),
+                                 A_COL_ANDOR => L_COL_ANDOR, A_ANYOR_PRESENT => L_ANYOR_PRESENT,
+                                 A_JOINTABLE_PREFIX => '', A_JOINCOLUMN1 => '', A_JOINCOLUMN2 => '', 
+                                 A_PREV_COL_TP => L_PREV_COL_TP, A_PREV_COL_ID => L_PREV_COL_ID, A_PREV_COL_INDEX => L_PREV_COL_INDEX,
+                                 A_NEXTTABLE_TOJOIN => L_NEXT_RQ_JOIN, A_FROM_CLAUSE => L_FROM_CLAUSE,
+                                 A_WHERE_CLAUSE4JOIN => L_WHERE_CLAUSE4JOIN, A_WHERE_CLAUSE => L_WHERE_CLAUSE,
+                                 A_SQL_VAL_TAB => L_SQL_VAL_TAB);                  
+               END IF;
+               L_COLUMN_HANDLED(I) := TRUE; 
+            END IF;
+         END IF;
+      END LOOP;
+      
+      IF SUBSTR(L_WHERE_CLAUSE4JOIN, -4) = 'AND ' THEN
+         L_WHERE_CLAUSE4JOIN := SUBSTR(L_WHERE_CLAUSE4JOIN, 1,
+                                  LENGTH(L_WHERE_CLAUSE4JOIN)-4);
+      END IF;
+      
+      
+      IF SUBSTR(L_WHERE_CLAUSE, -4) = 'AND ' THEN
+         L_WHERE_CLAUSE := SUBSTR(L_WHERE_CLAUSE, 1,
+                                  LENGTH(L_WHERE_CLAUSE)-4);
+      END IF;
+      IF UPPER(SUBSTR(L_WHERE_CLAUSE, -4)) = ' OR ' THEN
+         L_WHERE_CLAUSE := SUBSTR(L_WHERE_CLAUSE, 1,
+                                  LENGTH(L_WHERE_CLAUSE)-3);
+      END IF;
+      
+      IF L_WHERE_CLAUSE4JOIN IS NOT NULL THEN
+         IF L_WHERE_CLAUSE IS NULL THEN
+            L_WHERE_CLAUSE := ' WHERE ' || L_WHERE_CLAUSE4JOIN;
+         ELSE
+            L_WHERE_CLAUSE := ' WHERE (' || L_WHERE_CLAUSE4JOIN || ') AND ('||L_WHERE_CLAUSE||') ';
+         END IF;
+      ELSE
+         IF L_WHERE_CLAUSE IS NOT NULL THEN
+            L_WHERE_CLAUSE := ' WHERE '||L_WHERE_CLAUSE;
+         ELSE
+            L_WHERE_CLAUSE := ' ';
+         END IF;
+      END IF;
+
+      L_ORDER_BY_CLAUSE := NVL(A_ORDER_BY_CLAUSE, ' ORDER BY 1');
+
+      L_SQL_STRING := L_SQL_STRING || L_FROM_CLAUSE || L_WHERE_CLAUSE || L_ORDER_BY_CLAUSE;
+
+      L_LENGTH := 200;
+      FOR L_X IN 1..10 LOOP
+         IF ( LENGTH(L_SQL_STRING) > ((L_LENGTH*(L_X-1))+1) ) THEN
+            DBMS_OUTPUT.PUT_LINE(SUBSTR(L_SQL_STRING, (L_LENGTH*(L_X-1))+1, L_LENGTH));
+         ELSE
+            EXIT;
+         END IF;
+      END LOOP;            
+
+      IF P_SELECTRQGK_CURSOR IS NULL THEN
+         P_SELECTRQGK_CURSOR := DBMS_SQL.OPEN_CURSOR;
+      END IF;
+
+      UNAPIAUT.ADDORACLECBOHINT (L_SQL_STRING) ;
+      DBMS_SQL.PARSE(P_SELECTRQGK_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+      FOR L_X IN 1..L_SQL_VAL_TAB.COUNT() LOOP
+         DBMS_SQL.BIND_VARIABLE(P_SELECTRQGK_CURSOR, ':col_val'||L_X , L_SQL_VAL_TAB(L_X)); 
+      END LOOP;
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQGK_CURSOR, 1, L_VALUE, 40);
+
+      L_RESULT := DBMS_SQL.EXECUTE(P_SELECTRQGK_CURSOR);
+
+   END IF;
+   
+   L_RESULT := DBMS_SQL.FETCH_ROWS(P_SELECTRQGK_CURSOR);
+   L_FETCHED_ROWS := 0;
+
+   LOOP
+      EXIT WHEN L_RESULT = 0 OR L_FETCHED_ROWS >= A_NR_OF_ROWS;
+
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQGK_CURSOR, 1, L_VALUE);
+
+      L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+
+      A_VALUE(L_FETCHED_ROWS) := L_VALUE;
+
+      IF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+         L_RESULT := DBMS_SQL.FETCH_ROWS(P_SELECTRQGK_CURSOR);
+      END IF;
+   END LOOP;
+
+   
+   IF (L_FETCHED_ROWS = 0) THEN
+       DBMS_SQL.CLOSE_CURSOR(P_SELECTRQGK_CURSOR);
+       P_SELECTRQGK_CURSOR := NULL;
+       RETURN(UNAPIGEN.DBERR_NORECORDS);
+   ELSIF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+      DBMS_SQL.CLOSE_CURSOR(P_SELECTRQGK_CURSOR);
+      P_SELECTRQGK_CURSOR := NULL;
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES (UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+              'SelectRqGkValues', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      L_LENGTH := 200;
+      FOR L_X IN 1..10 LOOP
+         IF ( LENGTH(L_SQL_STRING) > ((L_LENGTH*(L_X-1))+1) ) THEN
+            INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+            VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+                   'SelectRequest', '(SQL)'||SUBSTR(L_SQL_STRING, (L_LENGTH*(L_X-1))+1, L_LENGTH));             
+         ELSE
+            EXIT;
+         END IF;
+      END LOOP;            
+      L_LENGTH := 200;
+      FOR L_X IN 1..10 LOOP
+         IF ( LENGTH(L_SQLERRM) > ((L_LENGTH*(L_X-1))+1) ) THEN
+            DBMS_OUTPUT.PUT_LINE(SUBSTR(L_SQLERRM, (L_LENGTH*(L_X-1))+1, L_LENGTH));
+         ELSE
+            EXIT;
+         END IF;
+      END LOOP;            
+      UNAPIGEN.U4COMMIT;
+      IF DBMS_SQL.IS_OPEN (P_SELECTRQGK_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR (P_SELECTRQGK_CURSOR);
+      END IF;
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END SELECTRQGKVALUES;
+
+FUNCTION SELECTRQPROPVALUES
+(A_COL_ID           IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_TP           IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_VALUE        IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_NR_OF_ROWS   IN      NUMBER,                    
+ A_PROP             IN      VARCHAR2,                  
+ A_VALUE            OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_NR_OF_ROWS       IN OUT  NUMBER,                    
+ A_ORDER_BY_CLAUSE  IN      VARCHAR2,                  
+ A_NEXT_ROWS        IN      NUMBER)                    
+RETURN NUMBER IS
+L_COL_OPERATOR           UNAPIGEN.VC20_TABLE_TYPE;
+L_COL_ANDOR              UNAPIGEN.VC3_TABLE_TYPE;
+BEGIN
+FOR L_X IN 1..A_COL_NR_OF_ROWS LOOP
+    L_COL_OPERATOR(L_X) := '=';
+    L_COL_ANDOR(L_X) := 'AND';
+END LOOP;
+ RETURN(UNAPIRQ.SELECTRQPROPVALUES(A_COL_ID,
+                                 A_COL_TP,
+                                 A_COL_VALUE,
+                                 L_COL_OPERATOR,
+                                 L_COL_ANDOR,
+                                 A_COL_NR_OF_ROWS,
+                                 A_PROP,
+                                 A_VALUE,
+                                 A_NR_OF_ROWS,
+                                 A_ORDER_BY_CLAUSE,
+                                 A_NEXT_ROWS));
+END SELECTRQPROPVALUES;
+
+FUNCTION SELECTRQPROPVALUES
+(A_COL_ID           IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_TP           IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_VALUE        IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_COL_OPERATOR     IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_COL_ANDOR        IN      UNAPIGEN.VC3_TABLE_TYPE,   
+ A_COL_NR_OF_ROWS   IN      NUMBER,                    
+ A_PROP             IN      VARCHAR2,                  
+ A_VALUE            OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_NR_OF_ROWS       IN OUT  NUMBER,                    
+ A_ORDER_BY_CLAUSE  IN      VARCHAR2,                  
+ A_NEXT_ROWS        IN      NUMBER)                    
+RETURN NUMBER IS
+L_VALUE                          VARCHAR2(40);
+L_ORDER_BY_CLAUSE                VARCHAR2(255);
+L_FROM_CLAUSE                    VARCHAR2(500);
+L_NEXT_SC_JOIN                   VARCHAR2(4);
+L_NEXT_RQ_JOIN                   VARCHAR2(4);
+L_NEXT_SCGK_JOIN                 VARCHAR2(4);
+L_NEXT_RTGK_JOIN                 VARCHAR2(4);
+L_NEXT_RQGK_JOIN                 VARCHAR2(4);
+L_COLUMN_HANDLED                 BOOLEAN_TABLE_TYPE;
+L_ANYOR_PRESENT                  BOOLEAN;
+L_COL_ANDOR                      VARCHAR2(3);
+L_PREV_COL_TP                    VARCHAR2(40);
+L_PREV_COL_ID                    VARCHAR2(40);
+L_PREV_COL_INDEX                 INTEGER;
+L_WHERE_CLAUSE4JOIN              VARCHAR2(2000);
+L_LENGTH                         INTEGER;
+L_SQL_VAL_TAB                    VC40_NESTEDTABLE_TYPE := VC40_NESTEDTABLE_TYPE();
+
+BEGIN
+
+   IF NVL(A_NR_OF_ROWS,0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN (UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+
+   IF NVL(A_NEXT_ROWS, 0) NOT IN (-1, 0, 1) THEN
+      RETURN(UNAPIGEN.DBERR_NEXTROWS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = -1 THEN
+      IF P_SELECTRQPROP_CURSOR IS NOT NULL THEN
+         DBMS_SQL.CLOSE_CURSOR(P_SELECTRQPROP_CURSOR);
+         P_SELECTRQPROP_CURSOR := NULL;
+      END IF;
+      RETURN (UNAPIGEN.DBERR_SUCCESS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = 1 THEN
+      IF P_SELECTRQPROP_CURSOR IS NULL THEN
+         RETURN(UNAPIGEN.DBERR_NOCURSOR);
+      END IF;
+   END IF;
+
+   
+   IF NVL(A_NEXT_ROWS,0) = 0 THEN
+
+      L_SQL_STRING := 'SELECT DISTINCT a.' || A_PROP ||' FROM ';
+      L_FROM_CLAUSE := 'dd' || UNAPIGEN.P_DD || '.uvrq a';
+
+      
+      L_WHERE_CLAUSE4JOIN := '';
+      L_WHERE_CLAUSE := '';
+      L_ANYOR_PRESENT := FALSE;
+      FOR I IN 1..A_COL_NR_OF_ROWS LOOP
+         L_COLUMN_HANDLED(I) := FALSE;
+         IF LTRIM(RTRIM(UPPER(A_COL_ANDOR(I)))) = 'OR' AND
+            NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+            L_ANYOR_PRESENT := TRUE;
+         END IF;
+         
+         
+         IF I<>1 THEN
+            IF NVL(A_COL_TP(I), ' ') = NVL(A_COL_TP(I-1), ' ') AND
+               NVL(A_COL_ID(I), ' ') = NVL(A_COL_ID(I-1), ' ') AND
+               NVL(A_COL_OPERATOR(I), '=') = '=' AND
+               NVL(A_COL_OPERATOR(I-1), '=') = '=' AND
+               NVL(A_COL_ANDOR(I-1), 'AND') =  'AND' AND
+               (NVL(A_COL_VALUE(I), ' ') <> ' ' OR NVL(A_COL_VALUE(I-1), ' ') <> ' ') THEN
+               IF I> 2 AND A_COL_ANDOR(I-2) = 'OR' THEN
+                  L_ANYOR_PRESENT := TRUE;
+               END IF;
+            END IF;
+         END IF;         
+      END LOOP;
+
+      L_NEXT_SC_JOIN := 'sc';
+      L_NEXT_RQ_JOIN := 'a';
+      L_NEXT_SCGK_JOIN := 'sc';
+      L_NEXT_RTGK_JOIN := 'a';
+      L_NEXT_RQGK_JOIN := 'a';
+      FOR I IN REVERSE 1..A_COL_NR_OF_ROWS LOOP
+         IF NVL(LTRIM(A_COL_ID(I)), ' ') = ' ' THEN
+            RETURN(UNAPIGEN.DBERR_SELCOLSINVALID);
+         END IF;
+
+         
+         L_COL_ANDOR := 'AND';
+         IF I<>1 THEN
+            L_COL_ANDOR := A_COL_ANDOR(I-1);
+         END IF;
+         IF L_COL_ANDOR IS NULL THEN
+            
+            L_COL_ANDOR := 'AND';
+         END IF;
+
+         IF L_COLUMN_HANDLED(I) = FALSE THEN
+            IF NVL(A_COL_TP(I), ' ') = 'rqgk' THEN 
+               IF NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+                  UNAPIGEN.WHERECLAUSESTRINGBUILDER (A_BASE_TABLE => 'utrq', A_INDEX =>I, A_COL_TP => A_COL_TP(I), A_COL_ID => A_COL_ID(I),
+                                 A_COL_VALUE => A_COL_VALUE(I), A_COL_OPERATOR => A_COL_OPERATOR(I),
+                                 A_COL_ANDOR => L_COL_ANDOR, A_ANYOR_PRESENT => L_ANYOR_PRESENT,
+                                 A_JOINTABLE_PREFIX => 'utrqgk', A_JOINCOLUMN1 => 'rq', A_JOINCOLUMN2 => '', 
+                                 A_PREV_COL_TP => L_PREV_COL_TP, A_PREV_COL_ID => L_PREV_COL_ID, A_PREV_COL_INDEX => L_PREV_COL_INDEX,
+                                 A_NEXTTABLE_TOJOIN => L_NEXT_RQGK_JOIN, A_FROM_CLAUSE => L_FROM_CLAUSE,
+                                 A_WHERE_CLAUSE4JOIN => L_WHERE_CLAUSE4JOIN, A_WHERE_CLAUSE => L_WHERE_CLAUSE,
+                                 A_SQL_VAL_TAB => L_SQL_VAL_TAB);                  
+               END IF;
+               L_COLUMN_HANDLED(I) := TRUE; 
+            ELSIF NVL(A_COL_TP(I), ' ') = 'scgk' THEN 
+               IF NVL(A_COL_VALUE(I), ' ') <> ' ' AND
+                  INSTR(L_FROM_CLAUSE, '.uvsc sc') = 0 THEN
+                  L_FROM_CLAUSE := L_FROM_CLAUSE || ', dd' || UNAPIGEN.P_DD || '.uvsc sc' ;
+                  L_WHERE_CLAUSE4JOIN := L_WHERE_CLAUSE4JOIN || 'sc.rq = a.rq AND ';
+               END IF;
+
+               UNAPIGEN.WHERECLAUSESTRINGBUILDER (A_BASE_TABLE => 'utsc', A_INDEX =>I, A_COL_TP => A_COL_TP(I), A_COL_ID => A_COL_ID(I),
+                              A_COL_VALUE => A_COL_VALUE(I), A_COL_OPERATOR => A_COL_OPERATOR(I),
+                              A_COL_ANDOR => L_COL_ANDOR, A_ANYOR_PRESENT => L_ANYOR_PRESENT,
+                              A_JOINTABLE_PREFIX => 'utscgk', A_JOINCOLUMN1 => 'sc', A_JOINCOLUMN2 => '', 
+                              A_PREV_COL_TP => L_PREV_COL_TP, A_PREV_COL_ID => L_PREV_COL_ID, A_PREV_COL_INDEX => L_PREV_COL_INDEX,
+                              A_NEXTTABLE_TOJOIN => L_NEXT_SCGK_JOIN, A_FROM_CLAUSE => L_FROM_CLAUSE,
+                              A_WHERE_CLAUSE4JOIN => L_WHERE_CLAUSE4JOIN, A_WHERE_CLAUSE => L_WHERE_CLAUSE,
+                              A_BASETABLE4GK_ALIAS => 'sc',
+                              A_SQL_VAL_TAB => L_SQL_VAL_TAB);                  
+               L_COLUMN_HANDLED(I) := TRUE; 
+            ELSIF NVL(A_COL_TP(I), ' ') = 'rtgk' THEN 
+               IF NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+                  UNAPIGEN.WHERECLAUSESTRINGBUILDER (A_BASE_TABLE => 'utrq', A_INDEX =>I, A_COL_TP => A_COL_TP(I), A_COL_ID => A_COL_ID(I),
+                                 A_COL_VALUE => A_COL_VALUE(I), A_COL_OPERATOR => A_COL_OPERATOR(I),
+                                 A_COL_ANDOR => L_COL_ANDOR, A_ANYOR_PRESENT => L_ANYOR_PRESENT,
+                                 A_JOINTABLE_PREFIX => 'utrtgk', A_JOINCOLUMN1 => 'rt', A_JOINCOLUMN2 => 'version', 
+                                 A_PREV_COL_TP => L_PREV_COL_TP, A_PREV_COL_ID => L_PREV_COL_ID, A_PREV_COL_INDEX => L_PREV_COL_INDEX,
+                                 A_NEXTTABLE_TOJOIN => L_NEXT_RTGK_JOIN, A_FROM_CLAUSE => L_FROM_CLAUSE,
+                                 A_WHERE_CLAUSE4JOIN => L_WHERE_CLAUSE4JOIN, A_WHERE_CLAUSE => L_WHERE_CLAUSE,
+                                 A_SQL_VAL_TAB => L_SQL_VAL_TAB);                  
+               END IF;
+               L_COLUMN_HANDLED(I) := TRUE; 
+            ELSIF NVL(A_COL_TP(I), ' ') = 'sc' THEN 
+               IF NVL(A_COL_VALUE(I), ' ') <> ' ' AND
+                  INSTR(L_FROM_CLAUSE, '.uvsc sc') = 0 THEN
+                  L_FROM_CLAUSE := L_FROM_CLAUSE || ', dd' || UNAPIGEN.P_DD || '.uvsc sc' ;
+                  L_WHERE_CLAUSE4JOIN := L_WHERE_CLAUSE4JOIN || 'sc.rq = a.rq AND ';
+               END IF;
+
+               IF NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+                  UNAPIGEN.WHERECLAUSESTRINGBUILDER (A_BASE_TABLE => 'utrq', A_INDEX =>I, A_COL_TP => A_COL_TP(I), A_COL_ID => A_COL_ID(I),
+                                 A_COL_VALUE => A_COL_VALUE(I), A_COL_OPERATOR => A_COL_OPERATOR(I),
+                                 A_COL_ANDOR => L_COL_ANDOR, A_ANYOR_PRESENT => L_ANYOR_PRESENT,
+                                 A_JOINTABLE_PREFIX => '', A_JOINCOLUMN1 => '', A_JOINCOLUMN2 => '', 
+                                 A_PREV_COL_TP => L_PREV_COL_TP, A_PREV_COL_ID => L_PREV_COL_ID, A_PREV_COL_INDEX => L_PREV_COL_INDEX,
+                                 A_NEXTTABLE_TOJOIN => L_NEXT_SC_JOIN, A_FROM_CLAUSE => L_FROM_CLAUSE,
+                                 A_WHERE_CLAUSE4JOIN => L_WHERE_CLAUSE4JOIN, A_WHERE_CLAUSE => L_WHERE_CLAUSE,
+                                 A_BASETABLE4GK_ALIAS => 'sc',
+                                 A_SQL_VAL_TAB => L_SQL_VAL_TAB);                                                     
+               END IF;
+               L_COLUMN_HANDLED(I) := TRUE; 
+            ELSE
+               
+               IF NVL(A_COL_VALUE(I), ' ') <> ' ' THEN
+                  UNAPIGEN.WHERECLAUSESTRINGBUILDER (A_BASE_TABLE => 'utrq', A_INDEX =>I, A_COL_TP => A_COL_TP(I), A_COL_ID => A_COL_ID(I),
+                                   A_COL_VALUE => A_COL_VALUE(I), A_COL_OPERATOR => A_COL_OPERATOR(I),
+                                   A_COL_ANDOR => L_COL_ANDOR, A_ANYOR_PRESENT => L_ANYOR_PRESENT,
+                                   A_JOINTABLE_PREFIX => '', A_JOINCOLUMN1 => '', A_JOINCOLUMN2 => '', 
+                                   A_PREV_COL_TP => L_PREV_COL_TP, A_PREV_COL_ID => L_PREV_COL_ID, A_PREV_COL_INDEX => L_PREV_COL_INDEX,
+                                   A_NEXTTABLE_TOJOIN => L_NEXT_RQ_JOIN, A_FROM_CLAUSE => L_FROM_CLAUSE,
+                                   A_WHERE_CLAUSE4JOIN => L_WHERE_CLAUSE4JOIN, A_WHERE_CLAUSE => L_WHERE_CLAUSE,
+                                   A_SQL_VAL_TAB => L_SQL_VAL_TAB);                  
+               END IF;
+               L_COLUMN_HANDLED(I) := TRUE; 
+            END IF;
+         END IF;
+      END LOOP;
+
+      
+      IF SUBSTR(L_WHERE_CLAUSE4JOIN, -4) = 'AND ' THEN
+         L_WHERE_CLAUSE4JOIN := SUBSTR(L_WHERE_CLAUSE4JOIN, 1,
+                                  LENGTH(L_WHERE_CLAUSE4JOIN)-4);
+      END IF;
+      
+      
+      IF SUBSTR(L_WHERE_CLAUSE, -4) = 'AND ' THEN
+         L_WHERE_CLAUSE := SUBSTR(L_WHERE_CLAUSE, 1,
+                                  LENGTH(L_WHERE_CLAUSE)-4);
+      END IF;
+      IF UPPER(SUBSTR(L_WHERE_CLAUSE, -4)) = ' OR ' THEN
+         L_WHERE_CLAUSE := SUBSTR(L_WHERE_CLAUSE, 1,
+                                  LENGTH(L_WHERE_CLAUSE)-3);
+      END IF;
+      
+      IF L_WHERE_CLAUSE4JOIN IS NOT NULL THEN
+         IF L_WHERE_CLAUSE IS NULL THEN
+            L_WHERE_CLAUSE := ' WHERE ' || L_WHERE_CLAUSE4JOIN;
+         ELSE
+            L_WHERE_CLAUSE := ' WHERE (' || L_WHERE_CLAUSE4JOIN || ') AND ('||L_WHERE_CLAUSE||') ';
+         END IF;
+      ELSE
+         IF L_WHERE_CLAUSE IS NOT NULL THEN
+            L_WHERE_CLAUSE := ' WHERE '||L_WHERE_CLAUSE;
+         ELSE
+            L_WHERE_CLAUSE := ' ';
+         END IF;
+      END IF;
+
+      L_ORDER_BY_CLAUSE := NVL(A_ORDER_BY_CLAUSE, ' ORDER BY 1');
+
+      L_SQL_STRING := L_SQL_STRING || L_FROM_CLAUSE || L_WHERE_CLAUSE || L_ORDER_BY_CLAUSE;
+
+      L_LENGTH := 200;
+      FOR L_X IN 1..10 LOOP
+         IF ( LENGTH(L_SQL_STRING) > ((L_LENGTH*(L_X-1))+1) ) THEN
+            DBMS_OUTPUT.PUT_LINE(SUBSTR(L_SQL_STRING, (L_LENGTH*(L_X-1))+1, L_LENGTH));
+         ELSE
+            EXIT;
+         END IF;
+      END LOOP;            
+
+      IF P_SELECTRQPROP_CURSOR IS NULL THEN
+         P_SELECTRQPROP_CURSOR := DBMS_SQL.OPEN_CURSOR;
+      END IF;
+      
+      UNAPIAUT.ADDORACLECBOHINT (L_SQL_STRING) ;
+      DBMS_SQL.PARSE(P_SELECTRQPROP_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+      FOR L_X IN 1..L_SQL_VAL_TAB.COUNT() LOOP
+         DBMS_SQL.BIND_VARIABLE(P_SELECTRQPROP_CURSOR, ':col_val'||L_X , L_SQL_VAL_TAB(L_X)); 
+      END LOOP;
+      DBMS_SQL.DEFINE_COLUMN(P_SELECTRQPROP_CURSOR, 1, L_VALUE, 40);
+
+      L_RESULT := DBMS_SQL.EXECUTE(P_SELECTRQPROP_CURSOR);
+   END IF;
+   
+   L_RESULT := DBMS_SQL.FETCH_ROWS(P_SELECTRQPROP_CURSOR);
+   L_FETCHED_ROWS := 0;
+
+   LOOP
+      EXIT WHEN L_RESULT = 0 OR L_FETCHED_ROWS >= A_NR_OF_ROWS;
+
+      DBMS_SQL.COLUMN_VALUE(P_SELECTRQPROP_CURSOR, 1, L_VALUE);
+
+      L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+
+      A_VALUE(L_FETCHED_ROWS) := L_VALUE;
+
+      IF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+         L_RESULT := DBMS_SQL.FETCH_ROWS(P_SELECTRQPROP_CURSOR);
+      END IF;
+   END LOOP;
+
+   
+   IF (L_FETCHED_ROWS = 0) THEN
+       DBMS_SQL.CLOSE_CURSOR(P_SELECTRQPROP_CURSOR);
+       P_SELECTRQPROP_CURSOR := NULL;
+       RETURN(UNAPIGEN.DBERR_NORECORDS);
+   ELSIF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+      DBMS_SQL.CLOSE_CURSOR(P_SELECTRQPROP_CURSOR);
+      P_SELECTRQPROP_CURSOR := NULL;
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+   END IF;
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES (UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+              'SelectRqPropValues', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      L_LENGTH := 200;
+      FOR L_X IN 1..10 LOOP
+         IF ( LENGTH(L_SQL_STRING) > ((L_LENGTH*(L_X-1))+1) ) THEN
+            INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+            VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+                   'SelectRqPropValues', '(SQL)'||SUBSTR(L_SQL_STRING, (L_LENGTH*(L_X-1))+1, L_LENGTH));             
+         ELSE
+            EXIT;
+         END IF;
+      END LOOP;            
+      L_LENGTH := 200;
+      FOR L_X IN 1..10 LOOP
+         IF ( LENGTH(L_SQLERRM) > ((L_LENGTH*(L_X-1))+1) ) THEN
+            DBMS_OUTPUT.PUT_LINE(SUBSTR(L_SQLERRM, (L_LENGTH*(L_X-1))+1, L_LENGTH));
+         ELSE
+            EXIT;
+         END IF;
+      END LOOP;            
+      UNAPIGEN.U4COMMIT;
+      IF DBMS_SQL.IS_OPEN (P_SELECTRQPROP_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR (P_SELECTRQPROP_CURSOR);
+      END IF;
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END SELECTRQPROPVALUES;
+
+FUNCTION DELETEREQUEST
+(A_RQ            IN  VARCHAR2,          
+ A_MODIFY_REASON IN  VARCHAR2)          
+RETURN NUMBER  IS
+BEGIN
+   RETURN(UNAPIRQ2.DELETEREQUEST
+            (A_RQ, A_MODIFY_REASON));
+END DELETEREQUEST;
+
+FUNCTION INITRQANALYSESDETAILS
+(A_RT               IN      VARCHAR2,                  
+ A_RT_VERSION       IN OUT  VARCHAR2,                  
+ A_RQ               IN      VARCHAR2,                  
+ A_FILTER_FREQ      IN      CHAR,                      
+ A_REF_DATE         IN      DATE,                      
+ A_ADD_STPP         IN      CHAR,                      
+ A_PP               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_VERSION       OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY1          OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY2          OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY3          OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY4          OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY5          OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_DELAY            OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_DELAY_UNIT       OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_INHERIT_AU       OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_NR_OF_ROWS       IN OUT  NUMBER)                    
+RETURN NUMBER IS
+BEGIN
+   RETURN(UNAPIRQ2.INITRQANALYSESDETAILS
+            (A_RT, A_RT_VERSION, A_RQ, A_FILTER_FREQ, A_REF_DATE, A_ADD_STPP,
+             A_PP, A_PP_VERSION, A_PP_KEY1, A_PP_KEY2, A_PP_KEY3, A_PP_KEY4, A_PP_KEY5, 
+             A_DELAY, A_DELAY_UNIT, A_INHERIT_AU, A_NR_OF_ROWS));
+END INITRQANALYSESDETAILS;
+
+FUNCTION INITRQSAMPLINGDETAILS
+(A_RT               IN      VARCHAR2,                  
+ A_RT_VERSION       IN OUT  VARCHAR2,                  
+ A_RQ               IN      VARCHAR2,                  
+ A_FILTER_FREQ      IN      CHAR,                      
+ A_REF_DATE         IN      DATE,                      
+ A_ST               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_ST_VERSION       OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_DELAY            OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_DELAY_UNIT       OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_INHERIT_AU       OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_NR_PLANNED_SC    OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_NR_OF_ROWS       IN OUT  NUMBER)                    
+RETURN NUMBER IS
+BEGIN
+   RETURN(UNAPIRQ2.INITRQSAMPLINGDETAILS
+            (A_RT, A_RT_VERSION, A_RQ, A_FILTER_FREQ, A_REF_DATE, A_ST, A_ST_VERSION, A_DELAY, A_DELAY_UNIT,
+              A_INHERIT_AU, A_NR_PLANNED_SC, A_NR_OF_ROWS));
+END INITRQSAMPLINGDETAILS;
+
+
+FUNCTION CREATERQSAMPLINGDETAILS
+(A_RT               IN      VARCHAR2,                   
+ A_RT_VERSION       IN OUT  VARCHAR2,                   
+ A_RQ               IN      VARCHAR2,                   
+ A_FILTER_FREQ      IN      CHAR,                       
+ A_REF_DATE         IN      DATE,                       
+ A_ADD_STPP         IN      CHAR,                       
+ A_USERID           IN      VARCHAR2,                   
+ A_FIELDTYPE_TAB    IN      UNAPIGEN.VC20_TABLE_TYPE,   
+ A_FIELDNAMES_TAB   IN      UNAPIGEN.VC20_TABLE_TYPE,   
+ A_FIELDVALUES_TAB  IN      UNAPIGEN.VC40_TABLE_TYPE,   
+ A_NR_OF_ROWS       IN      NUMBER, A_MODIFY_REASON    IN      VARCHAR2)                   
+RETURN NUMBER IS
+BEGIN
+   RETURN(UNAPIRQ2.CREATERQSAMPLINGDETAILS
+            (A_RT, A_RT_VERSION, A_RQ, A_FILTER_FREQ, A_REF_DATE, A_ADD_STPP, A_USERID, 
+             A_FIELDTYPE_TAB, A_FIELDNAMES_TAB, A_FIELDVALUES_TAB, A_NR_OF_ROWS,
+             A_MODIFY_REASON));
+END CREATERQSAMPLINGDETAILS;
+
+
+FUNCTION GETPREFVALUE                                  
+(A_UP_IN            IN     NUMBER,                     
+ A_US_IN            IN     VARCHAR2,                   
+ A_PREF_NAME_IN     IN     VARCHAR2,                   
+ A_PREF_VALUE       OUT    VARCHAR2)                   
+RETURN NUMBER IS
+
+L_UPUSPREF_UP           UNAPIGEN.LONG_TABLE_TYPE;
+L_UPUSPREF_US           UNAPIGEN.VC20_TABLE_TYPE;
+L_UPUSPREF_PREF_NAME    UNAPIGEN.VC20_TABLE_TYPE;
+L_UPUSPREF_PREF_VALUE   UNAPIGEN.VC40_TABLE_TYPE;
+L_UPUSPREF_INHERIT_PREF UNAPIGEN.CHAR1_TABLE_TYPE;
+L_UPUSPREF_NR_OF_ROWS   NUMBER;
+L_UP_IN                 NUMBER;
+
+BEGIN
+   
+   
+   
+   IF UNAPIEV.P_EV_MGR_SESSION THEN
+      BEGIN
+         SELECT DEF_UP
+         INTO L_UP_IN
+         FROM UTAD
+         WHERE AD = A_US_IN;
+      EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+         RETURN(UNAPIGEN.DBERR_NOOBJECT);
+      END;
+   ELSE
+     L_UP_IN := A_UP_IN;
+   END IF;
+
+   L_RET_CODE := UNAPIUPP.GETUPUSPREF(L_UP_IN, NVL(A_US_IN,UNAPIGEN.P_USER) , A_PREF_NAME_IN,
+                                      L_UPUSPREF_UP, L_UPUSPREF_US, L_UPUSPREF_PREF_NAME,
+                                      L_UPUSPREF_PREF_VALUE, L_UPUSPREF_INHERIT_PREF,
+                                      L_UPUSPREF_NR_OF_ROWS);
+   IF L_RET_CODE = UNAPIGEN.DBERR_NORECORDS THEN
+      A_PREF_VALUE := '';
+      RETURN(UNAPIGEN.DBERR_SUCCESS);
+   ELSIF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+      L_SQLERRM := 'GetUpUsPref returned '||TO_CHAR(L_RET_CODE) || ' for (up,user,pref_name)=('||
+                   A_UP_IN || ',' ||  NVL(A_US_IN,UNAPIGEN.P_USER) || ',' || A_PREF_NAME_IN ||')';
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+   ELSIF L_UPUSPREF_NR_OF_ROWS > 1 THEN
+      L_SQLERRM := 'GetUpUsPref returned too much rows for (up,user,pref_name)=('||
+                   A_UP_IN || ',' ||  NVL(A_US_IN,UNAPIGEN.P_USER) || ',' || A_PREF_NAME_IN ||')';
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+   END IF;
+   A_PREF_VALUE := L_UPUSPREF_PREF_VALUE(1);
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+END GETPREFVALUE;
+
+
+
+
+
+
+
+
+FUNCTION CREATEREQUEST
+(A_RT               IN     VARCHAR2,                  
+ A_RT_VERSION       IN OUT VARCHAR2,                  
+ A_RQ               IN OUT VARCHAR2,                  
+ A_REF_DATE         IN     DATE,                      
+ A_CREATE_IC        IN     VARCHAR2,                  
+ A_CREATE_SC        IN     VARCHAR2,                  
+ A_USERID           IN     VARCHAR2,                  
+ A_FIELDTYPE_TAB    IN     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_FIELDNAMES_TAB   IN     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_FIELDVALUES_TAB  IN     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_NR_OF_ROWS       IN     NUMBER,                    
+ A_MODIFY_REASON    IN     VARCHAR2)                  
+RETURN NUMBER IS
+
+L_SAMPLING_DATE        TIMESTAMP WITH TIME ZONE;
+L_PREF_VALUE           VARCHAR2(40);
+L_CREATE_IC            VARCHAR2(40);
+L_CREATE_SC            VARCHAR2(40);
+L_DATE_CURSOR          INTEGER;
+L_RT_REC               UTRT%ROWTYPE;
+L_EDIT_ALLOWED         CHAR(1);
+L_VALID_CF             VARCHAR2(20);
+L_DELAYED_TILL         TIMESTAMP WITH TIME ZONE;
+L_TIMED_EVENT_TP       VARCHAR2(255);
+L_REF_DATE             TIMESTAMP WITH TIME ZONE;
+L_LC                   VARCHAR2(2);
+L_LC_VERSION           VARCHAR2(20);
+L_SS                   VARCHAR2(2);
+L_LOG_HS               CHAR(1);
+L_LOG_HS_DETAILS       CHAR(1);
+L_ALLOW_MODIFY         CHAR(1);
+L_ACTIVE               CHAR(1);
+L_RQ_CLASS             VARCHAR2(2);
+L_RT_VERSION           VARCHAR2(20);
+L_PLAN_REQUEST         BOOLEAN;
+L_SINGLE_VALUED_GK     CHAR(1);
+L_GK_PRESENT           CHAR(1);
+L_INSERT               BOOLEAN;
+L_API_NAME             VARCHAR2(20);
+L_CHECK_IF_GK_PRESENT  BOOLEAN;
+
+
+CURSOR L_RTGK_CURSOR(C_RT_INHERIT_GK CHAR) IS
+   SELECT A.GK, A.GKSEQ, A.VALUE
+   FROM  UTGKRQ B, UTRTGK A
+   WHERE A.RT = A_RT
+     AND A.VERSION = UNAPIGEN.USEVERSION('rt', A_RT, A_RT_VERSION)   
+     AND A.GK = B.GK
+     AND B.STRUCT_CREATED = '1'
+     AND B.VERSION_IS_CURRENT = '1'
+     AND B.VERSION = DECODE(A.GK_VERSION, NULL, B.VERSION, UNAPIGEN.USEVERSION('gkrt', A.GK, A.GK_VERSION))
+     AND DECODE(C_RT_INHERIT_GK, '0',B.INHERIT_GK, C_RT_INHERIT_GK) = '1';
+
+CURSOR L_GKRQ_CURSOR (A_GK IN VARCHAR2) IS
+   SELECT SINGLE_VALUED
+   FROM UTGKRQ
+   WHERE GK = A_GK
+   AND STRUCT_CREATED='1';
+   
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <>
+      UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   
+   
+   
+   
+   
+   
+   
+
+   
+   IF A_RT IS NOT NULL THEN
+      A_RT_VERSION := UNAPIGEN.VALIDATEVERSION('rt', A_RT, A_RT_VERSION);
+   ELSE
+      IF A_RT_VERSION IS NULL THEN
+         A_RT_VERSION := UNVERSION.P_NO_VERSION;
+      END IF;
+   END IF;
+   
+   
+   
+   
+   
+   L_SQLERRM := '';   
+   IF A_REF_DATE IS NULL THEN
+      L_REF_DATE := NULL;
+      L_SAMPLING_DATE := NULL;
+   ELSE
+      L_SAMPLING_DATE := A_REF_DATE;
+      L_REF_DATE := A_REF_DATE;
+   END IF;
+
+   
+   
+   
+   
+   IF NVL(A_RQ, ' ') = ' ' THEN
+      L_RET_CODE := GENERATEREQUESTCODE(A_RT, A_RT_VERSION, L_REF_DATE, 
+                                        A_FIELDTYPE_TAB, A_FIELDNAMES_TAB, A_FIELDVALUES_TAB, A_NR_OF_ROWS,
+                                        A_RQ, L_EDIT_ALLOWED, L_VALID_CF);
+      IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+         RAISE STPERROR;
+      END IF;
+   END IF;
+
+    
+    IF A_RQ IS NULL THEN
+       IF A_RT_VERSION IS NULL THEN
+          A_RT_VERSION := UNVERSION.P_NO_VERSION;
+       END IF;
+    END IF;
+
+   
+   
+   
+   
+   
+   
+   
+   
+   L_RT_VERSION := A_RT_VERSION;
+   L_RET_CODE := UNAPIAUT.GETRQAUTHORISATION(A_RQ, L_RT_VERSION, L_LC, L_LC_VERSION, L_SS,
+                                             L_ALLOW_MODIFY, L_ACTIVE, L_LOG_HS, L_LOG_HS_DETAILS);
+   IF L_RET_CODE <> UNAPIGEN.DBERR_NOOBJECT  THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_RQALREADYEXIST;
+      RAISE STPERROR;
+   END IF;
+
+
+   
+   
+   
+   
+   
+   
+   
+   
+
+   IF NVL(A_RT, ' ') <> ' ' THEN
+
+      BEGIN
+         SELECT *
+         INTO L_RT_REC
+         FROM UTRT
+         WHERE RT = A_RT
+         AND VERSION = A_RT_VERSION;
+
+      EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJECT;
+         RAISE STPERROR;
+      END;
+
+   END IF;
+
+   
+   
+   
+   L_CREATE_SC := A_CREATE_SC;
+   IF NVL(L_CREATE_SC, ' ') = ' ' THEN      
+      
+      
+      L_RET_CODE := GETPREFVALUE(UNAPIGEN.P_CURRENT_UP, A_USERID, 'rqCreateSc',
+                                 L_PREF_VALUE);
+      IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+         RAISE STPERROR;
+      END IF;
+      L_CREATE_SC := L_PREF_VALUE;
+   END IF;
+
+   IF NVL(L_CREATE_SC, 'ON REQUEST CREATION') = 'WHEN INFO AVAILABLE' THEN
+      L_RQ_CLASS := '1';
+   ELSIF NVL(A_RT, ' ') <> ' ' THEN 
+      L_RQ_CLASS := L_RT_REC.RT_CLASS ;
+   ELSE
+      L_RQ_CLASS := NULL;    
+   END IF;
+
+   L_PLAN_REQUEST := FALSE;
+   FOR L_ROW IN 1..A_NR_OF_ROWS LOOP
+      IF A_FIELDTYPE_TAB(L_ROW) = 'plan_request' THEN
+         L_PLAN_REQUEST := TRUE;
+      END IF;
+   END LOOP;
+
+   
+   
+   
+   
+   IF NVL(A_RT, ' ') <> ' ' THEN
+
+      INSERT INTO UTRQ(RQ, RT, RT_VERSION, DESCRIPTION, SAMPLING_DATE, SAMPLING_DATE_TZ, 
+                       CREATION_DATE, CREATION_DATE_TZ, CREATED_BY,
+                       PRIORITY, LABEL_FORMAT, DESCR_DOC, DESCR_DOC_VERSION,
+                       RQ_CLASS, LOG_HS, LOG_HS_DETAILS, ALLOW_MODIFY,
+                       ACTIVE, 
+                       LC, LC_VERSION,
+                       ALLOW_ANY_ST, ALLOW_NEW_SC)
+      VALUES(A_RQ, A_RT, L_RT_REC.VERSION, L_RT_REC.DESCRIPTION, L_SAMPLING_DATE, L_SAMPLING_DATE, 
+             CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NVL(A_USERID,UNAPIGEN.P_USER),
+             L_RT_REC.PRIORITY, L_RT_REC.LABEL_FORMAT, L_RT_REC.DESCR_DOC, L_RT_REC.DESCR_DOC_VERSION, 
+             L_RQ_CLASS, L_LOG_HS, L_LOG_HS_DETAILS, '#',
+             '0', 
+             L_RT_REC.RQ_LC, UNAPIGEN.USEVERSION('lc', L_RT_REC.RQ_LC, L_RT_REC.RQ_LC_VERSION),
+             L_RT_REC.ALLOW_ANY_ST,L_RT_REC.ALLOW_NEW_SC);
+       UNAPIAUT.UPDATELCINAUTHORISATIONBUFFER('rq', A_RQ , '', L_RT_REC.RQ_LC, UNAPIGEN.USEVERSION('lc', L_RT_REC.RQ_LC, L_RT_REC.RQ_LC_VERSION));                 
+
+      IF L_PLAN_REQUEST THEN
+         UPDATE UTRT
+         SET LAST_SCHED = L_REF_DATE,
+           LAST_SCHED_TZ =  DECODE(L_REF_DATE, LAST_SCHED_TZ, LAST_SCHED_TZ, L_REF_DATE)
+         WHERE RT = A_RT
+           AND VERSION = L_RT_VERSION;     
+      END IF;
+   ELSE
+
+      INSERT INTO UTRQ(RQ, SAMPLING_DATE, SAMPLING_DATE_TZ, CREATION_DATE, CREATION_DATE_TZ, CREATED_BY,
+                       RQ_CLASS, LOG_HS, LOG_HS_DETAILS, ALLOW_MODIFY, ACTIVE, LC, LC_VERSION,
+                       ALLOW_ANY_ST, ALLOW_NEW_SC)
+      VALUES (A_RQ, L_SAMPLING_DATE, L_SAMPLING_DATE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NVL(A_USERID,UNAPIGEN.P_USER),
+              L_RQ_CLASS, L_LOG_HS, L_LOG_HS_DETAILS, '#', '0', '', '', '1', '1');
+   END IF;
+
+   
+   
+   
+   INSERT INTO UTRQPP
+   (RQ, PP, PP_VERSION, SEQ, DELAY, DELAY_UNIT, FREQ_TP,
+    FREQ_VAL, FREQ_UNIT, INVERT_FREQ, LAST_SCHED, LAST_SCHED_TZ,
+          LAST_CNT, LAST_VAL, INHERIT_AU)
+   SELECT A_RQ, PP, PP_VERSION, SEQ, DELAY, DELAY_UNIT, FREQ_TP,
+          FREQ_VAL, FREQ_UNIT, INVERT_FREQ, LAST_SCHED, LAST_SCHED_TZ,
+          LAST_CNT, LAST_VAL, INHERIT_AU
+   FROM UTRTPP
+   WHERE RT = A_RT
+   AND VERSION = A_RT_VERSION;
+
+   IF L_PLAN_REQUEST THEN
+      
+      
+      
+      L_EVENT_TP := 'RequestPlanned';
+      L_EV_SEQ_NR := -1;
+      L_EV_DETAILS := 'rt_version=' || L_RT_VERSION || 
+                      '#ss_to=@P';
+      L_RESULT := UNAPIEV.INSERTEVENT('PlanRequest', UNAPIGEN.P_EVMGR_NAME, 'rq',
+                                      A_RQ, '', '', '', L_EVENT_TP, L_EV_DETAILS, L_EV_SEQ_NR);
+      IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+         UNAPIGEN.P_TXN_ERROR := L_RESULT;
+         RAISE STPERROR;
+      END IF;
+
+      INSERT INTO UTRQHS(RQ, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+      VALUES(A_RQ, NVL(A_USERID, UNAPIGEN.P_USER), UNAPIGEN.SQLUSERDESCRIPTION(NVL(A_USERID, UNAPIGEN.P_USER)), 
+             L_EVENT_TP, 'request "'||A_RQ||'" is planned.', 
+             CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);   
+   END IF;
+
+   
+   
+   
+   
+   
+   
+   
+   
+   IF NVL(A_RT, ' ') <> ' ' THEN
+
+      
+      IF NVL(L_RT_REC.INHERIT_AU, '0') = '1' THEN
+         INSERT INTO UTRQAU
+         (RQ, AU, AU_VERSION, AUSEQ, VALUE)
+         SELECT A_RQ, A.AU, '' B_VERSION, A.AUSEQ, A.VALUE
+         FROM UTAU B, UTRTAU A
+         WHERE RT = A_RT
+         AND A.VERSION = A_RT_VERSION
+         AND A.AU = B.AU
+         AND UNAPIGEN.USEVERSION('au', A.AU, A.AU_VERSION) = B.VERSION;
+      ELSE
+         INSERT INTO UTRQAU
+         (RQ, AU, AU_VERSION, AUSEQ, VALUE)
+         SELECT A_RQ, A.AU, '' B_VERSION, A.AUSEQ, A.VALUE
+         FROM UTAU B, UTRTAU A
+         WHERE RT = A_RT
+         AND A.VERSION = A_RT_VERSION
+         AND A.AU = B.AU
+         AND UNAPIGEN.USEVERSION('au', A.AU, A.AU_VERSION) = B.VERSION
+         AND B.INHERIT_AU = '1';      
+      END IF;
+
+      
+      
+      
+      FOR L_RTGK_REC IN L_RTGK_CURSOR(NVL(L_RT_REC.INHERIT_GK, '0')) LOOP
+         BEGIN
+            
+            INSERT INTO UTRQGK(RQ, GK, GKSEQ, VALUE)
+            VALUES(A_RQ, L_RTGK_REC.GK, L_RTGK_REC.GKSEQ, L_RTGK_REC.VALUE);
+
+            IF L_RTGK_REC.VALUE IS NOT NULL THEN
+               EXECUTE IMMEDIATE 'INSERT INTO utrqgk' || L_RTGK_REC.GK ||
+                               '(rq, ' || L_RTGK_REC.GK || ') VALUES (:a_rq, :a_gk)'
+               USING A_RQ, L_RTGK_REC.VALUE;
+               
+               IF SQL%ROWCOUNT = 0 THEN
+                  UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NORECORDS;
+                  RAISE STPERROR;
+               END IF;            
+            END IF;
+         EXCEPTION
+         WHEN DUP_VAL_ON_INDEX THEN
+            
+            
+            NULL;
+         END;
+      END LOOP;
+
+      
+      
+          
+      FOR L_ROW IN 1..A_NR_OF_ROWS LOOP
+         IF A_FIELDTYPE_TAB(L_ROW) = 'gk' THEN
+            OPEN L_GKRQ_CURSOR(A_FIELDNAMES_TAB(L_ROW));
+            FETCH L_GKRQ_CURSOR
+            INTO L_SINGLE_VALUED_GK;
+            IF L_GKRQ_CURSOR%FOUND THEN
+               L_INSERT := FALSE;
+               L_CHECK_IF_GK_PRESENT := FALSE;               
+               IF L_SINGLE_VALUED_GK = '1' THEN
+                  BEGIN
+                     IF A_FIELDVALUES_TAB(L_ROW) IS NOT NULL THEN
+                        EXECUTE IMMEDIATE 'UPDATE utrqgk' || A_FIELDNAMES_TAB(L_ROW) ||
+                                          ' SET '||A_FIELDNAMES_TAB(L_ROW) || ' = :a_gk ' ||
+                                          ' WHERE rq = :a_rq'
+                        USING A_FIELDVALUES_TAB(L_ROW), A_RQ;
+
+                        IF SQL%ROWCOUNT = 0 THEN
+                           L_INSERT := TRUE;
+                        END IF;
+                     END IF;
+                     
+                     IF NOT L_INSERT THEN
+                        
+                        UPDATE UTRQGK
+                        SET VALUE = A_FIELDVALUES_TAB(L_ROW)
+                        WHERE RQ = A_RQ
+                        AND GK = A_FIELDNAMES_TAB(L_ROW);
+
+                        IF SQL%ROWCOUNT = 0 THEN
+                           L_INSERT := TRUE;
+                        END IF;
+                     END IF;
+                  EXCEPTION
+                  WHEN DUP_VAL_ON_INDEX THEN
+                     
+                     
+                     
+                     
+                     
+                     L_CHECK_IF_GK_PRESENT := TRUE;
+                  END;
+
+               ELSE
+                  L_CHECK_IF_GK_PRESENT := TRUE;
+               END IF;
+
+               IF L_CHECK_IF_GK_PRESENT THEN
+                  
+                  
+                  BEGIN
+                     SELECT '1'
+                     INTO L_GK_PRESENT
+                     FROM UTRQGK
+                     WHERE RQ = A_RQ
+                     AND GK = A_FIELDNAMES_TAB(L_ROW)
+                     AND VALUE = A_FIELDVALUES_TAB(L_ROW);
+                  EXCEPTION
+                  WHEN NO_DATA_FOUND THEN
+                     L_INSERT := TRUE;
+                  END;
+               END IF;
+               
+               IF L_INSERT THEN
+                  BEGIN
+                     
+                     INSERT INTO UTRQGK(RQ, GK, GKSEQ, VALUE)
+                     SELECT A_RQ, A_FIELDNAMES_TAB(L_ROW),  NVL(MAX(GKSEQ),0)+1, A_FIELDVALUES_TAB(L_ROW)
+                     FROM UTRQGK
+                     WHERE RQ = A_RQ;
+
+                     IF A_FIELDVALUES_TAB(L_ROW) IS NOT NULL THEN
+                        EXECUTE IMMEDIATE 'INSERT INTO utrqgk' || A_FIELDNAMES_TAB(L_ROW) ||
+                                          '(rq, ' || A_FIELDNAMES_TAB(L_ROW) || ') VALUES (:a_rq, :a_gk)'
+                        USING A_RQ, A_FIELDVALUES_TAB(L_ROW);
+
+                        IF SQL%ROWCOUNT = 0 THEN
+                           UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NORECORDS;
+                           RAISE STPERROR;
+                        END IF;
+                     END IF;
+                  EXCEPTION
+                  WHEN DUP_VAL_ON_INDEX THEN
+                     
+                     
+                     NULL;
+                  END;
+               END IF;
+            END IF;
+            CLOSE L_GKRQ_CURSOR;
+         END IF;
+      END LOOP;
+
+      
+      
+      
+      L_CREATE_IC := A_CREATE_IC;
+      IF NVL(L_CREATE_IC, ' ') = ' ' THEN
+         
+         
+         L_RET_CODE := GETPREFVALUE(UNAPIGEN.P_CURRENT_UP, A_USERID, 'rqCreateIc',
+                                    L_PREF_VALUE);
+         IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+            UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+            RAISE STPERROR;
+         END IF;
+         L_CREATE_IC := L_PREF_VALUE;
+      END IF;
+
+      IF NVL(L_CREATE_IC, 'ON REQUEST CREATION') = 'ON REQUEST CREATION' THEN
+         L_RET_CODE := UNAPIRQ.CREATERQINFODETAILS(A_RT, A_RT_VERSION, A_RQ,
+                                        UNAPIGEN.PERFORM_FREQ_FILTERING,
+                                        L_REF_DATE, A_MODIFY_REASON);
+         IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+            UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+            RAISE STPERROR;
+         END IF;
+      END IF;
+
+      
+      
+      
+      IF NVL(L_CREATE_SC, 'ON REQUEST CREATION') = 'ON REQUEST CREATION' THEN
+         L_RET_CODE := UNAPIRQ.CREATERQSAMPLINGDETAILS(A_RT, A_RT_VERSION, A_RQ,
+                                            UNAPIGEN.PERFORM_FREQ_FILTERING,
+                                            L_REF_DATE, 
+                                            L_RT_REC.ADD_STPP,
+                                            NVL(A_USERID, UNAPIGEN.P_USER),
+                                            A_FIELDTYPE_TAB, 
+                                            A_FIELDNAMES_TAB, 
+                                            A_FIELDVALUES_TAB, 
+                                            A_NR_OF_ROWS,
+                                            A_MODIFY_REASON);
+         IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+            UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+            RAISE STPERROR;
+         END IF;
+      END IF;
+
+   END IF;
+
+   
+   
+   
+   L_EVENT_TP := 'RequestCreated';
+   L_EV_SEQ_NR := -1;
+   L_EV_DETAILS := 'rt_version=' || A_RT_VERSION;   
+   L_API_NAME := 'CreateRequest';
+   IF L_PLAN_REQUEST THEN
+      L_API_NAME := 'PlanRequest';
+   END IF;
+
+   L_RESULT := UNAPIEV.INSERTEVENT(L_API_NAME, UNAPIGEN.P_EVMGR_NAME, 'rq',
+                                   A_RQ, '', '', '', L_EVENT_TP, L_EV_DETAILS, L_EV_SEQ_NR);
+   IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+      UNAPIGEN.P_TXN_ERROR := L_RESULT;
+      RAISE STPERROR;
+   END IF;
+
+   INSERT INTO UTRQHS(RQ, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+   VALUES(A_RQ, NVL(A_USERID, UNAPIGEN.P_USER), UNAPIGEN.SQLUSERDESCRIPTION(NVL(A_USERID, UNAPIGEN.P_USER)), 
+          L_EVENT_TP, 'request "'||A_RQ||'" is created.', 
+          CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('CreateRequest', SQLERRM);
+	  
+   ELSIF L_SQLERRM IS NOT NULL THEN
+   
+      UNAPIGEN.LOGERROR('CreateRequest', L_SQLERRM);   
+   END IF;
+   IF DBMS_SQL.IS_OPEN(L_DATE_CURSOR) THEN
+      DBMS_SQL.CLOSE_CURSOR(L_DATE_CURSOR);
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR,'CreateRequest'));
+END CREATEREQUEST;
+
+FUNCTION PLANREQUEST
+(A_RT               IN     VARCHAR2,                  
+ A_RT_VERSION       IN OUT VARCHAR2,                  
+ A_RQ               IN OUT VARCHAR2,                  
+ A_REF_DATE         IN     DATE,                      
+ A_CREATE_IC        IN     VARCHAR2,                  
+ A_CREATE_SC        IN     VARCHAR2,                  
+ A_USERID           IN     VARCHAR2,                  
+ A_FIELDTYPE_TAB    IN     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_FIELDNAMES_TAB   IN     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_FIELDVALUES_TAB  IN     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_NR_OF_ROWS       IN     NUMBER,                    
+ A_MODIFY_REASON    IN     VARCHAR2)                  
+RETURN NUMBER IS
+
+L_FIELDTYPE_TAB           UNAPIGEN.VC20_TABLE_TYPE;
+L_FIELDNAMES_TAB          UNAPIGEN.VC20_TABLE_TYPE;
+L_FIELDVALUES_TAB         UNAPIGEN.VC40_TABLE_TYPE;
+L_NR_OF_ROWS              NUMBER;
+
+BEGIN
+   
+   FOR L_ROW IN 1..A_NR_OF_ROWS LOOP
+      L_FIELDTYPE_TAB(L_ROW) := A_FIELDTYPE_TAB(L_ROW);
+      L_FIELDNAMES_TAB(L_ROW) := A_FIELDNAMES_TAB(L_ROW);
+      L_FIELDVALUES_TAB(L_ROW) := A_FIELDVALUES_TAB(L_ROW);
+   END LOOP;
+   L_NR_OF_ROWS := NVL(A_NR_OF_ROWS,0)+1;
+   L_FIELDTYPE_TAB(L_NR_OF_ROWS) := 'plan_request';
+   L_FIELDNAMES_TAB(L_NR_OF_ROWS) := NULL;
+   L_FIELDVALUES_TAB(L_NR_OF_ROWS) := NULL;
+
+   
+   RETURN(UNAPIRQ.CREATEREQUEST(A_RT, A_RT_VERSION, A_RQ, A_REF_DATE, 
+                                A_CREATE_IC, A_CREATE_SC, A_USERID, 
+                                L_FIELDTYPE_TAB, L_FIELDNAMES_TAB, L_FIELDVALUES_TAB, L_NR_OF_ROWS,
+                                A_MODIFY_REASON));
+
+END PLANREQUEST;
+
+FUNCTION GENERATERQSAMPLECODE
+(A_RT               IN     VARCHAR2,                  
+ A_RT_VERSION       IN OUT VARCHAR2,                  
+ A_REF_DATE         IN     DATE,                      
+ A_RQ               IN     VARCHAR2,                  
+ A_ST               IN     VARCHAR2,                  
+ A_ST_VERSION       IN OUT VARCHAR2,                  
+ A_FIELDTYPE_TAB    IN     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_FIELDNAMES_TAB   IN     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_FIELDVALUES_TAB  IN     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_NR_OF_ROWS       IN     NUMBER,                    
+ A_SC               OUT    VARCHAR2,                  
+ A_EDIT_ALLOWED     OUT    CHAR,                      
+ A_VALID_CF         OUT    VARCHAR2)                  
+RETURN NUMBER IS
+
+L_SC_UC                 VARCHAR2(20);
+L_NEXT_VAL              VARCHAR2(255);
+L_FIELDTYPE_TAB         UNAPIGEN.VC20_TABLE_TYPE;
+L_FIELDNAMES_TAB        UNAPIGEN.VC40_TABLE_TYPE;
+L_FIELDVALUES_TAB       UNAPIGEN.VC40_TABLE_TYPE;
+L_NR_OF_ROWS            NUMBER;
+L_I                     NUMBER;
+L_ST_IN_FIELDS          BOOLEAN;
+L_ST_VERSION_IN_FIELDS  BOOLEAN;
+L_RT_IN_FIELDS          BOOLEAN;
+L_RT_VERSION_IN_FIELDS  BOOLEAN;
+L_RQ_IN_FIELDS          BOOLEAN;
+
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <>
+      UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   
+   A_RT_VERSION := UNAPIGEN.VALIDATEVERSION('rt', A_RT, A_RT_VERSION);
+   
+   A_ST_VERSION := UNAPIGEN.VALIDATEVERSION('st', A_ST, A_ST_VERSION);
+
+   
+   
+   
+   IF NVL(A_RT, ' ') <> ' ' THEN
+      BEGIN
+         SELECT SC_UC
+         INTO L_SC_UC
+         FROM UTRT
+         WHERE RT = A_RT
+         AND VERSION = A_RT_VERSION;
+
+      EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJECT;
+         RAISE STPERROR;
+      END;
+   END IF;
+
+   
+   
+   
+   
+   IF NVL(L_SC_UC, ' ') = ' ' THEN
+      BEGIN
+         SELECT SC_UC
+         INTO L_SC_UC
+         FROM UTST
+         WHERE ST = A_ST
+         AND VERSION = A_ST_VERSION;
+      EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJECT;
+         RAISE STPERROR;
+      END;
+   END IF;
+
+   
+   
+   
+   
+   IF NVL(L_SC_UC, ' ') = ' ' THEN
+      BEGIN
+         SELECT UC
+         INTO L_SC_UC
+         FROM UTUC
+         WHERE DEF_MASK_FOR = 'sc';
+
+      EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NODFLTMASKFORSC;
+         RAISE STPERROR;
+      WHEN TOO_MANY_ROWS THEN
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_MULTDEFMASKFORSC;
+         RAISE STPERROR;
+      END;
+   END IF;
+
+   
+   
+   
+   
+   L_RQ_IN_FIELDS := FALSE;
+   L_RT_IN_FIELDS := FALSE;
+   L_RT_VERSION_IN_FIELDS := FALSE;   
+   L_ST_IN_FIELDS := FALSE;
+   L_ST_VERSION_IN_FIELDS := FALSE;   
+   IF (A_NR_OF_ROWS > 0) THEN
+      FOR L_I IN 1..A_NR_OF_ROWS LOOP
+         L_FIELDTYPE_TAB(L_I) := A_FIELDTYPE_TAB(L_I);
+         L_FIELDNAMES_TAB(L_I) :=  A_FIELDNAMES_TAB(L_I);
+         L_FIELDVALUES_TAB(L_I) :=  A_FIELDVALUES_TAB(L_I);
+         IF L_FIELDTYPE_TAB(L_I) = 'st' AND L_FIELDNAMES_TAB(L_I) = 'st' THEN
+            L_ST_IN_FIELDS := TRUE;
+         END IF;
+         IF L_FIELDTYPE_TAB(L_I) = 'st' AND L_FIELDNAMES_TAB(L_I) = 'st_version' THEN
+            L_ST_VERSION_IN_FIELDS := TRUE;
+         END IF;
+         IF L_FIELDTYPE_TAB(L_I) = 'rt' AND L_FIELDNAMES_TAB(L_I) = 'rt' THEN
+            L_RT_IN_FIELDS := TRUE;
+         END IF;
+         IF L_FIELDTYPE_TAB(L_I) = 'rt' AND L_FIELDNAMES_TAB(L_I) = 'rt_version' THEN
+            L_RT_VERSION_IN_FIELDS := TRUE;
+         END IF;
+         IF L_FIELDTYPE_TAB(L_I) = 'rq' AND L_FIELDNAMES_TAB(L_I) = 'rq' THEN
+            L_RQ_IN_FIELDS := TRUE;
+         END IF;         
+       END LOOP  ;
+   END IF ;
+   L_NR_OF_ROWS :=   NVL(A_NR_OF_ROWS, 0);
+   IF NOT L_ST_IN_FIELDS THEN
+      L_NR_OF_ROWS :=   L_NR_OF_ROWS +1;
+      L_FIELDTYPE_TAB (L_NR_OF_ROWS) :=  'st';
+      L_FIELDNAMES_TAB (L_NR_OF_ROWS) :=  'st';
+      L_FIELDVALUES_TAB(L_NR_OF_ROWS) :=  A_ST;
+   END IF;
+   IF NOT L_ST_VERSION_IN_FIELDS THEN
+      L_NR_OF_ROWS :=   L_NR_OF_ROWS +1;
+      L_FIELDTYPE_TAB (L_NR_OF_ROWS) :=  'st';
+      L_FIELDNAMES_TAB (L_NR_OF_ROWS) :=  'st_version';
+      L_FIELDVALUES_TAB(L_NR_OF_ROWS) :=  A_ST_VERSION;
+   END IF;
+   IF NOT L_RT_IN_FIELDS THEN
+      L_NR_OF_ROWS :=   L_NR_OF_ROWS +1;
+      L_FIELDTYPE_TAB (L_NR_OF_ROWS) :=  'rt';
+      L_FIELDNAMES_TAB (L_NR_OF_ROWS) :=  'rt';
+      L_FIELDVALUES_TAB(L_NR_OF_ROWS) :=  A_RT;
+   END IF;
+   IF NOT L_RT_VERSION_IN_FIELDS THEN
+      L_NR_OF_ROWS :=   L_NR_OF_ROWS +1;
+      L_FIELDTYPE_TAB (L_NR_OF_ROWS) :=  'rt';
+      L_FIELDNAMES_TAB (L_NR_OF_ROWS) :=  'rt_version';
+      L_FIELDVALUES_TAB(L_NR_OF_ROWS) :=  A_RT_VERSION;
+   END IF;
+   IF NOT L_RQ_IN_FIELDS THEN
+      L_NR_OF_ROWS :=   L_NR_OF_ROWS +1;
+      L_FIELDTYPE_TAB (L_NR_OF_ROWS) :=  'rq';
+      L_FIELDNAMES_TAB (L_NR_OF_ROWS) :=  'rq';
+      L_FIELDVALUES_TAB(L_NR_OF_ROWS) :=  A_RQ;
+   END IF;
+    
+   L_RET_CODE := UNAPIUC.CREATENEXTUNIQUECODEVALUE(L_SC_UC, L_FIELDTYPE_TAB, L_FIELDNAMES_TAB, L_FIELDVALUES_TAB, 
+                                                   L_NR_OF_ROWS, A_REF_DATE, A_SC, A_EDIT_ALLOWED, A_VALID_CF);
+   IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+      UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+      RAISE STPERROR;
+   END IF;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+     UNAPIGEN.LOGERROR('GenerateRqSampleCode', SQLERRM);
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR, 'GenerateRqSampleCode'));
+END GENERATERQSAMPLECODE;   
+
+FUNCTION GENERATEREQUESTCODE
+(A_RT               IN     VARCHAR2,                  
+ A_RT_VERSION       IN OUT VARCHAR2,                  
+ A_REF_DATE         IN     DATE,                      
+ A_FIELDTYPE_TAB    IN     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_FIELDNAMES_TAB   IN     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_FIELDVALUES_TAB  IN     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_NR_OF_ROWS       IN     NUMBER,                    
+ A_RQ               OUT    VARCHAR2,                  
+ A_EDIT_ALLOWED     OUT    CHAR,                      
+ A_VALID_CF         OUT    VARCHAR2)                  
+RETURN NUMBER IS
+
+L_RQ_UC                VARCHAR2(20);
+L_NEXT_VAL             VARCHAR2(255);
+L_EDIT_ALLOWED         CHAR(1);
+L_VALID_CF             VARCHAR2(20);
+
+L_FIELDTYPE_TAB       UNAPIGEN.VC20_TABLE_TYPE;
+L_FIELDNAMES_TAB      UNAPIGEN.VC40_TABLE_TYPE;
+L_FIELDVALUES_TAB     UNAPIGEN.VC40_TABLE_TYPE;
+L_NR_OF_ROWS          NUMBER;
+L_I                   NUMBER;
+
+
+CURSOR L_RQ_UC_CURSOR IS
+   SELECT RQ_UC
+   FROM UTRT
+   WHERE RT = A_RT
+   AND VERSION = A_RT_VERSION;
+
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <>
+      UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   
+   A_RT_VERSION := UNAPIGEN.VALIDATEVERSION('rt', A_RT, A_RT_VERSION);
+
+   
+   
+   
+   IF NVL(A_RT, ' ') <> ' ' THEN
+      OPEN L_RQ_UC_CURSOR;
+      FETCH L_RQ_UC_CURSOR INTO L_RQ_UC;
+      IF L_RQ_UC_CURSOR%NOTFOUND THEN
+         CLOSE L_RQ_UC_CURSOR;
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJECT;
+         RAISE STPERROR;
+      END IF;
+      CLOSE L_RQ_UC_CURSOR;
+   END IF;
+
+   
+   
+   
+   
+   IF NVL(L_RQ_UC, ' ') = ' ' THEN
+      BEGIN
+         SELECT UC
+         INTO L_RQ_UC
+         FROM UTUC
+         WHERE DEF_MASK_FOR = 'rq';
+
+      EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NODFLTMASKFORRQ;
+         RAISE STPERROR;
+      WHEN TOO_MANY_ROWS THEN
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_MULTDEFMASKFORRQ;
+         RAISE STPERROR;
+      END;
+   END IF;
+
+   
+   IF (A_NR_OF_ROWS > 0) THEN
+      FOR L_I IN 1..A_NR_OF_ROWS LOOP
+          L_FIELDTYPE_TAB(L_I) := A_FIELDTYPE_TAB(L_I);
+          L_FIELDNAMES_TAB(L_I) :=  A_FIELDNAMES_TAB(L_I);
+         L_FIELDVALUES_TAB(L_I) :=  A_FIELDVALUES_TAB(L_I);
+      END LOOP  ;
+   END IF ;
+   L_FIELDTYPE_TAB(NVL(A_NR_OF_ROWS, 0) +1) := 'rt';
+   L_FIELDNAMES_TAB (NVL(A_NR_OF_ROWS, 0) +1) :=  'rt';
+   L_FIELDVALUES_TAB(NVL(A_NR_OF_ROWS, 0) +1) :=  A_RT;
+   L_FIELDTYPE_TAB(NVL(A_NR_OF_ROWS, 0) +2) := 'rt';
+   L_FIELDNAMES_TAB (NVL(A_NR_OF_ROWS, 0) +2) :=  'rt_version';
+   L_FIELDVALUES_TAB(NVL(A_NR_OF_ROWS, 0) +2) :=  A_RT_VERSION;
+   L_NR_OF_ROWS :=   NVL(A_NR_OF_ROWS, 0) +2;
+
+   
+   
+   
+   L_RET_CODE := UNAPIUC.CREATENEXTUNIQUECODEVALUE(L_RQ_UC, L_FIELDTYPE_TAB, L_FIELDNAMES_TAB, L_FIELDVALUES_TAB, 
+                                                   L_NR_OF_ROWS, A_REF_DATE, A_RQ,
+                                                   A_EDIT_ALLOWED, A_VALID_CF);
+   IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+      UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+      RAISE STPERROR;
+   END IF;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+     UNAPIGEN.LOGERROR('GenerateRequestCode', SQLERRM);
+   END IF;
+   IF L_RQ_UC_CURSOR%ISOPEN THEN
+      CLOSE L_RQ_UC_CURSOR;
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR, 'GenerateRequestCode'));
+END GENERATEREQUESTCODE;
+
+FUNCTION CREATERQSAMPLE
+(A_RT               IN     VARCHAR2,                    
+ A_RT_VERSION       IN OUT VARCHAR2,                    
+ A_RQ               IN     VARCHAR2,                    
+ A_ST               IN     VARCHAR2,                    
+ A_ST_VERSION       IN OUT VARCHAR2,                    
+ A_SC               IN OUT VARCHAR2,                    
+ A_REF_DATE         IN     DATE,                        
+ A_CREATE_IC        IN     VARCHAR2,                    
+ A_USERID           IN     VARCHAR2,                    
+ A_FIELDTYPE_TAB    IN     UNAPIGEN.VC20_TABLE_TYPE,    
+ A_FIELDNAMES_TAB   IN     UNAPIGEN.VC20_TABLE_TYPE,    
+ A_FIELDVALUES_TAB  IN     UNAPIGEN.VC40_TABLE_TYPE,    
+ A_FIELDNR_OF_ROWS  IN     NUMBER,                      
+ A_PP               IN     UNAPIGEN.VC20_TABLE_TYPE,    
+ A_PP_VERSION       IN OUT UNAPIGEN.VC20_TABLE_TYPE,    
+ A_PP_KEY1          IN     UNAPIGEN.VC20_TABLE_TYPE,    
+ A_PP_KEY2          IN     UNAPIGEN.VC20_TABLE_TYPE,    
+ A_PP_KEY3          IN     UNAPIGEN.VC20_TABLE_TYPE,    
+ A_PP_KEY4          IN     UNAPIGEN.VC20_TABLE_TYPE,    
+ A_PP_KEY5          IN     UNAPIGEN.VC20_TABLE_TYPE,    
+ A_NR_OF_ROWS       IN     NUMBER,                      
+ A_MODIFY_REASON    IN     VARCHAR2)                    
+RETURN NUMBER IS
+BEGIN
+   RETURN(UNAPIRQ2.CREATERQSAMPLE
+                   (A_RT, A_RT_VERSION, A_RQ, A_ST, A_ST_VERSION, A_SC, A_REF_DATE,
+                    A_CREATE_IC, A_USERID, 
+                    A_FIELDTYPE_TAB, A_FIELDNAMES_TAB, A_FIELDVALUES_TAB, A_FIELDNR_OF_ROWS, 
+                    A_PP, A_PP_VERSION, A_PP_KEY1, A_PP_KEY2, A_PP_KEY3, A_PP_KEY4, A_PP_KEY5, A_NR_OF_ROWS, 
+                    A_MODIFY_REASON));
+END CREATERQSAMPLE;
+
+FUNCTION GETRQSAMPLE
+(A_RQ               OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_SC               OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_ST               OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_ST_VERSION       OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_DESCRIPTION      OUT    UNAPIGEN.VC40_TABLE_TYPE,    
+ A_ASSIGN_DATE      OUT    UNAPIGEN.DATE_TABLE_TYPE,    
+ A_ASSIGNED_BY      OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_NR_OF_ROWS       IN OUT NUMBER,                      
+ A_WHERE_CLAUSE     IN     VARCHAR2)                    
+RETURN NUMBER IS
+BEGIN
+   RETURN(UNAPIRQ2.GETRQSAMPLE
+                   (A_RQ, A_SC, A_ST, A_ST_VERSION, A_DESCRIPTION,
+                    A_ASSIGN_DATE, A_ASSIGNED_BY, 
+                    A_NR_OF_ROWS, A_WHERE_CLAUSE));
+END GETRQSAMPLE;
+
+FUNCTION SAVERQSAMPLE
+(A_RQ               IN     VARCHAR2,                    
+ A_SC               IN     UNAPIGEN.VC20_TABLE_TYPE,    
+ A_ASSIGN_DATE      IN     UNAPIGEN.DATE_TABLE_TYPE,    
+ A_ASSIGNED_BY      IN     UNAPIGEN.VC20_TABLE_TYPE,    
+ A_NR_OF_ROWS       IN     NUMBER,                      
+ A_MODIFY_REASON    IN     VARCHAR2)                    
+RETURN NUMBER IS
+BEGIN
+   RETURN(UNAPIRQ2.SAVERQSAMPLE
+                   (A_RQ, A_SC, A_ASSIGN_DATE, A_ASSIGNED_BY,
+                    A_NR_OF_ROWS, A_MODIFY_REASON));
+END SAVERQSAMPLE;
+
+FUNCTION SAVE1RQSAMPLE
+(A_RQ               IN     VARCHAR2,                    
+ A_SC               IN     VARCHAR2,                    
+ A_ASSIGN_DATE      IN     DATE,                        
+ A_ASSIGNED_BY      IN     VARCHAR2,                    
+ A_MODIFY_REASON    IN     VARCHAR2)                    
+RETURN NUMBER IS
+BEGIN
+   RETURN(UNAPIRQ2.SAVE1RQSAMPLE
+                   (A_RQ, A_SC, A_ASSIGN_DATE, A_ASSIGNED_BY,
+                    A_MODIFY_REASON));
+END SAVE1RQSAMPLE;
+
+FUNCTION REMOVERQSAMPLE
+(A_RQ               IN     VARCHAR2,                    
+ A_SC               IN     VARCHAR2,                    
+ A_MODIFY_REASON    IN     VARCHAR2)                    
+RETURN NUMBER IS
+BEGIN
+   RETURN(UNAPIRQ2.REMOVERQSAMPLE
+                   (A_RQ, A_SC, A_MODIFY_REASON));
+END REMOVERQSAMPLE;
+
+FUNCTION INITANDSAVERQSCATTRIBUTES
+(A_RQ               IN      VARCHAR2,                  
+ A_SC               IN      VARCHAR2,                  
+ A_RT               IN      VARCHAR2,                  
+ A_RT_VERSION       IN      VARCHAR2,                  
+ A_ST               IN      VARCHAR2,                  
+ A_ST_VERSION       IN      VARCHAR2)                  
+RETURN NUMBER IS
+BEGIN
+   RETURN(UNAPIRQ2.INITANDSAVERQSCATTRIBUTES
+                   (A_RQ, A_SC, A_RT, A_RT_VERSION, A_ST, A_ST_VERSION));
+END INITANDSAVERQSCATTRIBUTES;
+
+FUNCTION SAVERQPARAMETERPROFILE
+(A_RQ               IN     VARCHAR2,                    
+ A_PP               IN     UNAPIGEN.VC20_TABLE_TYPE,    
+ A_PP_VERSION       IN     UNAPIGEN.VC20_TABLE_TYPE,    
+ A_PP_KEY1          IN     UNAPIGEN.VC20_TABLE_TYPE,    
+ A_PP_KEY2          IN     UNAPIGEN.VC20_TABLE_TYPE,    
+ A_PP_KEY3          IN     UNAPIGEN.VC20_TABLE_TYPE,    
+ A_PP_KEY4          IN     UNAPIGEN.VC20_TABLE_TYPE,    
+ A_PP_KEY5          IN     UNAPIGEN.VC20_TABLE_TYPE,    
+ A_DELAY            IN     UNAPIGEN.NUM_TABLE_TYPE,     
+ A_DELAY_UNIT       IN     UNAPIGEN.VC20_TABLE_TYPE,    
+ A_FREQ_TP          IN     UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_FREQ_VAL         IN     UNAPIGEN.NUM_TABLE_TYPE,     
+ A_FREQ_UNIT        IN     UNAPIGEN.VC20_TABLE_TYPE,    
+ A_INVERT_FREQ      IN     UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_LAST_SCHED       IN     UNAPIGEN.DATE_TABLE_TYPE,    
+ A_LAST_CNT         IN     UNAPIGEN.NUM_TABLE_TYPE,     
+ A_LAST_VAL         IN     UNAPIGEN.VC40_TABLE_TYPE,    
+ A_INHERIT_AU       IN     UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_NR_OF_ROWS       IN     NUMBER,                      
+ A_MODIFY_REASON    IN     VARCHAR2)                    
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIRQ2.SAVERQPARAMETERPROFILE
+                   (A_RQ, A_PP, A_PP_VERSION, A_PP_KEY1, A_PP_KEY2, A_PP_KEY3, 
+                    A_PP_KEY4, A_PP_KEY5, A_DELAY, A_DELAY_UNIT,
+                    A_FREQ_TP, A_FREQ_VAL, A_FREQ_UNIT,
+                    A_INVERT_FREQ, A_LAST_SCHED, A_LAST_CNT,
+                    A_LAST_VAL, A_INHERIT_AU, A_NR_OF_ROWS,
+                    A_MODIFY_REASON));
+END SAVERQPARAMETERPROFILE;
+
+FUNCTION GETRQPARAMETERPROFILE
+(A_RQ               OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_PP               OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_PP_VERSION       OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_PP_KEY1          OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_PP_KEY2          OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_PP_KEY3          OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_PP_KEY4          OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_PP_KEY5          OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_DESCRIPTION      OUT    UNAPIGEN.VC40_TABLE_TYPE,    
+ A_DELAY            OUT    UNAPIGEN.NUM_TABLE_TYPE,     
+ A_DELAY_UNIT       OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_FREQ_TP          OUT    UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_FREQ_VAL         OUT    UNAPIGEN.NUM_TABLE_TYPE,     
+ A_FREQ_UNIT        OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_INVERT_FREQ      OUT    UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_LAST_SCHED       OUT    UNAPIGEN.DATE_TABLE_TYPE,    
+ A_LAST_CNT         OUT    UNAPIGEN.NUM_TABLE_TYPE,     
+ A_LAST_VAL         OUT    UNAPIGEN.VC40_TABLE_TYPE,    
+ A_INHERIT_AU       OUT    UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_NR_OF_ROWS       IN OUT NUMBER,                      
+ A_WHERE_CLAUSE     IN     VARCHAR2)                    
+RETURN NUMBER IS
+BEGIN
+   RETURN(UNAPIRQ2.GETRQPARAMETERPROFILE
+                   (A_RQ, A_PP, A_PP_VERSION, A_PP_KEY1, A_PP_KEY2, A_PP_KEY3, 
+                    A_PP_KEY4, A_PP_KEY5, A_DESCRIPTION, A_DELAY, A_DELAY_UNIT,
+                    A_FREQ_TP, A_FREQ_VAL, A_FREQ_UNIT,
+                    A_INVERT_FREQ, A_LAST_SCHED, A_LAST_CNT,
+                    A_LAST_VAL, A_INHERIT_AU, A_NR_OF_ROWS,
+                    A_WHERE_CLAUSE));
+END GETRQPARAMETERPROFILE;
+
+FUNCTION SAVERQPPATTRIBUTE
+(A_RQ             IN        VARCHAR2,                 
+ A_PP             IN        VARCHAR2,                 
+ A_PP_VERSION     IN        VARCHAR2,                 
+ A_AU             IN        UNAPIGEN.VC20_TABLE_TYPE, 
+ A_AU_VERSION     IN        UNAPIGEN.VC20_TABLE_TYPE, 
+ A_VALUE          IN        UNAPIGEN.VC40_TABLE_TYPE, 
+ A_NR_OF_ROWS     IN        NUMBER,                   
+ A_MODIFY_REASON  IN        VARCHAR2)                 
+RETURN NUMBER IS
+BEGIN
+   RETURN(UNAPIRQ2.SAVERQPPATTRIBUTE
+                   (A_RQ, A_PP, A_PP_VERSION, A_AU, A_AU_VERSION, A_VALUE,
+                    A_NR_OF_ROWS, A_MODIFY_REASON));
+END SAVERQPPATTRIBUTE;
+
+FUNCTION GETRQPPATTRIBUTE
+(A_RQ                 OUT   UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP                 OUT   UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_VERSION         OUT   UNAPIGEN.VC20_TABLE_TYPE,  
+ A_AU                 OUT   UNAPIGEN.VC20_TABLE_TYPE,  
+ A_AU_VERSION         OUT   UNAPIGEN.VC20_TABLE_TYPE,  
+ A_VALUE              OUT   UNAPIGEN.VC40_TABLE_TYPE,  
+ A_DESCRIPTION        OUT   UNAPIGEN.VC40_TABLE_TYPE,  
+ A_IS_PROTECTED       OUT   UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_SINGLE_VALUED      OUT   UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_NEW_VAL_ALLOWED    OUT   UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_STORE_DB           OUT   UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_VALUE_LIST_TP      OUT   UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_RUN_MODE           OUT   UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_SERVICE            OUT   UNAPIGEN.VC255_TABLE_TYPE, 
+ A_CF_VALUE           OUT   UNAPIGEN.VC20_TABLE_TYPE,  
+ A_NR_OF_ROWS         IN OUT NUMBER,                   
+ A_WHERE_CLAUSE       IN     VARCHAR2)                 
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIRQ2.GETRQPPATTRIBUTE
+                   (A_RQ, A_PP, A_PP_VERSION, A_AU, A_AU_VERSION, A_VALUE, A_DESCRIPTION, 
+                    A_IS_PROTECTED, A_SINGLE_VALUED, A_NEW_VAL_ALLOWED,
+                    A_STORE_DB, A_VALUE_LIST_TP, A_RUN_MODE,
+                    A_SERVICE, A_CF_VALUE, A_NR_OF_ROWS,
+                    A_WHERE_CLAUSE));
+END GETRQPPATTRIBUTE;
+
+FUNCTION GETRQINFOCARD
+(A_RQ             OUT      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_IC             OUT      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_ICNODE         OUT      UNAPIGEN.LONG_TABLE_TYPE,  
+ A_IP_VERSION     OUT      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_DESCRIPTION    OUT      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_WINSIZE_X      OUT      UNAPIGEN.NUM_TABLE_TYPE,   
+ A_WINSIZE_Y      OUT      UNAPIGEN.NUM_TABLE_TYPE,   
+ A_IS_PROTECTED   OUT      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_HIDDEN         OUT      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_MANUALLY_ADDED OUT      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_NEXT_II        OUT      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_IC_CLASS       OUT      UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LOG_HS         OUT      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LOG_HS_DETAILS OUT      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_ALLOW_MODIFY   OUT      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_AR             OUT      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_ACTIVE         OUT      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LC             OUT      UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LC_VERSION     OUT      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_SS             OUT      UNAPIGEN.VC2_TABLE_TYPE,   
+ A_NR_OF_ROWS     IN OUT   NUMBER,                    
+ A_WHERE_CLAUSE   IN       VARCHAR2)                  
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIRQIC.GETRQINFOCARD(A_RQ, A_IC, A_ICNODE,  A_IP_VERSION, A_DESCRIPTION, 
+                                  A_WINSIZE_X, A_WINSIZE_Y, A_IS_PROTECTED,
+                                  A_HIDDEN, A_MANUALLY_ADDED, A_NEXT_II, 
+                                  A_IC_CLASS, A_LOG_HS, A_LOG_HS_DETAILS, A_ALLOW_MODIFY,
+                                  A_AR, A_ACTIVE, A_LC, A_LC_VERSION, A_SS, A_NR_OF_ROWS,
+                                   A_WHERE_CLAUSE));
+END GETRQINFOCARD;
+
+FUNCTION GETRQINFOFIELD
+(A_RQ               OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_IC               OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_ICNODE           OUT    UNAPIGEN.LONG_TABLE_TYPE,    
+ A_II               OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_IINODE           OUT    UNAPIGEN.LONG_TABLE_TYPE,    
+ A_IE_VERSION       OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_IIVALUE          OUT    UNAPIGEN.VC2000_TABLE_TYPE,  
+ A_POS_X            OUT    UNAPIGEN.NUM_TABLE_TYPE,     
+ A_POS_Y            OUT    UNAPIGEN.NUM_TABLE_TYPE,     
+ A_IS_PROTECTED     OUT    UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_MANDATORY        OUT    UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_HIDDEN           OUT    UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_DSP_TITLE        OUT    UNAPIGEN.VC40_TABLE_TYPE,    
+ A_DSP_LEN          OUT    UNAPIGEN.NUM_TABLE_TYPE,     
+ A_DSP_TP           OUT    UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_DSP_ROWS         OUT    UNAPIGEN.NUM_TABLE_TYPE,     
+ A_II_CLASS         OUT    UNAPIGEN.VC2_TABLE_TYPE,     
+ A_LOG_HS           OUT    UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_LOG_HS_DETAILS   OUT    UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_ALLOW_MODIFY     OUT    UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_AR               OUT    UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_ACTIVE           OUT    UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_LC               OUT    UNAPIGEN.VC2_TABLE_TYPE,     
+ A_LC_VERSION       OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_SS               OUT    UNAPIGEN.VC2_TABLE_TYPE,     
+ A_NR_OF_ROWS       IN OUT NUMBER,                      
+ A_WHERE_CLAUSE     IN     VARCHAR2,                    
+ A_NEXT_ROWS        IN     NUMBER)                      
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIRQIC.GETRQINFOFIELD(A_RQ, A_IC, A_ICNODE, A_II, A_IINODE, A_IE_VERSION,
+                                   A_IIVALUE, A_POS_X, A_POS_Y,
+                                   A_IS_PROTECTED, A_MANDATORY,
+                                   A_HIDDEN, A_DSP_TITLE, A_DSP_LEN,
+                                   A_DSP_TP, A_DSP_ROWS,
+                                   A_II_CLASS, A_LOG_HS, A_LOG_HS_DETAILS, A_ALLOW_MODIFY,
+                                   A_AR, A_ACTIVE, A_LC, A_LC_VERSION, A_SS, A_NR_OF_ROWS,
+                                   A_WHERE_CLAUSE, A_NEXT_ROWS));
+END GETRQINFOFIELD;
+
+FUNCTION SAVERQINFOCARD
+(A_RQ             IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_IC             IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_ICNODE         IN OUT  UNAPIGEN.LONG_TABLE_TYPE,  
+ A_IP_VERSION     IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_DESCRIPTION    IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_WINSIZE_X      IN      UNAPIGEN.NUM_TABLE_TYPE,   
+ A_WINSIZE_Y      IN      UNAPIGEN.NUM_TABLE_TYPE,   
+ A_IS_PROTECTED   IN      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_HIDDEN         IN      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_MANUALLY_ADDED IN      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_NEXT_II        IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_IC_CLASS       IN      UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LOG_HS         IN      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LOG_HS_DETAILS IN      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LC             IN      UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LC_VERSION     IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_MODIFY_FLAG    IN OUT  UNAPIGEN.NUM_TABLE_TYPE,   
+ A_NR_OF_ROWS     IN      NUMBER,                    
+ A_MODIFY_REASON  IN      VARCHAR2)                  
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIRQIC.SAVERQINFOCARD(A_RQ, A_IC, A_ICNODE, A_IP_VERSION, A_DESCRIPTION, 
+                                  A_WINSIZE_X, A_WINSIZE_Y, A_IS_PROTECTED,
+                                  A_HIDDEN, A_MANUALLY_ADDED, A_NEXT_II, 
+                                  A_IC_CLASS, A_LOG_HS, A_LOG_HS_DETAILS, A_LC,A_LC_VERSION, A_MODIFY_FLAG,
+                                  A_NR_OF_ROWS, A_MODIFY_REASON));
+END SAVERQINFOCARD;
+
+FUNCTION SAVERQINFOFIELD
+(A_RQ               IN       UNAPIGEN.VC20_TABLE_TYPE,    
+ A_IC               IN       UNAPIGEN.VC20_TABLE_TYPE,    
+ A_ICNODE           IN OUT   UNAPIGEN.LONG_TABLE_TYPE,    
+ A_II               IN       UNAPIGEN.VC20_TABLE_TYPE,    
+ A_IINODE           IN OUT   UNAPIGEN.LONG_TABLE_TYPE,    
+ A_IE_VERSION       IN       UNAPIGEN.VC20_TABLE_TYPE,    
+ A_IIVALUE          IN       UNAPIGEN.VC2000_TABLE_TYPE,  
+ A_POS_X            IN       UNAPIGEN.NUM_TABLE_TYPE,     
+ A_POS_Y            IN       UNAPIGEN.NUM_TABLE_TYPE,     
+ A_IS_PROTECTED     IN       UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_MANDATORY        IN       UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_HIDDEN           IN       UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_DSP_TITLE        IN       UNAPIGEN.VC40_TABLE_TYPE,    
+ A_DSP_LEN          IN       UNAPIGEN.NUM_TABLE_TYPE,     
+ A_DSP_TP           IN       UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_DSP_ROWS         IN       UNAPIGEN.NUM_TABLE_TYPE,     
+ A_II_CLASS         IN       UNAPIGEN.VC2_TABLE_TYPE,     
+ A_LOG_HS           IN       UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_LOG_HS_DETAILS   IN       UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_LC               IN       UNAPIGEN.VC2_TABLE_TYPE,     
+ A_LC_VERSION       IN       UNAPIGEN.VC20_TABLE_TYPE,    
+ A_MODIFY_FLAG      IN OUT   UNAPIGEN.NUM_TABLE_TYPE,     
+ A_NR_OF_ROWS       IN       NUMBER,                      
+ A_MODIFY_REASON    IN       VARCHAR2)                    
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIRQIC.SAVERQINFOFIELD(A_RQ, A_IC, A_ICNODE, A_II, A_IINODE, A_IE_VERSION,
+                                   A_IIVALUE, A_POS_X, A_POS_Y,
+                                   A_IS_PROTECTED, A_MANDATORY,
+                                   A_HIDDEN, A_DSP_TITLE, A_DSP_LEN,
+                                   A_DSP_TP, A_DSP_ROWS,
+                                   A_II_CLASS, A_LOG_HS, A_LOG_HS_DETAILS, A_LC, A_LC_VERSION, 
+                                   A_MODIFY_FLAG, A_NR_OF_ROWS,
+                                   A_MODIFY_REASON));
+END SAVERQINFOFIELD;
+
+FUNCTION SAVERQIIVALUE
+(A_RQ               IN       UNAPIGEN.VC20_TABLE_TYPE,    
+ A_IC               IN       UNAPIGEN.VC20_TABLE_TYPE,    
+ A_ICNODE           IN OUT   UNAPIGEN.LONG_TABLE_TYPE,    
+ A_II               IN       UNAPIGEN.VC20_TABLE_TYPE,    
+ A_IINODE           IN OUT   UNAPIGEN.LONG_TABLE_TYPE,    
+ A_IIVALUE          IN       UNAPIGEN.VC2000_TABLE_TYPE,  
+ A_MODIFY_FLAG      IN OUT   UNAPIGEN.NUM_TABLE_TYPE,     
+ A_NR_OF_ROWS       IN       NUMBER,                      
+ A_MODIFY_REASON    IN       VARCHAR2)                    
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIRQIC.SAVERQIIVALUE(A_RQ, A_IC, A_ICNODE, A_II, A_IINODE, 
+                                   A_IIVALUE, A_MODIFY_FLAG, A_NR_OF_ROWS,
+                                   A_MODIFY_REASON));
+END SAVERQIIVALUE;
+
+FUNCTION CREATERQINFODETAILS
+(A_RT             IN        VARCHAR2,                 
+ A_RT_VERSION     IN OUT    VARCHAR2,                 
+ A_RQ             IN        VARCHAR2,                 
+ A_FILTER_FREQ    IN        CHAR,                     
+ A_REF_DATE       IN        DATE,                     
+ A_MODIFY_REASON  IN        VARCHAR2)                 
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIRQIC.CREATERQINFODETAILS(A_RT, A_RT_VERSION, A_RQ, A_FILTER_FREQ, A_REF_DATE, A_MODIFY_REASON));
+END CREATERQINFODETAILS;
+
+FUNCTION ADDRQINFODETAILS
+(A_RT             IN        VARCHAR2,                 
+ A_RT_VERSION     IN        VARCHAR2,                 
+ A_RQ             IN        VARCHAR2,                 
+ A_IP             IN        VARCHAR2,                 
+ A_IP_VERSION     IN        VARCHAR2,                 
+ A_SEQ            IN        NUMBER,                   
+ A_MODIFY_REASON  IN        VARCHAR2)                 
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIRQIC.ADDRQINFODETAILS(A_RT, A_RT_VERSION, A_RQ, A_IP, A_IP_VERSION, A_SEQ, A_MODIFY_REASON));
+END ADDRQINFODETAILS;
+
+FUNCTION CREATERQICDETAILS                            
+(A_RT             IN        VARCHAR2,                 
+ A_RT_VERSION     IN OUT    VARCHAR2,                 
+ A_IP             IN        VARCHAR2,                 
+ A_IP_VERSION     IN OUT    VARCHAR2,                 
+ A_SEQ            IN        NUMBER,                   
+ A_RQ             IN        VARCHAR2,                 
+ A_ICNODE         IN        NUMBER,                   
+ A_MODIFY_REASON  IN        VARCHAR2)                 
+RETURN NUMBER IS
+BEGIN
+   RETURN(UNAPIRQIC.CREATERQICDETAILS(A_RT, A_RT_VERSION, A_IP, A_IP_VERSION, A_SEQ, A_RQ,
+                                      A_ICNODE, A_MODIFY_REASON));
+END CREATERQICDETAILS;
+
+FUNCTION ADDRQICDETAILS
+(A_RT             IN        VARCHAR2,                 
+ A_RT_VERSION     IN        VARCHAR2,                 
+ A_RQ             IN        VARCHAR2,                 
+ A_IC             IN        VARCHAR2,                 
+ A_ICNODE         IN        NUMBER,                   
+ A_IE             IN        VARCHAR2,                 
+ A_IE_VERSION     IN        VARCHAR2,                 
+ A_SEQ            IN        NUMBER,                   
+ A_MODIFY_REASON  IN        VARCHAR2)                 
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIRQIC.ADDRQICDETAILS(A_RT, A_RT_VERSION, A_RQ, A_IC, A_ICNODE,
+                                   A_IE, A_IE_VERSION, A_SEQ, A_MODIFY_REASON));
+END ADDRQICDETAILS;
+
+FUNCTION INITRQINFOCARD
+(A_IP              IN     VARCHAR2,                  
+ A_IP_VERSION_IN   IN     VARCHAR2,                  
+ A_SEQ             IN     NUMBER,                    
+ A_RT              IN     VARCHAR2,                  
+ A_RT_VERSION      IN     VARCHAR2,                  
+ A_RQ              IN     VARCHAR2,                  
+ A_IP_VERSION      OUT    UNAPIGEN.VC20_TABLE_TYPE,  
+ A_DESCRIPTION     OUT    UNAPIGEN.VC40_TABLE_TYPE,  
+ A_WINSIZE_X       OUT    UNAPIGEN.NUM_TABLE_TYPE,   
+ A_WINSIZE_Y       OUT    UNAPIGEN.NUM_TABLE_TYPE,   
+ A_IS_PROTECTED    OUT    UNAPIGEN.CHAR1_TABLE_TYPE ,
+ A_HIDDEN          OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_MANUALLY_ADDED  OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_NEXT_II         OUT    UNAPIGEN.VC20_TABLE_TYPE,  
+ A_IC_CLASS        OUT    UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LOG_HS          OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LOG_HS_DETAILS  OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LC              OUT    UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LC_VERSION      OUT    UNAPIGEN.VC20_TABLE_TYPE,  
+ A_NR_OF_ROWS      IN OUT NUMBER)                    
+RETURN NUMBER IS
+BEGIN
+   RETURN(UNAPIRQIC.INITRQINFOCARD(A_IP, A_IP_VERSION_IN, A_SEQ, A_RT, A_RT_VERSION, A_RQ, A_IP_VERSION, A_DESCRIPTION, 
+                                  A_WINSIZE_X, A_WINSIZE_Y, A_IS_PROTECTED,
+                                  A_HIDDEN, A_MANUALLY_ADDED, A_NEXT_II, 
+                                  A_IC_CLASS, A_LOG_HS, A_LOG_HS_DETAILS, A_LC, A_LC_VERSION, A_NR_OF_ROWS));
+END INITRQINFOCARD;
+
+FUNCTION INITRQICATTRIBUTE
+(A_RQ               IN     VARCHAR2,                  
+ A_RT               IN     VARCHAR2,                  
+ A_RT_VERSION       IN     VARCHAR2,                  
+ A_IP               IN     VARCHAR2,                  
+ A_IP_VERSION       IN     VARCHAR2,                  
+ A_AU               OUT    UNAPIGEN.VC20_TABLE_TYPE,  
+ A_AU_VERSION       OUT    UNAPIGEN.VC20_TABLE_TYPE,  
+ A_VALUE            OUT    UNAPIGEN.VC40_TABLE_TYPE,  
+ A_DESCRIPTION      OUT    UNAPIGEN.VC40_TABLE_TYPE,  
+ A_IS_PROTECTED     OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_SINGLE_VALUED    OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_NEW_VAL_ALLOWED  OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_STORE_DB         OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_VALUE_LIST_TP    OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_RUN_MODE         OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_SERVICE          OUT    UNAPIGEN.VC255_TABLE_TYPE, 
+ A_CF_VALUE         OUT    UNAPIGEN.VC20_TABLE_TYPE,  
+ A_NR_OF_ROWS       IN OUT NUMBER)                    
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIRQIC.INITRQICATTRIBUTE(A_RQ, A_RT,A_RT_VERSION,  A_IP, A_IP_VERSION, 
+                                      A_AU, A_AU_VERSION, A_VALUE, A_DESCRIPTION,
+                                      A_IS_PROTECTED, A_SINGLE_VALUED,
+                                      A_NEW_VAL_ALLOWED, A_STORE_DB,
+                                      A_VALUE_LIST_TP, A_RUN_MODE,
+                                      A_SERVICE, A_CF_VALUE, A_NR_OF_ROWS));
+END INITRQICATTRIBUTE;
+
+FUNCTION INITRQICDETAILS
+(A_IP              IN     VARCHAR2,                   
+ A_IP_VERSION      IN OUT VARCHAR2,                   
+ A_RQ              IN     VARCHAR2,                   
+ A_II              OUT    UNAPIGEN.VC20_TABLE_TYPE,   
+ A_IE_VERSION      OUT    UNAPIGEN.VC20_TABLE_TYPE,   
+ A_IIVALUE         OUT    UNAPIGEN.VC2000_TABLE_TYPE, 
+ A_POS_X           OUT    UNAPIGEN.NUM_TABLE_TYPE,    
+ A_POS_Y           OUT    UNAPIGEN.NUM_TABLE_TYPE,    
+ A_IS_PROTECTED    OUT    UNAPIGEN.CHAR1_TABLE_TYPE,  
+ A_MANDATORY       OUT    UNAPIGEN.CHAR1_TABLE_TYPE,  
+ A_HIDDEN          OUT    UNAPIGEN.CHAR1_TABLE_TYPE,  
+ A_DSP_TITLE       OUT    UNAPIGEN.VC40_TABLE_TYPE,   
+ A_DSP_LEN         OUT    UNAPIGEN.NUM_TABLE_TYPE,    
+ A_DSP_TP          OUT    UNAPIGEN.CHAR1_TABLE_TYPE,  
+ A_DSP_ROWS        OUT    UNAPIGEN.NUM_TABLE_TYPE,    
+ A_II_CLASS        OUT    UNAPIGEN.VC2_TABLE_TYPE,    
+ A_LOG_HS          OUT    UNAPIGEN.CHAR1_TABLE_TYPE,  
+ A_LOG_HS_DETAILS  OUT    UNAPIGEN.CHAR1_TABLE_TYPE,  
+ A_LC              OUT    UNAPIGEN.VC2_TABLE_TYPE,    
+ A_LC_VERSION      OUT    UNAPIGEN.VC20_TABLE_TYPE,   
+ A_NR_OF_ROWS      IN OUT NUMBER,                     
+ A_NEXT_ROWS       IN     NUMBER)                     
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIRQIC.INITRQICDETAILS(A_IP, A_IP_VERSION , A_RQ, A_II, A_IE_VERSION, A_IIVALUE,
+                                    A_POS_X, A_POS_Y,
+                                    A_IS_PROTECTED, A_MANDATORY,
+                                    A_HIDDEN, A_DSP_TITLE, A_DSP_LEN,
+                                    A_DSP_TP, A_DSP_ROWS,
+                                    A_II_CLASS, A_LOG_HS, A_LOG_HS_DETAILS, A_LC, A_LC_VERSION,
+                                    A_NR_OF_ROWS,A_NEXT_ROWS));
+END INITRQICDETAILS;
+
+FUNCTION INITRQINFODETAILS
+(A_RT             IN        VARCHAR2,                  
+ A_RT_VERSION     IN OUT    VARCHAR2,                 
+ A_RQ             IN        VARCHAR2,                  
+ A_FILTER_FREQ    IN        CHAR,                      
+ A_REF_DATE       IN        DATE,                      
+ A_IC             OUT       UNAPIGEN.VC20_TABLE_TYPE,  
+ A_IP_VERSION     OUT       UNAPIGEN.VC20_TABLE_TYPE,  
+ A_DESCRIPTION    OUT       UNAPIGEN.VC40_TABLE_TYPE,  
+ A_WINSIZE_X      OUT       UNAPIGEN.NUM_TABLE_TYPE,   
+ A_WINSIZE_Y      OUT       UNAPIGEN.NUM_TABLE_TYPE,   
+ A_IS_PROTECTED   OUT       UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_HIDDEN         OUT       UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_MANUALLY_ADDED OUT       UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_NEXT_II        OUT       UNAPIGEN.VC20_TABLE_TYPE,  
+ A_IC_CLASS       OUT       UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LOG_HS         OUT       UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LOG_HS_DETAILS OUT       UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LC             OUT       UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LC_VERSION     OUT       UNAPIGEN.VC20_TABLE_TYPE,  
+ A_NR_OF_ROWS     IN OUT    NUMBER)                    
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIRQIC.INITRQINFODETAILS(A_RT, A_RT_VERSION, A_RQ, A_FILTER_FREQ, A_REF_DATE, 
+                                      A_IC, A_IP_VERSION, A_DESCRIPTION, A_WINSIZE_X, A_WINSIZE_Y, 
+                                      A_IS_PROTECTED, A_HIDDEN, A_MANUALLY_ADDED, A_NEXT_II, A_IC_CLASS, 
+                                      A_LOG_HS, A_LOG_HS_DETAILS, A_LC, A_LC_VERSION, A_NR_OF_ROWS));
+END INITRQINFODETAILS;
+
+FUNCTION GETRQICATTRIBUTE
+(A_RQ                 OUT    UNAPIGEN.VC20_TABLE_TYPE,  
+ A_IC                 OUT    UNAPIGEN.VC20_TABLE_TYPE,  
+ A_ICNODE             OUT    UNAPIGEN.LONG_TABLE_TYPE,  
+ A_AU                 OUT    UNAPIGEN.VC20_TABLE_TYPE,  
+ A_AU_VERSION         OUT    UNAPIGEN.VC20_TABLE_TYPE,  
+ A_VALUE              OUT    UNAPIGEN.VC40_TABLE_TYPE,  
+ A_DESCRIPTION        OUT    UNAPIGEN.VC40_TABLE_TYPE,  
+ A_IS_PROTECTED       OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_SINGLE_VALUED      OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_NEW_VAL_ALLOWED    OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_STORE_DB           OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_VALUE_LIST_TP      OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_RUN_MODE           OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_SERVICE            OUT    UNAPIGEN.VC255_TABLE_TYPE, 
+ A_CF_VALUE           OUT    UNAPIGEN.VC20_TABLE_TYPE,  
+ A_NR_OF_ROWS         IN OUT NUMBER,                    
+ A_WHERE_CLAUSE       IN     VARCHAR2)                  
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIRQIC2.GETRQICATTRIBUTE(A_RQ, A_IC, A_ICNODE, 
+                                      A_AU, A_AU_VERSION, A_VALUE, A_DESCRIPTION,
+                                      A_IS_PROTECTED, A_SINGLE_VALUED,
+                                      A_NEW_VAL_ALLOWED, A_STORE_DB,
+                                      A_VALUE_LIST_TP, A_RUN_MODE,
+                                      A_SERVICE, A_CF_VALUE, A_NR_OF_ROWS,
+                                      A_WHERE_CLAUSE));
+END GETRQICATTRIBUTE;
+
+FUNCTION SAVERQICATTRIBUTE
+(A_RQ             IN        VARCHAR2,                 
+ A_IC             IN        VARCHAR2,                 
+ A_ICNODE         IN        NUMBER,                   
+ A_AU             IN        UNAPIGEN.VC20_TABLE_TYPE, 
+ A_AU_VERSION     IN OUT    UNAPIGEN.VC20_TABLE_TYPE, 
+ A_VALUE          IN        UNAPIGEN.VC40_TABLE_TYPE, 
+ A_NR_OF_ROWS     IN        NUMBER,                   
+ A_MODIFY_REASON  IN        VARCHAR2)                 
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIRQIC2.SAVERQICATTRIBUTE(A_RQ, A_IC, A_ICNODE, 
+                                      A_AU, A_AU_VERSION, A_VALUE, A_NR_OF_ROWS,
+                                      A_MODIFY_REASON));
+END SAVERQICATTRIBUTE;
+
+FUNCTION SAVE1RQICATTRIBUTE
+(A_RQ             IN        VARCHAR2,                 
+ A_IC             IN        VARCHAR2,                 
+ A_ICNODE         IN        NUMBER,                   
+ A_AU             IN        VARCHAR2,                 
+ A_AU_VERSION     IN OUT    VARCHAR2,                 
+ A_VALUE          IN        UNAPIGEN.VC40_TABLE_TYPE, 
+ A_NR_OF_ROWS     IN        NUMBER,                   
+ A_MODIFY_REASON  IN        VARCHAR2)                 
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIRQIC2.SAVE1RQICATTRIBUTE(A_RQ, A_IC, A_ICNODE, 
+                                      A_AU, A_AU_VERSION, A_VALUE, A_NR_OF_ROWS,
+                                      A_MODIFY_REASON));
+END SAVE1RQICATTRIBUTE;
+
+FUNCTION SAVERQICHISTORY
+(A_RQ             IN        VARCHAR2,                  
+ A_IC                IN        VARCHAR2,                  
+ A_ICNODE            IN        NUMBER,                    
+ A_WHO               IN        UNAPIGEN.VC20_TABLE_TYPE,   
+ A_WHO_DESCRIPTION   IN        UNAPIGEN.VC40_TABLE_TYPE,   
+ A_WHAT              IN        UNAPIGEN.VC60_TABLE_TYPE,   
+ A_WHAT_DESCRIPTION  IN        UNAPIGEN.VC255_TABLE_TYPE,  
+ A_LOGDATE           IN        UNAPIGEN.DATE_TABLE_TYPE,   
+ A_WHY               IN        UNAPIGEN.VC255_TABLE_TYPE,  
+ A_TR_SEQ            IN        UNAPIGEN.NUM_TABLE_TYPE,    
+ A_EV_SEQ            IN        UNAPIGEN.NUM_TABLE_TYPE,    
+ A_NR_OF_ROWS     IN        NUMBER)                    
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIRQIC2.SAVERQICHISTORY(A_RQ, A_IC, A_ICNODE, 
+                                    A_WHO, A_WHO_DESCRIPTION, A_WHAT, A_WHAT_DESCRIPTION, A_LOGDATE,
+                                    A_WHY, A_TR_SEQ, A_EV_SEQ, A_NR_OF_ROWS));
+END SAVERQICHISTORY;
+
+FUNCTION GETRQICHISTORY
+(A_RQ               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_IC               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_ICNODE           OUT     UNAPIGEN.LONG_TABLE_TYPE,  
+ A_WHO               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_WHO_DESCRIPTION   OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_WHAT              OUT     UNAPIGEN.VC60_TABLE_TYPE,  
+ A_WHAT_DESCRIPTION  OUT     UNAPIGEN.VC255_TABLE_TYPE, 
+ A_LOGDATE           OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_WHY               OUT     UNAPIGEN.VC255_TABLE_TYPE, 
+ A_TR_SEQ            OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_EV_SEQ            OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_NR_OF_ROWS       IN OUT  NUMBER,                    
+ A_WHERE_CLAUSE     IN      VARCHAR2)                  
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIRQIC2.GETRQICHISTORY(A_RQ, A_IC, A_ICNODE, 
+                                   A_WHO, A_WHO_DESCRIPTION, A_WHAT, A_WHAT_DESCRIPTION, A_LOGDATE,
+                                   A_WHY, A_TR_SEQ, A_EV_SEQ, A_NR_OF_ROWS, A_WHERE_CLAUSE));
+END GETRQICHISTORY;
+
+FUNCTION GETRQICHISTORY 
+(A_RQ                OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_IC                OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_ICNODE            OUT     UNAPIGEN.LONG_TABLE_TYPE,  
+ A_WHO               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_WHO_DESCRIPTION   OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_WHAT              OUT     UNAPIGEN.VC60_TABLE_TYPE,  
+ A_WHAT_DESCRIPTION  OUT     UNAPIGEN.VC255_TABLE_TYPE, 
+ A_LOGDATE           OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_WHY               OUT     UNAPIGEN.VC255_TABLE_TYPE, 
+ A_TR_SEQ            OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_EV_SEQ            OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_NR_OF_ROWS        IN OUT  NUMBER,                    
+ A_WHERE_CLAUSE      IN      VARCHAR2,                  
+ A_NEXT_ROWS         IN      NUMBER)                    
+RETURN NUMBER IS
+BEGIN
+   RETURN(UNAPIRQIC2.GETRQICHISTORY(A_RQ, A_IC, A_ICNODE,
+                                    A_WHO, A_WHO_DESCRIPTION, A_WHAT, A_WHAT_DESCRIPTION, A_LOGDATE,
+                                    A_WHY, A_TR_SEQ, A_EV_SEQ, A_NR_OF_ROWS, A_WHERE_CLAUSE, A_NEXT_ROWS));
+END GETRQICHISTORY;
+
+FUNCTION GETRQICHISTORYDETAILS 
+(A_RQ                OUT     UNAPIGEN.VC20_TABLE_TYPE,    
+ A_IC                OUT     UNAPIGEN.VC20_TABLE_TYPE,    
+ A_ICNODE            OUT     UNAPIGEN.LONG_TABLE_TYPE,    
+ A_TR_SEQ            OUT     UNAPIGEN.NUM_TABLE_TYPE,     
+ A_EV_SEQ            OUT     UNAPIGEN.NUM_TABLE_TYPE,     
+ A_SEQ               OUT     UNAPIGEN.NUM_TABLE_TYPE,     
+ A_DETAILS           OUT     UNAPIGEN.VC4000_TABLE_TYPE,  
+ A_NR_OF_ROWS        IN OUT  NUMBER,                      
+ A_WHERE_CLAUSE      IN      VARCHAR2,                    
+ A_NEXT_ROWS         IN      NUMBER)                      
+RETURN NUMBER IS
+BEGIN
+   RETURN(UNAPIRQIC2.GETRQICHISTORYDETAILS(A_RQ, A_IC, A_ICNODE,
+                                           A_TR_SEQ, A_EV_SEQ, A_SEQ, A_DETAILS, A_NR_OF_ROWS, 
+                                           A_WHERE_CLAUSE, A_NEXT_ROWS));
+END GETRQICHISTORYDETAILS;
+
+FUNCTION ADDRQICCOMMENT
+(A_RQ           IN  VARCHAR2, 
+ A_IC           IN  VARCHAR2, 
+ A_ICNODE       IN  NUMBER,   
+ A_COMMENT      IN  VARCHAR2) 
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIRQIC2.ADDRQICCOMMENT(A_RQ, A_IC, A_ICNODE, 
+                                   A_COMMENT));
+END ADDRQICCOMMENT;
+
+FUNCTION GETRQICCOMMENT
+(A_RQ               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_IC               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_ICNODE           OUT     UNAPIGEN.LONG_TABLE_TYPE,  
+ A_LAST_COMMENT     OUT     UNAPIGEN.VC255_TABLE_TYPE, 
+ A_NR_OF_ROWS       IN OUT  NUMBER,                    
+ A_WHERE_CLAUSE     IN      VARCHAR2,                  
+ A_NEXT_ROWS        IN      NUMBER)                    
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIRQIC2.GETRQICCOMMENT(A_RQ, A_IC, A_ICNODE, 
+                                    A_LAST_COMMENT, A_NR_OF_ROWS, A_WHERE_CLAUSE, A_NEXT_ROWS));
+END GETRQICCOMMENT;
+
+FUNCTION SAVERQICACCESS
+(A_RQ                IN      VARCHAR2,                  
+ A_IC                IN      VARCHAR2,                  
+ A_ICNODE            IN      NUMBER,                    
+ A_DD                IN      UNAPIGEN.VC3_TABLE_TYPE,   
+ A_ACCESS_RIGHTS     IN      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_NR_OF_ROWS        IN      NUMBER,                    
+ A_MODIFY_REASON     IN      VARCHAR2)                  
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIRQIC2.SAVERQICACCESS(A_RQ, A_IC, A_ICNODE, 
+                                   A_DD, A_ACCESS_RIGHTS, 
+                                   A_NR_OF_ROWS, A_MODIFY_REASON));
+END SAVERQICACCESS;
+
+FUNCTION GETRQICACCESS
+(A_RQ                OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_IC                OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_ICNODE            OUT     UNAPIGEN.LONG_TABLE_TYPE,  
+ A_DD                OUT     UNAPIGEN.VC3_TABLE_TYPE,   
+ A_DATA_DOMAIN       OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_ACCESS_RIGHTS     OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_NR_OF_ROWS        IN OUT  NUMBER,                    
+ A_WHERE_CLAUSE      IN      VARCHAR2)                  
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIRQIC2.GETRQICACCESS(A_RQ, A_IC, A_ICNODE, 
+                                   A_DD, A_DATA_DOMAIN, A_ACCESS_RIGHTS, 
+                                   A_NR_OF_ROWS, A_WHERE_CLAUSE));
+END GETRQICACCESS;
+
+FUNCTION CHANGERQICSTATUS
+(A_RQ                IN      VARCHAR2,     
+ A_IC                IN      VARCHAR2,     
+ A_ICNODE            IN      NUMBER,       
+ A_OLD_SS            IN      VARCHAR2,     
+ A_NEW_SS            IN      VARCHAR2,     
+ A_LC                IN      VARCHAR2,     
+ A_LC_VERSION        IN      VARCHAR2,     
+ A_MODIFY_REASON     IN      VARCHAR2)     
+RETURN NUMBER IS
+
+BEGIN
+
+   RETURN(UNAPIRQIC2.CHANGERQICSTATUS(A_RQ, A_IC, A_ICNODE, 
+                                      A_OLD_SS, A_NEW_SS, A_LC, A_LC_VERSION, 
+                                      A_MODIFY_REASON));
+                                     
+END CHANGERQICSTATUS;
+
+FUNCTION INTERNALCHANGERQICSTATUS          
+(A_RQ                IN      VARCHAR2,     
+ A_IC                IN      VARCHAR2,     
+ A_ICNODE            IN      NUMBER,       
+ A_NEW_SS            IN      VARCHAR2,     
+ A_MODIFY_REASON     IN      VARCHAR2)     
+RETURN NUMBER IS
+BEGIN
+
+   RETURN(UNAPIRQIC2.INTERNALCHANGERQICSTATUS(A_RQ, A_IC, A_ICNODE, 
+                                              A_NEW_SS, A_MODIFY_REASON));
+                                     
+END INTERNALCHANGERQICSTATUS;
+
+FUNCTION CANCELRQIC
+(A_RQ                IN      VARCHAR2,     
+ A_IC                IN      VARCHAR2,     
+ A_ICNODE            IN      NUMBER,       
+ A_MODIFY_REASON     IN      VARCHAR2)     
+RETURN NUMBER IS
+
+BEGIN
+
+   RETURN(UNAPIRQIC2.CANCELRQIC(A_RQ, A_IC, A_ICNODE, 
+                                A_MODIFY_REASON));
+                                     
+END CANCELRQIC;
+
+FUNCTION CHANGERQICLIFECYCLE
+(A_RQ                IN      VARCHAR2,     
+ A_IC                IN      VARCHAR2,     
+ A_ICNODE            IN      NUMBER,       
+ A_OLD_LC            IN      VARCHAR2,     
+ A_OLD_LC_VERSION    IN      VARCHAR2,     
+ A_NEW_LC            IN      VARCHAR2,     
+ A_NEW_LC_VERSION    IN      VARCHAR2,     
+ A_MODIFY_REASON     IN      VARCHAR2)     
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIRQIC2.CHANGERQICLIFECYCLE(A_RQ, A_IC, A_ICNODE, A_OLD_LC, A_OLD_LC_VERSION, 
+                                         A_NEW_LC, A_NEW_LC_VERSION, A_MODIFY_REASON));
+END CHANGERQICLIFECYCLE;
+
+FUNCTION RQICELECTRONICSIGNATURE
+(A_RQ                IN      VARCHAR2,     
+ A_IC                IN      VARCHAR2,     
+ A_ICNODE            IN      NUMBER,       
+ A_AUTHORISED_BY     IN      VARCHAR2,     
+ A_MODIFY_REASON     IN      VARCHAR2)     
+RETURN NUMBER IS
+
+BEGIN
+
+   RETURN(UNAPIRQIC2.RQICELECTRONICSIGNATURE(A_RQ, A_IC, A_ICNODE, 
+                                             A_AUTHORISED_BY,
+                                             A_MODIFY_REASON));
+                                     
+END RQICELECTRONICSIGNATURE;
+
+FUNCTION COPYRQSAMPLINGDETAILS                         
+(A_RQ_FROM             IN        VARCHAR2,             
+ A_RT_TO               IN        VARCHAR2,             
+ A_RT_TO_VERSION       IN OUT    VARCHAR2,              
+ A_RQ_TO               IN        VARCHAR2,             
+ A_REF_DATE            IN        DATE,                 
+ A_COPY_SCIC           IN        VARCHAR2,             
+ A_COPY_SCPG           IN        VARCHAR2,             
+ A_USERID              IN        VARCHAR2,             
+ A_MODIFY_REASON       IN        VARCHAR2)             
+RETURN NUMBER IS
+BEGIN
+   RETURN(UNAPIRQ2.COPYRQSAMPLINGDETAILS(A_RQ_FROM, A_RT_TO, A_RT_TO_VERSION, A_RQ_TO, A_REF_DATE,
+                                         A_COPY_SCIC, A_COPY_SCPG, A_USERID, A_MODIFY_REASON));
+END COPYRQSAMPLINGDETAILS;
+
+FUNCTION COPYREQUEST                 
+(A_RQ_FROM         IN     VARCHAR2,  
+ A_RT_TO           IN     VARCHAR2,  
+ A_RT_TO_VERSION   IN OUT VARCHAR2,   
+ A_RQ_TO           IN OUT VARCHAR2,  
+ A_REF_DATE        IN     DATE,      
+ A_COPY_IC         IN     VARCHAR2,  
+ A_COPY_SC         IN     VARCHAR2,  
+ A_COPY_SCIC       IN     VARCHAR2,  
+ A_COPY_SCPG       IN     VARCHAR2,  
+ A_USERID          IN     VARCHAR2,  
+ A_MODIFY_REASON   IN     VARCHAR2)  
+RETURN NUMBER IS
+BEGIN
+   RETURN(UNAPIRQ2.COPYREQUEST(A_RQ_FROM, A_RT_TO, A_RT_TO_VERSION, A_RQ_TO, A_REF_DATE,
+                               A_COPY_IC, A_COPY_SC, A_COPY_SCIC, A_COPY_SCPG, 
+                               A_USERID, A_MODIFY_REASON));
+END COPYREQUEST;
+
+FUNCTION COPYRQINFODETAILS
+(A_RQ_FROM        IN        VARCHAR2,                 
+ A_RT_TO          IN        VARCHAR2,                 
+ A_RT_TO_VERSION  IN        VARCHAR2,                 
+ A_RQ_TO          IN        VARCHAR2,                 
+ A_MODIFY_REASON  IN        VARCHAR2)                 
+RETURN NUMBER IS
+BEGIN
+   RETURN(UNAPIRQIC.COPYRQINFODETAILS(A_RQ_FROM, A_RT_TO, A_RT_TO_VERSION, A_RQ_TO, 
+                                      A_MODIFY_REASON));
+END COPYRQINFODETAILS;
+
+FUNCTION COPYRQICDETAILS
+(A_RQ_FROM        IN        VARCHAR2,                 
+ A_IC_FROM        IN        VARCHAR2,                 
+ A_ICNODE_FROM    IN        NUMBER,                   
+ A_RT_TO          IN        VARCHAR2,                 
+ A_RT_TO_VERSION  IN        VARCHAR2,                 
+ A_RQ_TO          IN        VARCHAR2,                 
+ A_IC_TO          IN        VARCHAR2,                 
+ A_ICNODE_TO      IN        NUMBER,                   
+ A_MODIFY_REASON  IN        VARCHAR2)                 
+RETURN NUMBER IS
+BEGIN
+   RETURN(UNAPIRQIC.COPYRQICDETAILS(A_RQ_FROM, A_IC_FROM, A_ICNODE_FROM, A_RT_TO,
+                                    A_RT_TO_VERSION, A_RQ_TO, A_IC_TO, A_ICNODE_TO,
+                                    A_MODIFY_REASON));
+END COPYRQICDETAILS;
+
+FUNCTION COPYRQINFOVALUES
+(A_RQ_FROM        IN        VARCHAR2,                 
+ A_IC_FROM        IN        VARCHAR2,                 
+ A_ICNODE_FROM    IN        NUMBER,                   
+ A_RT_TO          IN        VARCHAR2,                 
+ A_RT_TO_VERSION  IN        VARCHAR2,                 
+ A_RQ_TO          IN        VARCHAR2,                 
+ A_IC_TO          IN        VARCHAR2,                 
+ A_ICNODE_TO      IN        NUMBER,                   
+ A_MODIFY_REASON  IN        VARCHAR2)                 
+RETURN NUMBER IS
+BEGIN
+   RETURN(UNAPIRQIC.COPYRQINFOVALUES(A_RQ_FROM, A_IC_FROM, A_ICNODE_FROM, A_RT_TO,
+                                     A_RT_TO_VERSION, A_RQ_TO, A_IC_TO, A_ICNODE_TO,
+                                     A_MODIFY_REASON));
+END COPYRQINFOVALUES;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+END UNAPIRQ;

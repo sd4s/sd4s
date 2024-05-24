@@ -1,0 +1,766 @@
+PACKAGE BODY unapird AS
+
+L_SQLERRM         VARCHAR2(255);
+L_SQL_STRING      VARCHAR2(2000);
+L_WHERE_CLAUSE    VARCHAR2(1000);
+L_EVENT_TP        UTEV.EV_TP%TYPE;
+L_RET_CODE        NUMBER;
+L_RESULT          NUMBER;
+L_FETCHED_ROWS    NUMBER;
+L_EV_SEQ_NR       NUMBER;
+L_EV_DETAILS      VARCHAR2(255);
+STPERROR          EXCEPTION;
+
+FUNCTION GETVERSION
+   RETURN VARCHAR2
+IS
+BEGIN
+   RETURN('06.07.00.00_00.13');
+EXCEPTION
+   WHEN OTHERS THEN
+      RETURN (NULL);
+END GETVERSION;
+
+FUNCTION GETSCRAWDATA
+(A_SC               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PG               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PGNODE           OUT     UNAPIGEN.LONG_TABLE_TYPE,  
+ A_PA               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PANODE           OUT     UNAPIGEN.LONG_TABLE_TYPE,  
+ A_ME               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_MENODE           OUT     UNAPIGEN.LONG_TABLE_TYPE,  
+ A_RD               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_RDNODE           OUT     UNAPIGEN.LONG_TABLE_TYPE,  
+ A_VALUE_F          OUT     UNAPIGEN.FLOAT_TABLE_TYPE, 
+ A_VALUE_S          OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_REANALYSIS       OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_NR_OF_ROWS       IN OUT  NUMBER,                    
+ A_WHERE_CLAUSE     IN      VARCHAR2)                  
+RETURN NUMBER IS
+
+L_SC                VARCHAR2(20);
+L_PG                VARCHAR2(20);
+L_PGNODE            NUMBER(9);
+L_PA                VARCHAR2(20);
+L_PANODE            NUMBER(9);
+L_ME                VARCHAR2(20);
+L_MENODE            NUMBER(9);
+L_RD                VARCHAR2(20);
+L_RDNODE            NUMBER(9);
+L_VALUE_F           FLOAT;
+L_VALUE_S           VARCHAR2(40);
+L_REANALYSIS        NUMBER(3);
+L_ME_CURSOR         INTEGER;
+
+BEGIN
+
+   IF NVL(A_NR_OF_ROWS,0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN(UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+
+   IF NVL(A_WHERE_CLAUSE, ' ') = ' ' THEN
+      RETURN(UNAPIGEN.DBERR_WHERECLAUSE);
+   ELSIF
+      UPPER(SUBSTR(A_WHERE_CLAUSE,1,6)) <> 'WHERE ' THEN
+      L_WHERE_CLAUSE := 'WHERE sc = ''' || REPLACE(A_WHERE_CLAUSE, '''', '''''') || 
+                        ''' ORDER BY sc, pgnode, panode, menode, rdnode';
+   ELSE
+      L_WHERE_CLAUSE := A_WHERE_CLAUSE; 
+   END IF;
+
+   L_ME_CURSOR := DBMS_SQL.OPEN_CURSOR;
+   L_SQL_STRING := 'SELECT sc, pg, pgnode, pa, panode, me, menode, '||
+                   'rd, rdnode, value_f, value_s, reanalysis ' ||
+                   'FROM dd' || UNAPIGEN.P_DD || '.uvscrd ' || L_WHERE_CLAUSE;
+
+   DBMS_SQL.PARSE(L_ME_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 1, L_SC, 20);
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 2, L_PG, 20);
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 3, L_PGNODE);
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 4, L_PA, 20);
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 5, L_PANODE);
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 6, L_ME, 20);
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 7, L_MENODE);
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 8, L_RD, 20);
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 9, L_RDNODE);
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 10, L_VALUE_F);
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 11, L_VALUE_S, 40);
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 12, L_REANALYSIS);
+   L_RESULT := DBMS_SQL.EXECUTE_AND_FETCH(L_ME_CURSOR);
+   L_FETCHED_ROWS := 0;
+
+   LOOP
+      EXIT WHEN L_RESULT = 0 OR L_FETCHED_ROWS >= A_NR_OF_ROWS;
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 1, L_SC);
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 2, L_PG);
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 3, L_PGNODE);
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 4, L_PA);
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 5, L_PANODE);
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 6, L_ME);
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 7, L_MENODE);
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 8, L_RD);
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 9, L_RDNODE);
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 10, L_VALUE_F);
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 11, L_VALUE_S);
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 12, L_REANALYSIS);
+
+      L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+      A_SC(L_FETCHED_ROWS) := L_SC;
+      A_PG(L_FETCHED_ROWS) := L_PG;
+      A_PGNODE(L_FETCHED_ROWS) := L_PGNODE;
+      A_PA(L_FETCHED_ROWS) := L_PA;
+      A_PANODE(L_FETCHED_ROWS) := L_PANODE;
+      A_ME(L_FETCHED_ROWS) := L_ME;
+      A_MENODE(L_FETCHED_ROWS) := L_MENODE;
+      A_RD(L_FETCHED_ROWS) := L_RD;
+      A_RDNODE(L_FETCHED_ROWS) := L_RDNODE;
+      A_VALUE_F(L_FETCHED_ROWS) := L_VALUE_F;
+      A_VALUE_S(L_FETCHED_ROWS) := L_VALUE_S;
+      A_REANALYSIS(L_FETCHED_ROWS) := L_REANALYSIS;
+
+      IF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+         L_RESULT := DBMS_SQL.FETCH_ROWS(L_ME_CURSOR);
+      END IF;
+   END LOOP;
+
+   DBMS_SQL.CLOSE_CURSOR(L_ME_CURSOR);
+
+   IF L_FETCHED_ROWS = 0 THEN
+      L_RET_CODE := UNAPIGEN.DBERR_NORECORDS;
+   ELSE
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+      L_RET_CODE := UNAPIGEN.DBERR_SUCCESS;
+   END IF;
+
+   RETURN(L_RET_CODE);
+
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+             'GetScRawData', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      IF DBMS_SQL.IS_OPEN(L_ME_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR(L_ME_CURSOR);
+      END IF;
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END GETSCRAWDATA;
+
+FUNCTION SAVESCRAWDATA
+(A_SC               IN     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PG               IN     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PGNODE           IN     UNAPIGEN.LONG_TABLE_TYPE,  
+ A_PA               IN     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PANODE           IN     UNAPIGEN.LONG_TABLE_TYPE,  
+ A_ME               IN     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_MENODE           IN     UNAPIGEN.LONG_TABLE_TYPE,  
+ A_RD               IN     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_RDNODE           IN OUT UNAPIGEN.LONG_TABLE_TYPE,  
+ A_VALUE_F          IN     UNAPIGEN.FLOAT_TABLE_TYPE, 
+ A_VALUE_S          IN     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_MODIFY_FLAG      IN OUT UNAPIGEN.NUM_TABLE_TYPE,   
+ A_NR_OF_ROWS       IN     NUMBER,                    
+ A_MODIFY_REASON    IN     VARCHAR)                   
+RETURN NUMBER IS
+
+
+
+
+
+
+L_RD_RECORD_OK           BOOLEAN;
+L_RD_HANDLED             BOOLEAN;
+CURR_ITEM                INTEGER;
+NEXT_ITEM                INTEGER;
+PREV_NODE                NUMBER(9);
+NEXT_NODE                NUMBER(9);
+NODE_STEP                NUMBER(9);
+L_SEQ_NO                 INTEGER;
+NBR_OF_NODES_TO_CREATE   INTEGER;
+L_COMPLETELY_SAVED       BOOLEAN;
+L_WHY                    VARCHAR2(255);
+L_OLD_VALUE_F            FLOAT;
+L_OLD_VALUE_S            VARCHAR2(40);
+L_VALUE_S                VARCHAR2(40);
+L_VALUE_F                NUMBER;
+L_REANALYSIS             NUMBER(3);
+L_CURRENT_TIMESTAMP                TIMESTAMP WITH TIME ZONE;
+
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <>
+      UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   
+   
+   
+   L_CURRENT_TIMESTAMP := CURRENT_TIMESTAMP;
+   CURR_ITEM := 1;
+   WHILE CURR_ITEM <= A_NR_OF_ROWS LOOP
+      IF A_MODIFY_FLAG(CURR_ITEM) = UNAPIGEN.MOD_FLAG_INSERT THEN
+         IF NVL(A_RDNODE(CURR_ITEM), 0) <> 0 THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NEWNODENOTZERO;
+            RAISE STPERROR;
+         END IF;
+         
+         
+         
+         NEXT_ITEM := CURR_ITEM;
+         NBR_OF_NODES_TO_CREATE := 0;
+         WHILE (A_MODIFY_FLAG(NEXT_ITEM) = UNAPIGEN.MOD_FLAG_INSERT AND
+                NVL(A_SC(NEXT_ITEM), ' ') = NVL(A_SC(CURR_ITEM),' ') AND
+                NVL(A_PG(NEXT_ITEM), ' ') = NVL(A_PG(CURR_ITEM),' ') AND
+                NVL(A_PGNODE(NEXT_ITEM), 0) = NVL(A_PGNODE(CURR_ITEM), 0) AND
+                NVL(A_PA(NEXT_ITEM), ' ') = NVL(A_PA(CURR_ITEM),' ') AND
+                NVL(A_PANODE(NEXT_ITEM), 0) = NVL(A_PANODE(CURR_ITEM), 0) AND
+                NVL(A_ME(NEXT_ITEM), ' ') = NVL(A_ME(CURR_ITEM),' ') AND
+                NVL(A_MENODE(NEXT_ITEM), 0) = NVL(A_MENODE(CURR_ITEM), 0)) LOOP
+            NBR_OF_NODES_TO_CREATE := NBR_OF_NODES_TO_CREATE + 1;
+            IF NEXT_ITEM < A_NR_OF_ROWS THEN
+               NEXT_ITEM := NEXT_ITEM + 1;
+            ELSE
+               EXIT;
+            END IF;
+         END LOOP;
+
+         
+         
+         
+         
+         IF A_MODIFY_FLAG(NEXT_ITEM) <> UNAPIGEN.MOD_FLAG_INSERT AND
+            NVL(A_SC(NEXT_ITEM), ' ') = NVL(A_SC(CURR_ITEM), ' ') AND
+            NVL(A_PG(NEXT_ITEM), ' ') = NVL(A_PG(CURR_ITEM), ' ') AND
+            NVL(A_PGNODE(NEXT_ITEM), 0) = NVL(A_PGNODE(CURR_ITEM), 0) AND
+            NVL(A_PA(NEXT_ITEM), ' ') = NVL(A_PA(CURR_ITEM), ' ') AND
+            NVL(A_PANODE(NEXT_ITEM), 0) = NVL(A_PANODE(CURR_ITEM), 0) AND
+            NVL(A_ME(NEXT_ITEM), ' ') = NVL(A_ME(CURR_ITEM), ' ') AND
+            NVL(A_MENODE(NEXT_ITEM), 0) = NVL(A_MENODE(CURR_ITEM), 0) THEN
+
+            NEXT_NODE := A_RDNODE(NEXT_ITEM);
+            SELECT NVL(MAX(RDNODE), 0)
+            INTO PREV_NODE
+            FROM UTSCRD
+            WHERE RDNODE < NEXT_NODE
+              AND SC = A_SC(CURR_ITEM)
+              AND PG = A_PG(CURR_ITEM)
+              AND PGNODE = A_PGNODE(CURR_ITEM)
+              AND PA = A_PA(CURR_ITEM)
+              AND PANODE = A_PANODE(CURR_ITEM)
+              AND ME = A_ME(CURR_ITEM)
+              AND MENODE = A_MENODE(CURR_ITEM);
+            NODE_STEP :=
+               TRUNC(ABS((NEXT_NODE - PREV_NODE)) / (NBR_OF_NODES_TO_CREATE + 1));
+
+            IF NODE_STEP < 1 THEN
+               UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NODELIMITOVERF;
+               RAISE STPERROR;
+            END IF;
+         ELSE
+            
+            SELECT NVL(MAX(RDNODE), 0)
+            INTO PREV_NODE
+            FROM UTSCRD
+            WHERE SC = A_SC(CURR_ITEM)
+              AND PG = A_PG(CURR_ITEM)
+              AND PGNODE = A_PGNODE(CURR_ITEM)
+              AND PA = A_PA(CURR_ITEM)
+              AND PANODE = A_PANODE(CURR_ITEM)
+              AND ME = A_ME(CURR_ITEM)
+              AND MENODE = A_MENODE(CURR_ITEM);
+            NODE_STEP := UNAPIGEN.DEFAULT_NODE_INTERVAL;
+         END IF;
+         
+         
+         
+         FOR I IN 1..NBR_OF_NODES_TO_CREATE LOOP
+            A_RDNODE(CURR_ITEM + I - 1) := PREV_NODE + (NODE_STEP * I);
+         END LOOP;
+
+         CURR_ITEM := CURR_ITEM + NBR_OF_NODES_TO_CREATE;
+      ELSE
+         CURR_ITEM := CURR_ITEM + 1;
+      END IF;
+   END LOOP;
+
+   
+   
+   
+   L_COMPLETELY_SAVED := TRUE;
+
+   
+   
+   
+   FOR L_SEQ_NO IN 1..A_NR_OF_ROWS LOOP
+      L_RD_RECORD_OK := TRUE;          
+      L_RD_HANDLED   := TRUE;
+
+      IF NVL(A_SC(L_SEQ_NO), ' ') = ' ' OR
+         NVL(A_PG(L_SEQ_NO), ' ') = ' ' OR
+         NVL(A_PGNODE(L_SEQ_NO), 0) = 0 OR
+         NVL(A_PA(L_SEQ_NO), ' ') = ' ' OR
+         NVL(A_PANODE(L_SEQ_NO), 0) = 0 OR
+         NVL(A_ME(L_SEQ_NO), ' ') = ' ' OR
+         NVL(A_MENODE(L_SEQ_NO), 0) = 0 OR
+         NVL(A_RD(L_SEQ_NO), ' ') = ' ' THEN
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+         RAISE STPERROR;
+      ELSIF A_MODIFY_FLAG(L_SEQ_NO) NOT IN (UNAPIGEN.MOD_FLAG_INSERT,
+                                            UNAPIGEN.MOD_FLAG_INSERT_WITH_NODES,
+                                            UNAPIGEN.MOD_FLAG_UPDATE,
+                                            UNAPIGEN.MOD_FLAG_DELETE) THEN
+         IF A_MODIFY_FLAG(L_SEQ_NO) = UNAPIGEN.DBERR_SUCCESS THEN
+            
+            
+            
+            L_RD_RECORD_OK := FALSE; 
+            L_RD_HANDLED   := FALSE; 
+         ELSE
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_INVALMODFLAG;
+            RAISE STPERROR;
+         END IF;
+      END IF;
+
+      
+      
+      
+      
+      
+      
+      IF L_RD_RECORD_OK AND
+         A_MODIFY_FLAG(L_SEQ_NO) = UNAPIGEN.MOD_FLAG_UPDATE THEN
+
+         
+         
+         
+         SELECT VALUE_S, VALUE_F
+         INTO L_OLD_VALUE_S, L_OLD_VALUE_F
+         FROM UTSCRD
+         WHERE SC = A_SC(L_SEQ_NO)
+           AND PG = A_PG(L_SEQ_NO)
+           AND PGNODE = A_PGNODE(L_SEQ_NO)
+           AND PA = A_PA(L_SEQ_NO)
+           AND PANODE = A_PANODE(L_SEQ_NO)
+           AND ME = A_ME(L_SEQ_NO)
+           AND MENODE = A_MENODE(L_SEQ_NO)
+           AND RD = A_RD(L_SEQ_NO)
+           AND RDNODE = A_RDNODE(L_SEQ_NO);
+
+         IF NVL(L_OLD_VALUE_F, 0) <> NVL(A_VALUE_F(L_SEQ_NO), 0) OR
+            NVL(L_OLD_VALUE_S, ' ') <> NVL(A_VALUE_S(L_SEQ_NO), ' ') THEN
+            
+            
+            
+            L_RET_CODE := UNAPIRD.REANALSCRAWDATA
+                          (A_SC(L_SEQ_NO), A_PG(L_SEQ_NO), A_PGNODE(L_SEQ_NO),
+                           A_PA(L_SEQ_NO), A_PANODE(L_SEQ_NO), A_ME(L_SEQ_NO),
+                           A_MENODE(L_SEQ_NO), A_RD(L_SEQ_NO), A_RDNODE(L_SEQ_NO),
+                           L_REANALYSIS, A_MODIFY_REASON);
+            IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+               UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+               RAISE STPERROR;
+            END IF;
+         END IF;
+
+         
+         
+         
+         UPDATE UTSCRD
+            SET VALUE_F = A_VALUE_F(L_SEQ_NO),
+                VALUE_S = A_VALUE_S(L_SEQ_NO)
+           WHERE SC = A_SC(L_SEQ_NO)
+             AND PG = A_PG(L_SEQ_NO)
+             AND PGNODE = A_PGNODE(L_SEQ_NO)
+             AND PA = A_PA(L_SEQ_NO)
+             AND PANODE = A_PANODE(L_SEQ_NO)
+             AND ME = A_ME(L_SEQ_NO)
+             AND MENODE = A_MENODE(L_SEQ_NO)
+             AND RD = A_RD(L_SEQ_NO)
+             AND RDNODE = A_RDNODE(L_SEQ_NO);
+         IF SQL%ROWCOUNT=0 THEN
+            RAISE NO_DATA_FOUND;
+         END IF;
+
+         
+         
+         
+
+      
+      
+      
+      ELSIF L_RD_RECORD_OK AND
+            A_MODIFY_FLAG(L_SEQ_NO) IN (UNAPIGEN.MOD_FLAG_INSERT,
+                                        UNAPIGEN.MOD_FLAG_INSERT_WITH_NODES) THEN
+
+         
+         
+         
+         INSERT INTO UTSCRD(SC, PG, PGNODE, PA, PANODE, ME, MENODE, RD, RDNODE,
+                            VALUE_F, VALUE_S, REANALYSIS)
+          VALUES(A_SC(L_SEQ_NO), A_PG(L_SEQ_NO), A_PGNODE(L_SEQ_NO),
+                 A_PA(L_SEQ_NO), A_PANODE(L_SEQ_NO),
+                 A_ME(L_SEQ_NO), A_MENODE(L_SEQ_NO),
+                 A_RD(L_SEQ_NO), A_RDNODE(L_SEQ_NO),
+                 A_VALUE_F(L_SEQ_NO), A_VALUE_S(L_SEQ_NO), 0);
+
+         
+         
+         
+
+      
+      
+      
+      ELSIF L_RD_RECORD_OK AND
+            A_MODIFY_FLAG(L_SEQ_NO) = UNAPIGEN.MOD_FLAG_DELETE THEN
+
+         
+         IF UNAPIGEN.ISSYSTEM21CFR11COMPLIANT = UNAPIGEN.DBERR_SUCCESS THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOTALLOWEDIN21CFR11;
+            RAISE STPERROR;
+         END IF;
+
+         
+         
+         
+         DELETE FROM UTSCRD
+         WHERE SC = A_SC(L_SEQ_NO)
+           AND PG = A_PG(L_SEQ_NO)
+           AND PGNODE = A_PGNODE(L_SEQ_NO)
+           AND PA = A_PA(L_SEQ_NO)
+           AND PANODE = A_PANODE(L_SEQ_NO)
+           AND ME = A_ME(L_SEQ_NO)
+           AND MENODE = A_MENODE(L_SEQ_NO)
+           AND RD = A_RD(L_SEQ_NO)
+           AND RDNODE = A_RDNODE(L_SEQ_NO);
+
+         
+         
+         
+         DELETE FROM UTRSCRD
+         WHERE SC = A_SC(L_SEQ_NO)
+           AND PG = A_PG(L_SEQ_NO)
+           AND PGNODE = A_PGNODE(L_SEQ_NO)
+           AND PA = A_PA(L_SEQ_NO)
+           AND PANODE = A_PANODE(L_SEQ_NO)
+           AND ME = A_ME(L_SEQ_NO)
+           AND MENODE = A_MENODE(L_SEQ_NO)
+           AND RD = A_RD(L_SEQ_NO)
+           AND RDNODE = A_RDNODE(L_SEQ_NO);
+
+         
+         
+         
+         
+         
+         
+         L_RET_CODE := UNAPIGEN.GETNEXTEVENTSEQNR(L_EV_SEQ_NR);
+         IF L_RET_CODE <> 0 THEN
+            UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+            RAISE STPERROR;
+         END IF;
+
+         L_WHY := A_RD(L_SEQ_NO) || ' ' || A_RDNODE(L_SEQ_NO);
+         INSERT INTO UTSCMEHS(SC, PG, PGNODE, PA, PANODE, ME, MENODE, WHO, WHO_DESCRIPTION, 
+                              WHAT, WHAT_DESCRIPTION, LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+         VALUES(A_SC(L_SEQ_NO), A_PG(L_SEQ_NO), A_PGNODE(L_SEQ_NO),
+                A_PA(L_SEQ_NO), A_PANODE(L_SEQ_NO),
+                A_ME(L_SEQ_NO), A_MENODE(L_SEQ_NO),
+                UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, 'RawData Deleted', 
+                'raw data "'||A_RD(L_SEQ_NO)||'" is deleted', 
+                L_CURRENT_TIMESTAMP, L_CURRENT_TIMESTAMP, L_WHY, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+
+          
+          A_RDNODE(L_SEQ_NO) := 0;
+
+         
+         
+         
+
+      END IF;
+
+      IF L_RD_RECORD_OK THEN
+         NULL;
+      ELSE
+         IF L_RD_HANDLED THEN
+            L_COMPLETELY_SAVED := FALSE;
+         END IF;
+      END IF;
+
+   
+   
+   
+   END LOOP;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   
+   
+   
+   FOR L_SEQ_NO IN 1..A_NR_OF_ROWS LOOP
+      IF A_MODIFY_FLAG(L_SEQ_NO) < UNAPIGEN.DBERR_SUCCESS THEN
+         A_MODIFY_FLAG(L_SEQ_NO) := UNAPIGEN.DBERR_SUCCESS;
+      END IF;
+   END LOOP;
+
+   IF L_COMPLETELY_SAVED THEN
+      RETURN(UNAPIGEN.DBERR_SUCCESS);
+   ELSE
+      RETURN(UNAPIGEN.DBERR_PARTIALSAVE);
+   END IF;
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('SaveScRawData',SQLERRM);
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR, 'SaveScRawData'));
+END SAVESCRAWDATA;
+
+FUNCTION GETSCRERAWDATA
+(A_SC               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PG               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PGNODE           OUT     UNAPIGEN.LONG_TABLE_TYPE,  
+ A_PA               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PANODE           OUT     UNAPIGEN.LONG_TABLE_TYPE,  
+ A_ME               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_MENODE           OUT     UNAPIGEN.LONG_TABLE_TYPE,  
+ A_RD               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_RDNODE           OUT     UNAPIGEN.LONG_TABLE_TYPE,  
+ A_VALUE_F          OUT     UNAPIGEN.FLOAT_TABLE_TYPE, 
+ A_VALUE_S          OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_REANALYSIS       OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_NR_OF_ROWS       IN OUT  NUMBER,                    
+ A_WHERE_CLAUSE     IN      VARCHAR2)                  
+RETURN NUMBER IS
+
+L_SC                VARCHAR2(20);
+L_PG                VARCHAR2(20);
+L_PGNODE            NUMBER(9);
+L_PA                VARCHAR2(20);
+L_PANODE            NUMBER(9);
+L_ME                VARCHAR2(20);
+L_MENODE            NUMBER(9);
+L_RD                VARCHAR2(20);
+L_RDNODE            NUMBER(9);
+L_VALUE_F           FLOAT;
+L_VALUE_S           VARCHAR2(40);
+L_REANALYSIS        NUMBER(3);
+L_ME_CURSOR         INTEGER;
+
+BEGIN
+
+   IF NVL(A_NR_OF_ROWS,0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN(UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+
+   IF NVL(A_WHERE_CLAUSE, ' ') = ' ' THEN
+      RETURN(UNAPIGEN.DBERR_WHERECLAUSE);
+   ELSIF
+      UPPER(SUBSTR(A_WHERE_CLAUSE,1,6)) <> 'WHERE ' THEN
+      L_WHERE_CLAUSE := 'WHERE sc = ''' || REPLACE(A_WHERE_CLAUSE, '''', '''''') || 
+                     ''' ORDER BY sc, pgnode, panode, menode, rdnode, reanalysis';
+   ELSE
+      L_WHERE_CLAUSE := A_WHERE_CLAUSE; 
+   END IF;
+
+   L_ME_CURSOR := DBMS_SQL.OPEN_CURSOR;
+   L_SQL_STRING := 'SELECT sc, pg, pgnode, pa, panode, me, menode, '||
+                   'rd, rdnode, value_f, value_s, reanalysis ' ||
+                   'FROM dd' || UNAPIGEN.P_DD || '.uvrscrd ' || L_WHERE_CLAUSE;
+
+   DBMS_SQL.PARSE(L_ME_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 1, L_SC, 20);
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 2, L_PG, 20);
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 3, L_PGNODE);
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 4, L_PA, 20);
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 5, L_PANODE);
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 6, L_ME, 20);
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 7, L_MENODE);
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 8, L_RD, 20);
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 9, L_RDNODE);
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 10, L_VALUE_F);
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 11, L_VALUE_S, 40);
+   DBMS_SQL.DEFINE_COLUMN(L_ME_CURSOR, 12, L_REANALYSIS);
+   L_RESULT := DBMS_SQL.EXECUTE_AND_FETCH(L_ME_CURSOR);
+   L_FETCHED_ROWS := 0;
+
+   LOOP
+      EXIT WHEN L_RESULT = 0 OR L_FETCHED_ROWS >= A_NR_OF_ROWS;
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 1, L_SC);
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 2, L_PG);
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 3, L_PGNODE);
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 4, L_PA);
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 5, L_PANODE);
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 6, L_ME);
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 7, L_MENODE);
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 8, L_RD);
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 9, L_RDNODE);
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 10, L_VALUE_F);
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 11, L_VALUE_S);
+      DBMS_SQL.COLUMN_VALUE(L_ME_CURSOR, 12, L_REANALYSIS);
+
+      L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+      A_SC(L_FETCHED_ROWS) := L_SC;
+      A_PG(L_FETCHED_ROWS) := L_PG;
+      A_PGNODE(L_FETCHED_ROWS) := L_PGNODE;
+      A_PA(L_FETCHED_ROWS) := L_PA;
+      A_PANODE(L_FETCHED_ROWS) := L_PANODE;
+      A_ME(L_FETCHED_ROWS) := L_ME;
+      A_MENODE(L_FETCHED_ROWS) := L_MENODE;
+      A_RD(L_FETCHED_ROWS) := L_RD;
+      A_RDNODE(L_FETCHED_ROWS) := L_RDNODE;
+      A_VALUE_F(L_FETCHED_ROWS) := L_VALUE_F;
+      A_VALUE_S(L_FETCHED_ROWS) := L_VALUE_S;
+      A_REANALYSIS(L_FETCHED_ROWS) := L_REANALYSIS;
+
+      IF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+         L_RESULT := DBMS_SQL.FETCH_ROWS(L_ME_CURSOR);
+      END IF;
+   END LOOP;
+
+   DBMS_SQL.CLOSE_CURSOR(L_ME_CURSOR);
+
+   IF L_FETCHED_ROWS = 0 THEN
+      L_RET_CODE := UNAPIGEN.DBERR_NORECORDS;
+   ELSE
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+      L_RET_CODE := UNAPIGEN.DBERR_SUCCESS;
+   END IF;
+
+   RETURN(L_RET_CODE);
+
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+              'GetScReRawData', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      IF DBMS_SQL.IS_OPEN(L_ME_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR(L_ME_CURSOR);
+      END IF;
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END GETSCRERAWDATA;
+
+FUNCTION REANALSCRAWDATA
+(A_SC               IN    VARCHAR2,                 
+ A_PG               IN    VARCHAR2,                 
+ A_PGNODE           IN    NUMBER,                   
+ A_PA               IN    VARCHAR2,                 
+ A_PANODE           IN    NUMBER,                   
+ A_ME               IN    VARCHAR2,                 
+ A_MENODE           IN    NUMBER,                   
+ A_RD               IN    VARCHAR2,                 
+ A_RDNODE           IN    NUMBER,                   
+ A_REANALYSIS       OUT   NUMBER,                   
+ A_MODIFY_REASON    IN    VARCHAR2)                 
+RETURN NUMBER IS
+
+L_REANALYSIS    NUMBER(3);
+
+CURSOR L_SCRD_CURSOR IS
+   SELECT REANALYSIS
+   FROM UTSCRD
+   WHERE SC = A_SC
+     AND PG = A_PG
+     AND PGNODE = A_PGNODE
+     AND PA = A_PA
+     AND PANODE = A_PANODE
+     AND ME = A_ME
+     AND MENODE = A_MENODE
+     AND RD = A_RD
+     AND RDNODE = A_RDNODE;
+
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <>
+      UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_SC, ' ') = ' ' OR
+      NVL(A_PG, ' ') = ' ' OR
+      NVL(A_PGNODE, 0) = 0 OR
+      NVL(A_PA, ' ') = ' ' OR
+      NVL(A_PANODE, 0) = 0 OR
+      NVL(A_ME, ' ') = ' ' OR
+      NVL(A_MENODE, 0) = 0 OR
+      NVL(A_RD, ' ') = ' ' OR
+      NVL(A_RDNODE, 0) = 0 THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   OPEN L_SCRD_CURSOR;
+   FETCH L_SCRD_CURSOR
+   INTO L_REANALYSIS;
+   IF L_SCRD_CURSOR%NOTFOUND THEN
+      CLOSE L_SCRD_CURSOR;
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJECT;
+      RAISE STPERROR;
+   END IF;
+   CLOSE L_SCRD_CURSOR;
+
+   
+   
+   
+   INSERT INTO UTRSCRD
+   SELECT *
+   FROM UTSCRD
+   WHERE SC = A_SC
+     AND PG = A_PG
+     AND PGNODE = A_PGNODE
+     AND PA = A_PA
+     AND PANODE = A_PANODE
+     AND ME = A_ME
+     AND MENODE = A_MENODE
+     AND RD = A_RD
+     AND RDNODE = A_RDNODE;
+
+   
+   
+   
+   UPDATE UTSCRD
+      SET VALUE_F = NULL,
+          VALUE_S = NULL,
+          REANALYSIS = REANALYSIS + 1
+   WHERE SC = A_SC
+      AND PG = A_PG
+      AND PGNODE = A_PGNODE
+      AND PA = A_PA
+      AND PANODE = A_PANODE
+      AND ME = A_ME
+      AND MENODE = A_MENODE
+      AND RD = A_RD
+      AND RDNODE = A_RDNODE;
+
+   A_REANALYSIS := L_REANALYSIS + 1;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('ReanalScRawData', SQLERRM);
+   END IF;
+   IF L_SCRD_CURSOR%ISOPEN THEN
+      CLOSE L_SCRD_CURSOR;
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR, 'ReanalScRawData'));
+END REANALSCRAWDATA;
+
+END UNAPIRD;

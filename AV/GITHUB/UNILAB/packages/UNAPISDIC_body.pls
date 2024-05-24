@@ -1,0 +1,4504 @@
+PACKAGE BODY unapisdic AS
+
+L_SQLERRM         VARCHAR2(255);
+L_SQL_STRING      VARCHAR2(2000);
+L_WHERE_CLAUSE    VARCHAR2(1000);
+L_EVENT_TP        UTEV.EV_TP%TYPE;
+L_RET_CODE        NUMBER;
+L_RESULT          NUMBER;
+L_FETCHED_ROWS    NUMBER;
+L_EV_SEQ_NR       NUMBER;
+L_EV_DETAILS      VARCHAR2(255);
+L_ERRM            VARCHAR2(255);
+STPERROR          EXCEPTION;
+
+P_SDII_CURSOR     INTEGER;
+
+CURSOR P_IPIE_CURSOR(C_IP VARCHAR2, C_IP_VERSION VARCHAR2) IS
+   SELECT A.*
+   FROM UTIPIE A
+   WHERE A.IP = C_IP
+   AND A.VERSION = C_IP_VERSION
+   ORDER BY A.SEQ;
+
+CURSOR L_SEQ_EVENT_CURSOR IS
+   SELECT SEQ_EVENT_NR.NEXTVAL FROM DUAL;
+
+FUNCTION GETVERSION
+   RETURN VARCHAR2
+IS
+BEGIN
+   RETURN('06.07.00.00_00.13');
+EXCEPTION
+   WHEN OTHERS THEN
+      RETURN (NULL);
+END GETVERSION;
+
+FUNCTION GETSDINFOCARD
+(A_SD             OUT      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_IC             OUT      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_ICNODE         OUT      UNAPIGEN.LONG_TABLE_TYPE,  
+ A_IP_VERSION     OUT      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_DESCRIPTION    OUT      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_WINSIZE_X      OUT      UNAPIGEN.NUM_TABLE_TYPE,   
+ A_WINSIZE_Y      OUT      UNAPIGEN.NUM_TABLE_TYPE,   
+ A_IS_PROTECTED   OUT      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_HIDDEN         OUT      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_MANUALLY_ADDED OUT      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_NEXT_II        OUT      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_IC_CLASS       OUT      UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LOG_HS         OUT      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LOG_HS_DETAILS OUT      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_ALLOW_MODIFY   OUT      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_AR             OUT      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_ACTIVE         OUT      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LC             OUT      UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LC_VERSION     OUT      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_SS             OUT      UNAPIGEN.VC2_TABLE_TYPE,   
+ A_NR_OF_ROWS     IN OUT   NUMBER,                    
+ A_WHERE_CLAUSE   IN       VARCHAR2)                  
+RETURN NUMBER IS
+
+L_SD             VARCHAR2(20);
+L_IC             VARCHAR2(20);
+L_ICNODE         NUMBER(9);
+L_IP_VERSION  VARCHAR2(20); 
+L_DESCRIPTION    VARCHAR2(40);
+L_WINSIZE_X      NUMBER(4);
+L_WINSIZE_Y      NUMBER(4);
+L_IS_PROTECTED   CHAR(1);
+L_HIDDEN         CHAR(1);
+L_MANUALLY_ADDED CHAR(1);
+L_NEXT_II        VARCHAR2(20);
+L_IC_CLASS       VARCHAR2(2);
+L_LOG_HS         CHAR(1);
+L_LOG_HS_DETAILS CHAR(1);
+L_ALLOW_MODIFY   CHAR(1);
+L_AR             CHAR(1);
+L_ACTIVE         CHAR(1);
+L_LC             VARCHAR2(2);
+L_LC_VERSION     VARCHAR2(20);
+L_SS             VARCHAR2(2);
+L_IC_CURSOR      INTEGER;
+
+BEGIN
+
+   IF NVL(A_NR_OF_ROWS,0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN(UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+
+   IF NVL(A_WHERE_CLAUSE, ' ') = ' ' THEN
+       RETURN(UNAPIGEN.DBERR_WHERECLAUSE);
+   ELSIF
+     UPPER(SUBSTR(A_WHERE_CLAUSE,1,6)) <> 'WHERE ' THEN
+     L_WHERE_CLAUSE := 'WHERE sd = ''' || REPLACE(A_WHERE_CLAUSE, '''', '''''') || 
+                       ''' ORDER BY icnode';
+   ELSE
+      L_WHERE_CLAUSE := A_WHERE_CLAUSE; 
+   END IF;
+
+   L_IC_CURSOR := DBMS_SQL.OPEN_CURSOR;
+   L_SQL_STRING := 'SELECT sd, ic, icnode, ip_version, description, winsize_x, winsize_y,'||
+                   'is_protected, hidden, manually_added, next_ii, ic_class,' ||
+                   'log_hs, log_hs_details, allow_modify, ar, active, lc, lc_version, ss ' ||
+                   'FROM dd' || UNAPIGEN.P_DD || '.uvsdic ' || L_WHERE_CLAUSE;
+
+   DBMS_SQL.PARSE(L_IC_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+
+   DBMS_SQL.DEFINE_COLUMN(L_IC_CURSOR, 1, L_SD, 20);
+   DBMS_SQL.DEFINE_COLUMN(L_IC_CURSOR, 2, L_IC, 20);
+   DBMS_SQL.DEFINE_COLUMN(L_IC_CURSOR, 3, L_ICNODE);
+   DBMS_SQL.DEFINE_COLUMN(L_IC_CURSOR, 4, L_IP_VERSION, 20);
+   DBMS_SQL.DEFINE_COLUMN(L_IC_CURSOR, 5, L_DESCRIPTION, 40);
+   DBMS_SQL.DEFINE_COLUMN(L_IC_CURSOR, 6, L_WINSIZE_X);
+   DBMS_SQL.DEFINE_COLUMN(L_IC_CURSOR, 7, L_WINSIZE_Y);
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_IC_CURSOR, 8, L_IS_PROTECTED, 1);
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_IC_CURSOR, 9, L_HIDDEN, 1);
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_IC_CURSOR, 10, L_MANUALLY_ADDED, 1);
+   DBMS_SQL.DEFINE_COLUMN(L_IC_CURSOR, 11, L_NEXT_II, 20);
+   DBMS_SQL.DEFINE_COLUMN(L_IC_CURSOR, 12, L_IC_CLASS, 2);
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_IC_CURSOR, 13, L_LOG_HS, 1);
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_IC_CURSOR, 14, L_LOG_HS_DETAILS, 1);
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_IC_CURSOR, 15, L_ALLOW_MODIFY, 1);
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_IC_CURSOR, 16, L_AR, 1);
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_IC_CURSOR, 17, L_ACTIVE, 1);
+   DBMS_SQL.DEFINE_COLUMN(L_IC_CURSOR, 18, L_LC, 2);
+   DBMS_SQL.DEFINE_COLUMN(L_IC_CURSOR, 19, L_LC_VERSION, 20);
+   DBMS_SQL.DEFINE_COLUMN(L_IC_CURSOR, 20, L_SS, 2);
+   L_RESULT := DBMS_SQL.EXECUTE_AND_FETCH(L_IC_CURSOR);
+   L_FETCHED_ROWS := 0;
+
+   LOOP
+
+      EXIT WHEN L_RESULT = 0 OR L_FETCHED_ROWS >= A_NR_OF_ROWS;
+
+      DBMS_SQL.COLUMN_VALUE(L_IC_CURSOR, 1, L_SD);
+      DBMS_SQL.COLUMN_VALUE(L_IC_CURSOR, 2, L_IC);
+      DBMS_SQL.COLUMN_VALUE(L_IC_CURSOR, 3, L_ICNODE);
+      DBMS_SQL.COLUMN_VALUE(L_IC_CURSOR, 4, L_IP_VERSION);
+      DBMS_SQL.COLUMN_VALUE(L_IC_CURSOR, 5, L_DESCRIPTION);
+      DBMS_SQL.COLUMN_VALUE(L_IC_CURSOR, 6, L_WINSIZE_X);
+      DBMS_SQL.COLUMN_VALUE(L_IC_CURSOR, 7, L_WINSIZE_Y);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_IC_CURSOR, 8, L_IS_PROTECTED);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_IC_CURSOR, 9, L_HIDDEN);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_IC_CURSOR, 10, L_MANUALLY_ADDED);
+      DBMS_SQL.COLUMN_VALUE(L_IC_CURSOR, 11, L_NEXT_II);
+      DBMS_SQL.COLUMN_VALUE(L_IC_CURSOR, 12, L_IC_CLASS);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_IC_CURSOR, 13, L_LOG_HS);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_IC_CURSOR, 14, L_LOG_HS_DETAILS);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_IC_CURSOR, 15, L_ALLOW_MODIFY);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_IC_CURSOR, 16, L_AR);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_IC_CURSOR, 17, L_ACTIVE);
+      DBMS_SQL.COLUMN_VALUE(L_IC_CURSOR, 18, L_LC);
+      DBMS_SQL.COLUMN_VALUE(L_IC_CURSOR, 19, L_LC_VERSION);
+      DBMS_SQL.COLUMN_VALUE(L_IC_CURSOR, 20, L_SS);
+
+      L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+      A_SD             (L_FETCHED_ROWS) := L_SD;
+      A_IC             (L_FETCHED_ROWS) := L_IC;
+      A_ICNODE         (L_FETCHED_ROWS) := L_ICNODE;
+      A_IP_VERSION     (L_FETCHED_ROWS) := L_IP_VERSION;
+      A_DESCRIPTION    (L_FETCHED_ROWS) := L_DESCRIPTION;
+      A_WINSIZE_X      (L_FETCHED_ROWS) := L_WINSIZE_X;
+      A_WINSIZE_Y      (L_FETCHED_ROWS) := L_WINSIZE_Y;
+      A_IS_PROTECTED   (L_FETCHED_ROWS) := L_IS_PROTECTED;
+      A_HIDDEN         (L_FETCHED_ROWS) := L_HIDDEN;
+      A_MANUALLY_ADDED (L_FETCHED_ROWS) := L_MANUALLY_ADDED;
+      A_NEXT_II        (L_FETCHED_ROWS) := L_NEXT_II;
+      A_IC_CLASS       (L_FETCHED_ROWS) := L_IC_CLASS;
+      A_LOG_HS         (L_FETCHED_ROWS) := L_LOG_HS;
+      A_LOG_HS_DETAILS (L_FETCHED_ROWS) := L_LOG_HS_DETAILS;
+      A_ALLOW_MODIFY   (L_FETCHED_ROWS) := L_ALLOW_MODIFY;
+      A_AR             (L_FETCHED_ROWS) := L_AR;
+      A_ACTIVE         (L_FETCHED_ROWS) := L_ACTIVE;
+      A_LC             (L_FETCHED_ROWS) := L_LC;
+      A_LC_VERSION     (L_FETCHED_ROWS) := L_LC_VERSION;
+      A_SS             (L_FETCHED_ROWS) := L_SS;
+
+      IF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+         L_RESULT := DBMS_SQL.FETCH_ROWS(L_IC_CURSOR);
+      END IF;
+
+   END LOOP;
+
+   DBMS_SQL.CLOSE_CURSOR(L_IC_CURSOR);
+
+   IF L_FETCHED_ROWS = 0 THEN
+      L_RET_CODE := UNAPIGEN.DBERR_NORECORDS;
+   ELSE
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+      L_RET_CODE := UNAPIGEN.DBERR_SUCCESS;
+   END IF;
+
+   RETURN(L_RET_CODE);
+
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+             'GetSdInfoCard', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      IF DBMS_SQL.IS_OPEN(L_IC_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR(L_IC_CURSOR);
+      END IF;
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END GETSDINFOCARD;
+
+FUNCTION GETSDINFOFIELD
+(A_SD               OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_IC               OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_ICNODE           OUT    UNAPIGEN.LONG_TABLE_TYPE,    
+ A_II               OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_IINODE           OUT    UNAPIGEN.LONG_TABLE_TYPE,    
+ A_IE_VERSION       OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_IIVALUE          OUT    UNAPIGEN.VC2000_TABLE_TYPE,  
+ A_POS_X            OUT    UNAPIGEN.NUM_TABLE_TYPE,     
+ A_POS_Y            OUT    UNAPIGEN.NUM_TABLE_TYPE,     
+ A_IS_PROTECTED     OUT    UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_MANDATORY        OUT    UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_HIDDEN           OUT    UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_DSP_TITLE        OUT    UNAPIGEN.VC40_TABLE_TYPE,    
+ A_DSP_LEN          OUT    UNAPIGEN.NUM_TABLE_TYPE,     
+ A_DSP_TP           OUT    UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_DSP_ROWS         OUT    UNAPIGEN.NUM_TABLE_TYPE,     
+ A_II_CLASS         OUT    UNAPIGEN.VC2_TABLE_TYPE,     
+ A_LOG_HS           OUT    UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_LOG_HS_DETAILS   OUT    UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_ALLOW_MODIFY     OUT    UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_AR               OUT    UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_ACTIVE           OUT    UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_LC               OUT    UNAPIGEN.VC2_TABLE_TYPE,     
+ A_LC_VERSION       OUT    UNAPIGEN.VC20_TABLE_TYPE,    
+ A_SS               OUT    UNAPIGEN.VC2_TABLE_TYPE,     
+ A_NR_OF_ROWS       IN OUT NUMBER,                      
+ A_WHERE_CLAUSE     IN     VARCHAR2,                    
+ A_NEXT_ROWS        IN     NUMBER)                      
+RETURN NUMBER IS
+
+L_SD             VARCHAR2(20);
+L_IC             VARCHAR2(20);
+L_ICNODE         NUMBER(9);
+L_II             VARCHAR2(20);
+L_IINODE         NUMBER(9);
+L_IE_VERSION     VARCHAR2(20);
+L_IIVALUE        VARCHAR2(2000);
+L_POS_X          NUMBER(4);
+L_POS_Y          NUMBER(4);
+L_IS_PROTECTED   CHAR(1);
+L_MANDATORY      CHAR(1);
+L_HIDDEN         CHAR(1);
+L_DSP_TITLE      VARCHAR2(40);
+L_DSP_TP         CHAR(1);
+L_DSP_LEN        NUMBER(4);
+L_DSP_ROWS       NUMBER(3);
+L_II_CLASS       VARCHAR2(2);
+L_LOG_HS         CHAR(1);
+L_LOG_HS_DETAILS CHAR(1);
+L_ALLOW_MODIFY   CHAR(1);
+L_AR             CHAR(1);
+L_ACTIVE         CHAR(1);
+L_LC             VARCHAR2(2);
+L_LC_VERSION     VARCHAR2(20);
+L_SS             VARCHAR2(2);
+
+BEGIN
+
+   IF NVL(A_NR_OF_ROWS,0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN(UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+
+   IF NVL(A_NEXT_ROWS, 0) NOT IN (-1, 0, 1) THEN
+      RETURN(UNAPIGEN.DBERR_NEXTROWS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = -1 THEN
+      IF P_SDII_CURSOR IS NOT NULL THEN
+         DBMS_SQL.CLOSE_CURSOR(P_SDII_CURSOR);
+         P_SDII_CURSOR := NULL;
+      END IF;
+      RETURN (UNAPIGEN.DBERR_SUCCESS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = 1 THEN
+      IF P_SDII_CURSOR IS NULL THEN
+         RETURN(UNAPIGEN.DBERR_NOCURSOR);
+      END IF;
+   END IF;
+
+   
+   IF NVL(A_NEXT_ROWS,0) = 0 THEN
+
+      IF NVL(A_WHERE_CLAUSE, ' ') = ' ' THEN
+          RETURN(UNAPIGEN.DBERR_WHERECLAUSE);
+      ELSIF
+        UPPER(SUBSTR(A_WHERE_CLAUSE,1,6)) <> 'WHERE ' THEN
+        L_WHERE_CLAUSE := 'WHERE sd = ''' || REPLACE(A_WHERE_CLAUSE, '''', '''''') || 
+                          ''' ORDER BY icnode, iinode';
+      ELSE
+         L_WHERE_CLAUSE := A_WHERE_CLAUSE; 
+      END IF;
+
+      IF P_SDII_CURSOR IS NULL THEN
+         P_SDII_CURSOR := DBMS_SQL.OPEN_CURSOR;
+      END IF;
+
+      L_SQL_STRING := 'SELECT sd, ic, icnode, ii, iinode, ie_version, iivalue, pos_x, pos_y, ' ||
+                      'is_protected, mandatory, hidden, dsp_title, dsp_len, dsp_tp, ' ||
+                      'dsp_rows, ii_class, log_hs, log_hs_details, allow_modify, ar, active,lc, lc_version, ss ' ||
+                      'FROM dd' || UNAPIGEN.P_DD || '.uvsdii ' || L_WHERE_CLAUSE;
+
+      DBMS_SQL.PARSE(P_SDII_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+
+      DBMS_SQL.DEFINE_COLUMN(P_SDII_CURSOR,     1,  L_SD,      20);
+      DBMS_SQL.DEFINE_COLUMN(P_SDII_CURSOR,     2,  L_IC,      20);
+      DBMS_SQL.DEFINE_COLUMN(P_SDII_CURSOR,     3,  L_ICNODE);
+      DBMS_SQL.DEFINE_COLUMN(P_SDII_CURSOR,     4,  L_II,      20);
+      DBMS_SQL.DEFINE_COLUMN(P_SDII_CURSOR,     5,  L_IINODE);
+      DBMS_SQL.DEFINE_COLUMN(P_SDII_CURSOR,     6,  L_IE_VERSION, 20);
+      DBMS_SQL.DEFINE_COLUMN(P_SDII_CURSOR,     7,  L_IIVALUE, 2000);
+      DBMS_SQL.DEFINE_COLUMN(P_SDII_CURSOR,     8,  L_POS_X);
+      DBMS_SQL.DEFINE_COLUMN(P_SDII_CURSOR,     9,  L_POS_Y);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_SDII_CURSOR,10, L_IS_PROTECTED, 1);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_SDII_CURSOR,11, L_MANDATORY, 1);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_SDII_CURSOR,12, L_HIDDEN,      1);
+      DBMS_SQL.DEFINE_COLUMN(P_SDII_CURSOR,     13, L_DSP_TITLE, 40);
+      DBMS_SQL.DEFINE_COLUMN(P_SDII_CURSOR,     14, L_DSP_LEN);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_SDII_CURSOR,15, L_DSP_TP,      1);
+      DBMS_SQL.DEFINE_COLUMN(P_SDII_CURSOR,     16, L_DSP_ROWS);
+      DBMS_SQL.DEFINE_COLUMN(P_SDII_CURSOR,     17, L_II_CLASS, 2);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_SDII_CURSOR,18, L_LOG_HS,      1);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_SDII_CURSOR,19, L_LOG_HS_DETAILS, 1);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_SDII_CURSOR,20, L_ALLOW_MODIFY, 1);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_SDII_CURSOR,21, L_AR,      1);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(P_SDII_CURSOR,22, L_ACTIVE,      1);
+      DBMS_SQL.DEFINE_COLUMN(P_SDII_CURSOR,     23, L_LC,      2);
+      DBMS_SQL.DEFINE_COLUMN(P_SDII_CURSOR,     24, L_LC_VERSION, 20);
+      DBMS_SQL.DEFINE_COLUMN(P_SDII_CURSOR,     25, L_SS,      2);
+      L_RESULT := DBMS_SQL.EXECUTE(P_SDII_CURSOR);
+   END IF;
+   
+   L_RESULT := DBMS_SQL.FETCH_ROWS(P_SDII_CURSOR);
+   L_FETCHED_ROWS := 0;
+
+   LOOP
+      EXIT WHEN L_RESULT = 0 OR L_FETCHED_ROWS >= A_NR_OF_ROWS;
+
+      DBMS_SQL.COLUMN_VALUE(P_SDII_CURSOR,      1,   L_SD);
+      DBMS_SQL.COLUMN_VALUE(P_SDII_CURSOR,      2,   L_IC);
+      DBMS_SQL.COLUMN_VALUE(P_SDII_CURSOR,      3,   L_ICNODE);
+      DBMS_SQL.COLUMN_VALUE(P_SDII_CURSOR,      4,   L_II);
+      DBMS_SQL.COLUMN_VALUE(P_SDII_CURSOR,      5,   L_IINODE);
+      DBMS_SQL.COLUMN_VALUE(P_SDII_CURSOR,      6,   L_IE_VERSION);
+      DBMS_SQL.COLUMN_VALUE(P_SDII_CURSOR,      7,   L_IIVALUE);
+      DBMS_SQL.COLUMN_VALUE(P_SDII_CURSOR,      8,   L_POS_X);
+      DBMS_SQL.COLUMN_VALUE(P_SDII_CURSOR,      9,   L_POS_Y);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_SDII_CURSOR, 10,  L_IS_PROTECTED);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_SDII_CURSOR, 11,  L_MANDATORY);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_SDII_CURSOR, 12,  L_HIDDEN);
+      DBMS_SQL.COLUMN_VALUE(P_SDII_CURSOR,      13,  L_DSP_TITLE);
+      DBMS_SQL.COLUMN_VALUE(P_SDII_CURSOR,      14,  L_DSP_LEN);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_SDII_CURSOR, 15,  L_DSP_TP);
+      DBMS_SQL.COLUMN_VALUE(P_SDII_CURSOR,      16,  L_DSP_ROWS);
+      DBMS_SQL.COLUMN_VALUE(P_SDII_CURSOR,      17,  L_II_CLASS);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_SDII_CURSOR, 18,  L_LOG_HS);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_SDII_CURSOR, 19,  L_LOG_HS_DETAILS);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_SDII_CURSOR, 20,  L_ALLOW_MODIFY);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_SDII_CURSOR, 21,  L_AR);
+      DBMS_SQL.COLUMN_VALUE_CHAR(P_SDII_CURSOR, 22,  L_ACTIVE);
+      DBMS_SQL.COLUMN_VALUE(P_SDII_CURSOR,      23,  L_LC);
+      DBMS_SQL.COLUMN_VALUE(P_SDII_CURSOR,      24,  L_LC_VERSION);
+      DBMS_SQL.COLUMN_VALUE(P_SDII_CURSOR,      25,  L_SS);
+
+      L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+      A_SD            (L_FETCHED_ROWS) := L_SD;
+      A_IC            (L_FETCHED_ROWS) := L_IC;
+      A_ICNODE        (L_FETCHED_ROWS) := L_ICNODE;
+      A_II            (L_FETCHED_ROWS) := L_II;
+      A_IINODE        (L_FETCHED_ROWS) := L_IINODE;
+      A_IE_VERSION    (L_FETCHED_ROWS) := L_IE_VERSION;
+      A_IIVALUE       (L_FETCHED_ROWS) := L_IIVALUE;
+      A_POS_X         (L_FETCHED_ROWS) := L_POS_X;
+      A_POS_Y         (L_FETCHED_ROWS) := L_POS_Y;
+      A_IS_PROTECTED  (L_FETCHED_ROWS) := L_IS_PROTECTED;
+      A_MANDATORY     (L_FETCHED_ROWS) := L_MANDATORY;
+      A_HIDDEN        (L_FETCHED_ROWS) := L_HIDDEN;
+      A_DSP_TITLE     (L_FETCHED_ROWS) := L_DSP_TITLE;
+      A_DSP_LEN       (L_FETCHED_ROWS) := L_DSP_LEN;
+      A_DSP_TP        (L_FETCHED_ROWS) := L_DSP_TP;
+      A_DSP_ROWS      (L_FETCHED_ROWS) := L_DSP_ROWS;
+      A_II_CLASS      (L_FETCHED_ROWS) := L_II_CLASS;
+      A_LOG_HS        (L_FETCHED_ROWS) := L_LOG_HS;
+      A_LOG_HS_DETAILS(L_FETCHED_ROWS) := L_LOG_HS_DETAILS;
+      A_ALLOW_MODIFY  (L_FETCHED_ROWS) := L_ALLOW_MODIFY;
+      A_AR            (L_FETCHED_ROWS) := L_AR;
+      A_ACTIVE        (L_FETCHED_ROWS) := L_ACTIVE;
+      A_LC            (L_FETCHED_ROWS) := L_LC;
+      A_LC_VERSION    (L_FETCHED_ROWS) := L_LC_VERSION;
+      A_SS            (L_FETCHED_ROWS) := L_SS;
+
+      IF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+         L_RESULT := DBMS_SQL.FETCH_ROWS(P_SDII_CURSOR);
+      END IF;
+
+   END LOOP;
+
+   
+   IF (L_FETCHED_ROWS = 0) THEN
+       DBMS_SQL.CLOSE_CURSOR(P_SDII_CURSOR);
+       P_SDII_CURSOR := NULL;
+       RETURN(UNAPIGEN.DBERR_NORECORDS);
+   ELSIF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+      DBMS_SQL.CLOSE_CURSOR(P_SDII_CURSOR);
+      P_SDII_CURSOR := NULL;
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+   END IF;
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+             'GetSdInfoField', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      IF DBMS_SQL.IS_OPEN(P_SDII_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR(P_SDII_CURSOR);
+      END IF;
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END GETSDINFOFIELD;
+
+FUNCTION SAVESDINFOCARD
+(A_SD             IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_IC             IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_ICNODE         IN OUT  UNAPIGEN.LONG_TABLE_TYPE,  
+ A_IP_VERSION     IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_DESCRIPTION    IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_WINSIZE_X      IN      UNAPIGEN.NUM_TABLE_TYPE,   
+ A_WINSIZE_Y      IN      UNAPIGEN.NUM_TABLE_TYPE,   
+ A_IS_PROTECTED   IN      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_HIDDEN         IN      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_MANUALLY_ADDED IN      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_NEXT_II        IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_IC_CLASS       IN      UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LOG_HS         IN      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LOG_HS_DETAILS IN      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LC             IN      UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LC_VERSION     IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_MODIFY_FLAG    IN OUT  UNAPIGEN.NUM_TABLE_TYPE,   
+ A_NR_OF_ROWS     IN      NUMBER,                    
+ A_MODIFY_REASON  IN      VARCHAR2)                  
+RETURN NUMBER IS
+
+L_LC                     VARCHAR2(2);
+L_LC_VERSION             VARCHAR2(20);
+L_SS                     VARCHAR2(2);
+L_LOG_HS                 CHAR(1);
+L_LOG_HS_DETAILS         CHAR(1);
+L_ALLOW_MODIFY           CHAR(1);
+L_ACTIVE                 CHAR(1);
+L_INSERT                 BOOLEAN;
+L_IC_RECORD_OK           BOOLEAN;
+L_IC_HANDLED             BOOLEAN;
+CURR_ITEM                INTEGER;
+NEXT_ITEM                INTEGER;
+PREV_NODE                NUMBER(9);
+NEXT_NODE                NUMBER(9);
+NODE_STEP                NUMBER(9);
+L_SEQ_NO                 INTEGER;
+NBR_OF_NODES_TO_CREATE   INTEGER;
+L_COMPLETELY_SAVED       BOOLEAN;
+L_DELETED_NODE           NUMBER(9);
+L_CURRENT_TIMESTAMP                TIMESTAMP WITH TIME ZONE;
+L_PT                     VARCHAR2(20);
+L_PT_VERSION             VARCHAR2(20);
+L_HS_DETAILS_SEQ_NR      INTEGER;
+L_IP_VERSION             VARCHAR2(20);
+
+CURSOR L_SD_CURSOR(A_SD VARCHAR2) IS
+   SELECT PT, PT_VERSION
+   FROM UTSD 
+   WHERE SD = A_SD;
+
+CURSOR L_SDICOLD_CURSOR (A_SD IN VARCHAR2,
+                         A_IC IN VARCHAR2, A_ICNODE IN NUMBER) IS
+   SELECT A.*
+   FROM UDSDIC A
+   WHERE A.SD = A_SD
+   AND A.IC = A_IC
+   AND A.ICNODE = A_ICNODE;
+L_SDICOLD_REC UDSDIC%ROWTYPE;
+L_SDICNEW_REC UDSDIC%ROWTYPE;
+
+BEGIN
+
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <>
+      UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   L_CURRENT_TIMESTAMP := CURRENT_TIMESTAMP;
+   L_HS_DETAILS_SEQ_NR := 0;
+   
+   
+   
+   CURR_ITEM := 1;
+   WHILE CURR_ITEM <= A_NR_OF_ROWS LOOP
+      IF A_MODIFY_FLAG(CURR_ITEM) IN (UNAPIGEN.MOD_FLAG_INSERT,
+                                      UNAPIGEN.MOD_FLAG_INSERT_AND_CRAU,
+                                      UNAPIGEN.MOD_FLAG_CREATE) THEN
+         IF NVL(A_ICNODE(CURR_ITEM), 0) <> 0 THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NEWNODENOTZERO;
+            RAISE STPERROR;
+         END IF;
+
+         
+         
+         
+         NEXT_ITEM := CURR_ITEM;
+         NBR_OF_NODES_TO_CREATE := 0;
+         WHILE (A_MODIFY_FLAG(NEXT_ITEM) IN (UNAPIGEN.MOD_FLAG_INSERT,
+                                             UNAPIGEN.MOD_FLAG_INSERT_AND_CRAU,
+                                             UNAPIGEN.MOD_FLAG_CREATE) AND
+                NVL(A_SD(CURR_ITEM), ' ') = NVL(A_SD(NEXT_ITEM), ' ')) LOOP
+            NBR_OF_NODES_TO_CREATE := NBR_OF_NODES_TO_CREATE + 1;
+            IF NEXT_ITEM < A_NR_OF_ROWS THEN
+               NEXT_ITEM := NEXT_ITEM + 1;
+            ELSE
+               EXIT;
+            END IF;
+         END LOOP;
+
+         
+         
+         
+         
+         IF A_MODIFY_FLAG(NEXT_ITEM) NOT IN (UNAPIGEN.MOD_FLAG_INSERT,
+                                             UNAPIGEN.MOD_FLAG_INSERT_AND_CRAU,
+                                             UNAPIGEN.MOD_FLAG_CREATE) AND
+                A_SD(CURR_ITEM) = A_SD(NEXT_ITEM) THEN
+            NEXT_NODE := A_ICNODE(NEXT_ITEM);
+            SELECT NVL(MAX(ICNODE), 0)
+            INTO PREV_NODE
+            FROM UTSDIC
+            WHERE ICNODE < NEXT_NODE
+              AND SD = A_SD(CURR_ITEM);
+            NODE_STEP :=
+               TRUNC(ABS((NEXT_NODE - PREV_NODE)) / (NBR_OF_NODES_TO_CREATE + 1));
+            IF NODE_STEP < 1 THEN
+               UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NODELIMITOVERF;
+               RAISE STPERROR;
+            END IF;
+         ELSE
+            
+            SELECT NVL(MAX(ICNODE), 0)
+            INTO PREV_NODE
+            FROM UTSDIC
+            WHERE SD = A_SD(CURR_ITEM);
+            NODE_STEP := UNAPIGEN.DEFAULT_NODE_INTERVAL;
+         END IF;
+
+         
+         
+         
+         FOR I IN 1..NBR_OF_NODES_TO_CREATE LOOP
+            A_ICNODE(CURR_ITEM + I - 1) := PREV_NODE + (NODE_STEP * I);
+         END LOOP;
+
+         CURR_ITEM := CURR_ITEM + NBR_OF_NODES_TO_CREATE;
+      ELSE
+         CURR_ITEM := CURR_ITEM + 1;
+      END IF;
+   END LOOP;
+
+   
+   
+   
+   L_COMPLETELY_SAVED := TRUE;
+
+   
+   
+   
+   FOR L_SEQ_NO IN 1..A_NR_OF_ROWS LOOP
+      L_IC_RECORD_OK := TRUE;          
+      L_IC_HANDLED := TRUE;
+
+      
+      
+      
+      IF A_MODIFY_FLAG(L_SEQ_NO) IN (UNAPIGEN.MOD_FLAG_INSERT,
+                                     UNAPIGEN.MOD_FLAG_INSERT_AND_CRAU,
+                                     UNAPIGEN.MOD_FLAG_INSERT_WITH_NODES,
+                                     UNAPIGEN.MOD_FLAG_INSERT_NODES_AND_CRAU,
+                                     UNAPIGEN.MOD_FLAG_CREATE) THEN
+         IF NVL(A_IP_VERSION(L_SEQ_NO), ' ') = ' ' THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_IPVERSION;
+            RAISE STPERROR;
+         END IF;
+      END IF;
+
+      IF NVL(A_SD(L_SEQ_NO), ' ') = ' ' OR
+         NVL(A_IC(L_SEQ_NO), ' ') = ' ' THEN
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+         RAISE STPERROR;
+
+         
+         
+         
+      ELSIF A_MODIFY_FLAG(L_SEQ_NO) IN (UNAPIGEN.MOD_FLAG_INSERT,
+                                        UNAPIGEN.MOD_FLAG_INSERT_AND_CRAU,
+                                        UNAPIGEN.MOD_FLAG_INSERT_WITH_NODES,
+                                        UNAPIGEN.MOD_FLAG_INSERT_NODES_AND_CRAU,
+                                        UNAPIGEN.MOD_FLAG_CREATE,                                        
+                                        UNAPIGEN.MOD_FLAG_UPDATE,
+                                        UNAPIGEN.MOD_FLAG_DELETE) THEN
+         L_IP_VERSION := A_IP_VERSION(L_SEQ_NO);
+         L_RET_CODE := UNAPIAUT.GETSDICAUTHORISATION(A_SD(L_SEQ_NO), A_IC(L_SEQ_NO),
+                                                     A_ICNODE(L_SEQ_NO), L_IP_VERSION, L_LC, 
+                                                     L_LC_VERSION, L_SS, L_ALLOW_MODIFY, L_ACTIVE, 
+                                                     L_LOG_HS, L_LOG_HS_DETAILS);
+         IF L_RET_CODE = UNAPIGEN.DBERR_NOOBJECT THEN
+            L_INSERT := TRUE;
+         ELSIF L_RET_CODE = UNAPIGEN.DBERR_SUCCESS THEN
+            L_INSERT := FALSE;
+         ELSE
+            A_MODIFY_FLAG(L_SEQ_NO) := L_RET_CODE;
+            L_IC_RECORD_OK := FALSE;
+         END IF;
+      ELSIF A_MODIFY_FLAG(L_SEQ_NO) = UNAPIGEN.DBERR_SUCCESS THEN
+         
+         
+         
+         L_IC_RECORD_OK := FALSE;  
+         L_IC_HANDLED := FALSE;    
+      ELSE
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_INVALMODFLAG;
+         RAISE STPERROR;         
+      END IF;
+
+      
+      
+      
+      IF A_MODIFY_FLAG(L_SEQ_NO) IN (UNAPIGEN.MOD_FLAG_INSERT,
+                                     UNAPIGEN.MOD_FLAG_INSERT_AND_CRAU,
+                                     UNAPIGEN.MOD_FLAG_INSERT_WITH_NODES,      
+                                     UNAPIGEN.MOD_FLAG_INSERT_NODES_AND_CRAU,
+                                     UNAPIGEN.MOD_FLAG_CREATE,
+                                     UNAPIGEN.MOD_FLAG_UPDATE) THEN
+         IF NVL(A_LOG_HS(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_LOGHS;
+            RAISE STPERROR;
+         ELSIF NVL(A_LOG_HS_DETAILS(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_LOGHSDETAILS;
+            RAISE STPERROR;
+         END IF;
+      END IF;
+
+      
+      
+      
+
+      
+      
+      
+      IF L_IC_RECORD_OK AND
+         A_MODIFY_FLAG(L_SEQ_NO) = UNAPIGEN.MOD_FLAG_UPDATE THEN
+
+         
+         
+         
+         IF L_INSERT THEN
+            
+            A_MODIFY_FLAG(L_SEQ_NO) := UNAPIGEN.DBERR_NOOBJECT;
+            L_IC_RECORD_OK := FALSE;
+         ELSIF NVL(A_IS_PROTECTED(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_PROTECTED;
+            RAISE STPERROR;
+         ELSIF NVL(A_HIDDEN(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_HIDDEN;
+            RAISE STPERROR;
+         ELSIF NVL(A_MANUALLY_ADDED(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_MANUALLYADDED;
+            RAISE STPERROR;
+         ELSE
+            
+            
+            
+
+            
+            
+            
+            OPEN L_SDICOLD_CURSOR(A_SD(L_SEQ_NO),
+                                  A_IC(L_SEQ_NO), A_ICNODE(L_SEQ_NO));
+            FETCH L_SDICOLD_CURSOR
+            INTO L_SDICOLD_REC;
+            CLOSE L_SDICOLD_CURSOR;
+            L_SDICNEW_REC := L_SDICOLD_REC;
+
+            
+            
+            
+            
+            
+            UPDATE UTSDIC
+            SET DESCRIPTION    = A_DESCRIPTION(L_SEQ_NO),
+                WINSIZE_X      = A_WINSIZE_X(L_SEQ_NO),
+                WINSIZE_Y      = A_WINSIZE_Y(L_SEQ_NO),
+                IS_PROTECTED   = A_IS_PROTECTED(L_SEQ_NO),
+                HIDDEN         = A_HIDDEN(L_SEQ_NO),
+                MANUALLY_ADDED = A_MANUALLY_ADDED(L_SEQ_NO),
+                IC_CLASS       = A_IC_CLASS(L_SEQ_NO),
+                LOG_HS         = A_LOG_HS(L_SEQ_NO),
+                LOG_HS_DETAILS = A_LOG_HS_DETAILS(L_SEQ_NO),
+                ALLOW_MODIFY   = '#'
+            WHERE SD = A_SD(L_SEQ_NO)
+              AND IC = A_IC(L_SEQ_NO)
+              AND ICNODE = A_ICNODE(L_SEQ_NO)
+            RETURNING DESCRIPTION, WINSIZE_X, WINSIZE_Y, 
+                      IS_PROTECTED, HIDDEN, MANUALLY_ADDED, 
+                      IC_CLASS, LOG_HS, LOG_HS_DETAILS, 
+                      ALLOW_MODIFY
+            INTO L_SDICNEW_REC.DESCRIPTION, L_SDICNEW_REC.WINSIZE_X, L_SDICNEW_REC.WINSIZE_Y, 
+                 L_SDICNEW_REC.IS_PROTECTED, L_SDICNEW_REC.HIDDEN, L_SDICNEW_REC.MANUALLY_ADDED, 
+                 L_SDICNEW_REC.IC_CLASS, L_SDICNEW_REC.LOG_HS, L_SDICNEW_REC.LOG_HS_DETAILS, 
+                 L_SDICNEW_REC.ALLOW_MODIFY;
+
+              
+              
+              
+              L_EVENT_TP := 'SdInfoCardUpdated';
+         END IF;
+
+      
+      
+      
+      ELSIF L_IC_RECORD_OK AND
+            A_MODIFY_FLAG(L_SEQ_NO) IN (UNAPIGEN.MOD_FLAG_INSERT,
+                                        UNAPIGEN.MOD_FLAG_INSERT_AND_CRAU,
+                                        UNAPIGEN.MOD_FLAG_INSERT_WITH_NODES,
+                                        UNAPIGEN.MOD_FLAG_INSERT_NODES_AND_CRAU,
+                                        UNAPIGEN.MOD_FLAG_CREATE) THEN
+
+         
+         
+         
+         IF NOT L_INSERT THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_ICALREADYEXIST;
+            RAISE STPERROR;
+         ELSIF NVL(A_IS_PROTECTED(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_PROTECTED;
+            RAISE STPERROR;
+         ELSIF NVL(A_HIDDEN(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_HIDDEN;
+            RAISE STPERROR;
+         ELSIF NVL(A_MANUALLY_ADDED(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_MANUALLYADDED;
+            RAISE STPERROR;
+         ELSE
+            
+            
+            
+            
+
+            
+            IF NVL(A_LC(L_SEQ_NO), ' ') <> ' ' THEN
+               L_LC := A_LC(L_SEQ_NO);
+            END IF;
+            IF NVL(A_LC_VERSION(L_SEQ_NO), ' ') <> ' ' THEN
+               L_LC_VERSION := A_LC_VERSION(L_SEQ_NO);
+            END IF;
+
+            INSERT INTO UTSDIC(SD, IC, ICNODE, IP_VERSION, DESCRIPTION, WINSIZE_X,
+                               WINSIZE_Y, IS_PROTECTED, HIDDEN,
+                               MANUALLY_ADDED, NEXT_II, IC_CLASS, LOG_HS, LOG_HS_DETAILS,
+                               ALLOW_MODIFY, ACTIVE, LC, LC_VERSION)
+            VALUES(A_SD(L_SEQ_NO), A_IC(L_SEQ_NO),  A_ICNODE(L_SEQ_NO), L_IP_VERSION,
+                   A_DESCRIPTION(L_SEQ_NO), A_WINSIZE_X(L_SEQ_NO),
+                   A_WINSIZE_Y(L_SEQ_NO), A_IS_PROTECTED(L_SEQ_NO),
+                   A_HIDDEN(L_SEQ_NO), A_MANUALLY_ADDED(L_SEQ_NO), NULL, A_IC_CLASS(L_SEQ_NO), 
+                   A_LOG_HS(L_SEQ_NO), A_LOG_HS_DETAILS(L_SEQ_NO), '#', '0', L_LC, L_LC_VERSION);
+            UNAPIAUT.UPDATELCINAUTHORISATIONBUFFER('ic', A_SD(L_SEQ_NO) || A_IC(L_SEQ_NO) || TO_CHAR(A_ICNODE(L_SEQ_NO)),
+                                                           '', L_LC, L_LC_VERSION);                 
+            
+            
+            
+            L_EVENT_TP := 'SdInfoCardCreated';
+         END IF;
+
+      
+      
+      
+      ELSIF L_IC_RECORD_OK AND
+            A_MODIFY_FLAG(L_SEQ_NO) = UNAPIGEN.MOD_FLAG_DELETE THEN
+
+         IF L_INSERT THEN
+            
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJECT;
+            RAISE STPERROR;
+
+         
+         
+         
+         ELSIF L_ACTIVE = '1' THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_OPACTIVE;
+            RAISE STPERROR;
+         ELSE
+            
+            IF UNAPIGEN.ISSYSTEM21CFR11COMPLIANT = UNAPIGEN.DBERR_SUCCESS THEN
+               UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOTALLOWEDIN21CFR11;
+               RAISE STPERROR;
+            END IF;
+
+            
+            
+            
+            DELETE FROM UTSDII
+            WHERE SD     = A_SD(L_SEQ_NO)
+              AND IC     = A_IC(L_SEQ_NO)
+              AND ICNODE = A_ICNODE(L_SEQ_NO);
+
+            
+            
+            
+            DELETE FROM UTSDICAU
+            WHERE SD     = A_SD(L_SEQ_NO)
+              AND IC     = A_IC(L_SEQ_NO)
+              AND ICNODE = A_ICNODE(L_SEQ_NO);
+
+            DELETE FROM UTSDICHS
+            WHERE SD     = A_SD(L_SEQ_NO)
+              AND IC     = A_IC(L_SEQ_NO)
+              AND ICNODE = A_ICNODE(L_SEQ_NO);
+
+            DELETE FROM UTSDICHSDETAILS
+            WHERE SD     = A_SD(L_SEQ_NO)
+              AND IC     = A_IC(L_SEQ_NO)
+              AND ICNODE = A_ICNODE(L_SEQ_NO);
+
+            DELETE FROM UTSDIC
+            WHERE SD     = A_SD(L_SEQ_NO)
+              AND IC     = A_IC(L_SEQ_NO)
+              AND ICNODE = A_ICNODE(L_SEQ_NO);
+
+            
+            
+            
+            DELETE FROM UTEVTIMED
+            WHERE OBJECT_TP = 'sdic'
+              AND OBJECT_ID = A_IC(L_SEQ_NO)
+              AND INSTR(EV_DETAILS, 'sd=' || A_SD(L_SEQ_NO)) <> 0
+              AND INSTR(EV_DETAILS, 'icnode=' || TO_CHAR(A_ICNODE(L_SEQ_NO))) <> 0;
+
+            DELETE FROM UTEVTIMED
+            WHERE INSTR(EV_DETAILS, 'sd=' || A_SD(L_SEQ_NO)) <> 0
+              AND INSTR(EV_DETAILS, 'ic=' || A_IC(L_SEQ_NO)) <> 0
+              AND INSTR(EV_DETAILS, 'icnode=' || TO_CHAR(A_ICNODE(L_SEQ_NO))) <> 0;
+
+            DELETE FROM UTEVRULESDELAYED
+            WHERE OBJECT_TP = 'sdic'
+              AND OBJECT_ID = A_IC(L_SEQ_NO)
+              AND INSTR(EV_DETAILS, 'sd=' || A_SD(L_SEQ_NO)) <> 0
+              AND INSTR(EV_DETAILS, 'icnode=' || TO_CHAR(A_ICNODE(L_SEQ_NO))) <> 0;
+
+            DELETE FROM UTEVRULESDELAYED
+            WHERE INSTR(EV_DETAILS, 'sd=' || A_SD(L_SEQ_NO)) <> 0
+              AND INSTR(EV_DETAILS, 'ic=' || A_IC(L_SEQ_NO)) <> 0
+              AND INSTR(EV_DETAILS, 'icnode=' || TO_CHAR(A_ICNODE(L_SEQ_NO))) <> 0;
+
+            L_DELETED_NODE := A_ICNODE(L_SEQ_NO);
+            A_ICNODE(L_SEQ_NO) := 0;  
+
+            
+            
+            
+            L_EVENT_TP := 'SdInfoCardDeleted';
+         END IF;
+      END IF;
+
+      
+      
+      
+      IF L_IC_RECORD_OK THEN
+         L_EV_SEQ_NR := -1;
+         IF A_MODIFY_FLAG(L_SEQ_NO) <> UNAPIGEN.MOD_FLAG_DELETE THEN
+            L_EV_DETAILS := 'sd=' || A_SD(L_SEQ_NO) || 
+                            '#icnode=' || TO_CHAR(A_ICNODE(L_SEQ_NO)) || 
+                            '#ip_version=' || L_IP_VERSION;
+         ELSE
+            L_EV_DETAILS := 'sd=' || A_SD(L_SEQ_NO) || 
+                            '#icnode=' || TO_CHAR(L_DELETED_NODE) ||
+                            '#ip_version=' || L_IP_VERSION;
+         END IF;
+         L_RESULT := UNAPIEV.INSERTEVENT('SaveSdInfoCard', UNAPIGEN.P_EVMGR_NAME,
+                                         'sdic', A_IC(L_SEQ_NO), L_LC, L_LC_VERSION, L_SS,
+                                         L_EVENT_TP, L_EV_DETAILS, L_EV_SEQ_NR);
+         IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+            UNAPIGEN.P_TXN_ERROR := L_RESULT;
+            RAISE STPERROR;
+         END IF;
+      ELSE
+         IF L_IC_HANDLED THEN
+            L_COMPLETELY_SAVED := FALSE;
+         END IF;
+      END IF;
+
+      
+      
+      
+      IF L_IC_RECORD_OK AND L_LOG_HS <> A_LOG_HS(L_SEQ_NO) AND
+         A_MODIFY_FLAG(L_SEQ_NO) <> UNAPIGEN.MOD_FLAG_DELETE THEN
+         IF A_LOG_HS(L_SEQ_NO) = '1' THEN
+            INSERT INTO UTSDICHS(SD, IC, ICNODE, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, 
+                                 LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+            VALUES(A_SD(L_SEQ_NO), A_IC(L_SEQ_NO), A_ICNODE(L_SEQ_NO), UNAPIGEN.P_USER,
+                   UNAPIGEN.P_USER_DESCRIPTION, 'History switched ON', 'Audit trail is turned on.', 
+                   L_CURRENT_TIMESTAMP, L_CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+         ELSE
+            INSERT INTO UTSDICHS(SD, IC, ICNODE, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, 
+                                 LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+            VALUES(A_SD(L_SEQ_NO), A_IC(L_SEQ_NO), A_ICNODE(L_SEQ_NO), UNAPIGEN.P_USER,
+                   UNAPIGEN.P_USER_DESCRIPTION, 'History switched OFF', 'Audit trail is turned off.', 
+                   L_CURRENT_TIMESTAMP, L_CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+         END IF;
+      END IF;
+
+      
+      
+      
+      IF L_IC_RECORD_OK AND L_LOG_HS_DETAILS <> A_LOG_HS_DETAILS(L_SEQ_NO) AND
+         A_MODIFY_FLAG(L_SEQ_NO) <> UNAPIGEN.MOD_FLAG_DELETE THEN
+         IF A_LOG_HS_DETAILS(L_SEQ_NO) = '1' THEN
+            L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+            INSERT INTO UTSDICHSDETAILS(SD, IC, ICNODE, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+            VALUES(A_SD(L_SEQ_NO), A_IC(L_SEQ_NO), A_ICNODE(L_SEQ_NO), UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, 
+                   L_HS_DETAILS_SEQ_NR, 'Audit trail is turned on.');
+         ELSE
+            L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+            INSERT INTO UTSDICHSDETAILS(SD, IC, ICNODE, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+            VALUES(A_SD(L_SEQ_NO), A_IC(L_SEQ_NO), A_ICNODE(L_SEQ_NO), UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, 
+                   L_HS_DETAILS_SEQ_NR, 'Audit trail is turned off.');
+         END IF;
+      END IF;
+
+      
+      L_RET_CODE := UNAPIGEN.GETNEXTEVENTSEQNR(L_EV_SEQ_NR);
+
+      IF L_IC_RECORD_OK AND (L_LOG_HS = '1' OR A_LOG_HS(L_SEQ_NO)='1') THEN
+         IF A_MODIFY_FLAG(L_SEQ_NO) = UNAPIGEN.MOD_FLAG_DELETE THEN
+            
+            
+            
+            INSERT INTO UTSDHS(SD, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, 
+                               LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+            VALUES(A_SD(L_SEQ_NO), UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+                   'info card "'||A_IC(L_SEQ_NO)||'" is deleted.', 
+                   L_CURRENT_TIMESTAMP, L_CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+         ELSE
+            
+            
+            
+            IF L_EVENT_TP = 'SdInfoCardCreated' THEN
+               INSERT INTO UTSDICHS(SD, IC, ICNODE, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, 
+                                    LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+               VALUES(A_SD(L_SEQ_NO), A_IC(L_SEQ_NO), A_ICNODE(L_SEQ_NO), UNAPIGEN.P_USER,
+                      UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+                      'info card "'||A_IC(L_SEQ_NO)||'" is created.', 
+                      L_CURRENT_TIMESTAMP, L_CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+            ELSE
+               INSERT INTO UTSDICHS(SD, IC, ICNODE, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, 
+                                    LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+               VALUES(A_SD(L_SEQ_NO), A_IC(L_SEQ_NO), A_ICNODE(L_SEQ_NO), UNAPIGEN.P_USER,
+                      UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+                      'info card "'||A_IC(L_SEQ_NO)||'" is updated.', 
+                      L_CURRENT_TIMESTAMP, L_CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+            END IF;
+         END IF;
+      END IF;
+
+      IF L_IC_RECORD_OK AND (L_LOG_HS_DETAILS = '1' OR A_LOG_HS_DETAILS(L_SEQ_NO)='1') THEN
+         IF A_MODIFY_FLAG(L_SEQ_NO) = UNAPIGEN.MOD_FLAG_DELETE THEN
+            
+            
+            
+            L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+            INSERT INTO UTSDHSDETAILS(SD, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+            VALUES(A_SD(L_SEQ_NO), UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR,
+                   'info card "'||A_IC(L_SEQ_NO)||'" is deleted.');
+         ELSE
+            
+            
+            
+            IF L_EVENT_TP = 'SdInfoCardCreated' THEN
+               L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+               INSERT INTO UTSDICHSDETAILS(SD, IC, ICNODE, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+               VALUES(A_SD(L_SEQ_NO), A_IC(L_SEQ_NO), A_ICNODE(L_SEQ_NO), UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR,
+                      L_HS_DETAILS_SEQ_NR, 'info card "'||A_IC(L_SEQ_NO)||'" is created.');
+            ELSE
+               L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+               INSERT INTO UTSDICHSDETAILS(SD, IC, ICNODE, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+               VALUES(A_SD(L_SEQ_NO), A_IC(L_SEQ_NO), A_ICNODE(L_SEQ_NO), UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR,
+                      L_HS_DETAILS_SEQ_NR, 'info card "'||A_IC(L_SEQ_NO)||'" is updated.');
+
+               UNAPIHSDETAILS.ADDSDICHSDETAILS(L_SDICOLD_REC, L_SDICNEW_REC, UNAPIGEN.P_TR_SEQ, 
+                                               L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR); 
+            END IF;
+         END IF;
+      END IF;
+
+      
+      
+      
+      
+      
+      
+      IF L_IC_RECORD_OK AND
+         A_MODIFY_FLAG(L_SEQ_NO) IN (UNAPIGEN.MOD_FLAG_CREATE,
+                                     UNAPIGEN.MOD_FLAG_INSERT_AND_CRAU,
+                                     UNAPIGEN.MOD_FLAG_INSERT_NODES_AND_CRAU) THEN
+
+         
+         
+         
+         L_RET_CODE := UNAPISDIC2.INITANDSAVESDICATTRIBUTES(A_SD(L_SEQ_NO), 
+                                                             A_IC(L_SEQ_NO), A_ICNODE(L_SEQ_NO));
+         IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+            UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+            RAISE STPERROR;
+         END IF;
+
+         IF A_MODIFY_FLAG(L_SEQ_NO) = UNAPIGEN.MOD_FLAG_CREATE THEN
+
+            OPEN L_SD_CURSOR(A_SD(L_SEQ_NO));
+            FETCH L_SD_CURSOR
+            INTO L_PT, L_PT_VERSION;
+            IF L_SD_CURSOR%NOTFOUND THEN
+               UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJECT;
+               RAISE STPERROR;
+            END IF;
+            CLOSE L_SD_CURSOR;
+
+            
+            
+            
+            L_RET_CODE := UNAPISDIC.CREATESDICDETAILS(L_PT, L_PT_VERSION, A_IC(L_SEQ_NO), 
+                                                      L_IP_VERSION, L_SEQ_NO, A_SD(L_SEQ_NO), 
+                                                      A_ICNODE(L_SEQ_NO), A_MODIFY_REASON);
+            
+            
+            
+            IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+               L_ERRM := 'sd=' || A_SD(L_SEQ_NO)|| 
+                         '#pt='|| L_PT || '#pt_version='|| L_PT_VERSION ||
+                         '#ic=' || A_IC(L_SEQ_NO) || '#ip_version=' || L_IP_VERSION ||
+                         '#icnode=' || TO_CHAR(A_ICNODE(L_SEQ_NO)) ||
+                         '#CreateSdIcDetails#ErrorCode=' || TO_CHAR(L_RET_CODE);
+               UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+               RAISE STPERROR;
+            END IF;
+         END IF;
+      END IF;
+
+   
+   
+   
+   END LOOP;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   
+   
+   
+   FOR L_SEQ_NO IN 1..A_NR_OF_ROWS LOOP
+      IF A_MODIFY_FLAG(L_SEQ_NO) < UNAPIGEN.DBERR_SUCCESS THEN
+         A_MODIFY_FLAG(L_SEQ_NO) := UNAPIGEN.DBERR_SUCCESS;
+      END IF;
+   END LOOP;
+
+   IF L_COMPLETELY_SAVED THEN
+      RETURN(UNAPIGEN.DBERR_SUCCESS);
+   ELSE
+      RETURN(UNAPIGEN.DBERR_PARTIALSAVE);
+   END IF;
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('SaveSdInfoCard',SQLERRM);
+   END IF;
+   IF L_SD_CURSOR%ISOPEN THEN
+      CLOSE L_SD_CURSOR;
+   END IF;
+   IF L_SDICOLD_CURSOR%ISOPEN THEN
+      CLOSE L_SDICOLD_CURSOR;
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR, 'SaveSdInfoCard'));
+END SAVESDINFOCARD;
+
+FUNCTION SAVESDINFOFIELD
+(A_SD               IN       UNAPIGEN.VC20_TABLE_TYPE,    
+ A_IC               IN       UNAPIGEN.VC20_TABLE_TYPE,    
+ A_ICNODE           IN OUT   UNAPIGEN.LONG_TABLE_TYPE,    
+ A_II               IN       UNAPIGEN.VC20_TABLE_TYPE,    
+ A_IINODE           IN OUT   UNAPIGEN.LONG_TABLE_TYPE,    
+ A_IE_VERSION       IN       UNAPIGEN.VC20_TABLE_TYPE,    
+ A_IIVALUE          IN       UNAPIGEN.VC2000_TABLE_TYPE,  
+ A_POS_X            IN       UNAPIGEN.NUM_TABLE_TYPE,     
+ A_POS_Y            IN       UNAPIGEN.NUM_TABLE_TYPE,     
+ A_IS_PROTECTED     IN       UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_MANDATORY        IN       UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_HIDDEN           IN       UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_DSP_TITLE        IN       UNAPIGEN.VC40_TABLE_TYPE,    
+ A_DSP_LEN          IN       UNAPIGEN.NUM_TABLE_TYPE,     
+ A_DSP_TP           IN       UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_DSP_ROWS         IN       UNAPIGEN.NUM_TABLE_TYPE,     
+ A_II_CLASS         IN       UNAPIGEN.VC2_TABLE_TYPE,     
+ A_LOG_HS           IN       UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_LOG_HS_DETAILS   IN       UNAPIGEN.CHAR1_TABLE_TYPE,   
+ A_LC               IN       UNAPIGEN.VC2_TABLE_TYPE,     
+ A_LC_VERSION       IN       UNAPIGEN.VC20_TABLE_TYPE,    
+ A_MODIFY_FLAG      IN OUT   UNAPIGEN.NUM_TABLE_TYPE,     
+ A_NR_OF_ROWS       IN       NUMBER,                      
+ A_MODIFY_REASON    IN       VARCHAR2)                    
+RETURN NUMBER IS
+
+L_LC                   VARCHAR2(2);
+L_LC_VERSION           VARCHAR2(20);
+L_SS                   VARCHAR2(2);
+L_LOG_HS               CHAR(1);
+L_LOG_HS_DETAILS       CHAR(1);
+L_ALLOW_MODIFY         CHAR(1);
+L_ACTIVE               CHAR(1);
+L_INSERT               BOOLEAN;
+CURR_ITEM              INTEGER;
+NEXT_ITEM              INTEGER;
+PREV_NODE              NUMBER(9);
+NEXT_NODE              NUMBER(9);
+NODE_STEP              NUMBER(9);
+L_SEQ_NO               INTEGER;
+NBR_OF_NODES_TO_CREATE INTEGER;
+L_COMPLETELY_SAVED     BOOLEAN;
+L_II_RECORD_OK         BOOLEAN;
+L_II_HANDLED           BOOLEAN;
+L_DELETED_NODE         NUMBER(9);
+L_CURRENT_TIMESTAMP              TIMESTAMP WITH TIME ZONE;
+L_OLD_VALUE            VARCHAR2(2000);
+L_NEW_VALUE            VARCHAR2(2000);
+L_HS_DETAILS_SEQ_NR    INTEGER;
+L_IE_VERSION           VARCHAR2(20);
+
+L_SVIIV_SEQ               INTEGER;
+L_SVIIV_SD                UNAPIGEN.VC20_TABLE_TYPE;
+L_SVIIV_IC                UNAPIGEN.VC20_TABLE_TYPE;
+L_SVIIV_ICNODE            UNAPIGEN.LONG_TABLE_TYPE;
+L_SVIIV_II                UNAPIGEN.VC20_TABLE_TYPE;
+L_SVIIV_IINODE            UNAPIGEN.LONG_TABLE_TYPE;
+L_SVIIV_IIVALUE           UNAPIGEN.VC2000_TABLE_TYPE;
+L_SVIIV_MODIFY_FLAG       UNAPIGEN.NUM_TABLE_TYPE;
+L_ROW                     INTEGER;
+
+CURSOR L_SDIIOLD_CURSOR (A_SD IN VARCHAR2,
+                         A_IC IN VARCHAR2, A_ICNODE IN NUMBER,
+                         A_II IN VARCHAR2, A_IINODE IN NUMBER) IS
+   SELECT A.*
+   FROM UDSDII A
+   WHERE A.SD = A_SD
+   AND A.IC = A_IC
+   AND A.ICNODE = A_ICNODE
+   AND A.II = A_II
+   AND A.IINODE = A_IINODE;
+L_SDIIOLD_REC UDSDII%ROWTYPE;
+L_SDIINEW_REC UDSDII%ROWTYPE;
+
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   L_SVIIV_SEQ := 0;
+   L_CURRENT_TIMESTAMP := CURRENT_TIMESTAMP;
+   L_ERRM := NULL;
+   L_HS_DETAILS_SEQ_NR := 0;
+   
+   
+   
+   CURR_ITEM := 1;
+   WHILE CURR_ITEM <= A_NR_OF_ROWS LOOP
+      IF A_MODIFY_FLAG(CURR_ITEM) = UNAPIGEN.MOD_FLAG_INSERT THEN
+
+         IF NVL(A_IINODE(CURR_ITEM), 0) <> 0 THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NEWNODENOTZERO;
+            RAISE STPERROR;
+         END IF;
+
+         
+         
+         
+         NEXT_ITEM := CURR_ITEM;
+         NBR_OF_NODES_TO_CREATE := 0;
+         WHILE A_MODIFY_FLAG(NEXT_ITEM) = UNAPIGEN.MOD_FLAG_INSERT AND
+               NVL(A_SD(NEXT_ITEM), ' ') = NVL(A_SD(CURR_ITEM),' ') AND
+               NVL(A_IC(NEXT_ITEM), ' ') = NVL(A_IC(CURR_ITEM),' ') AND
+               NVL(A_ICNODE(NEXT_ITEM), 0) = NVL(A_ICNODE(CURR_ITEM),0)
+            LOOP
+            NBR_OF_NODES_TO_CREATE := NBR_OF_NODES_TO_CREATE + 1;
+            IF NEXT_ITEM < A_NR_OF_ROWS THEN
+               NEXT_ITEM := NEXT_ITEM + 1;
+            ELSE
+               EXIT;
+            END IF;
+         END LOOP;
+
+         
+         
+         
+         
+         IF A_MODIFY_FLAG(NEXT_ITEM) <> UNAPIGEN.MOD_FLAG_INSERT AND
+            A_SD(NEXT_ITEM) = A_SD(CURR_ITEM) AND
+            A_IC(NEXT_ITEM) = A_IC(CURR_ITEM) AND
+            A_ICNODE(NEXT_ITEM) = A_ICNODE(CURR_ITEM) THEN
+            NEXT_NODE := A_IINODE(NEXT_ITEM);
+            SELECT NVL(MAX(IINODE), 0)
+            INTO PREV_NODE
+            FROM UTSDII
+            WHERE IINODE < NEXT_NODE
+              AND SD = A_SD(CURR_ITEM)
+              AND IC = A_IC(CURR_ITEM)
+              AND ICNODE = A_ICNODE(CURR_ITEM);
+            NODE_STEP :=
+               TRUNC(ABS((NEXT_NODE - PREV_NODE)) / (NBR_OF_NODES_TO_CREATE + 1));
+            IF NODE_STEP < 1 THEN
+               UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NODELIMITOVERF;
+               RAISE STPERROR;
+            END IF;
+        ELSE
+           
+           SELECT NVL(MAX(IINODE), 0)
+           INTO PREV_NODE
+           FROM UTSDII
+           WHERE SD = A_SD(CURR_ITEM)
+             AND IC = A_IC(CURR_ITEM)
+             AND ICNODE = A_ICNODE(CURR_ITEM);
+           NODE_STEP := UNAPIGEN.DEFAULT_NODE_INTERVAL;
+        END IF;
+
+         
+         
+         
+         FOR I IN 1..NBR_OF_NODES_TO_CREATE LOOP
+            A_IINODE(CURR_ITEM + I - 1) := PREV_NODE + (NODE_STEP * I);
+         END LOOP;
+
+         CURR_ITEM := CURR_ITEM + NBR_OF_NODES_TO_CREATE;
+      ELSE
+         CURR_ITEM := CURR_ITEM + 1;
+      END IF;
+   END LOOP;
+
+   
+   
+   
+   L_COMPLETELY_SAVED := TRUE;
+
+   
+   
+   
+   FOR L_SEQ_NO IN 1..A_NR_OF_ROWS LOOP
+      L_II_RECORD_OK := TRUE;          
+      L_II_HANDLED := TRUE;
+
+      
+      
+      
+      IF A_MODIFY_FLAG(L_SEQ_NO) IN (UNAPIGEN.MOD_FLAG_INSERT,
+                                     UNAPIGEN.MOD_FLAG_INSERT_WITH_NODES) THEN
+         IF NVL(A_IE_VERSION(L_SEQ_NO), ' ') = ' ' THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_IEVERSION;
+            RAISE STPERROR;
+         END IF;
+      END IF;
+
+      IF NVL(A_SD(L_SEQ_NO), ' ') = ' ' OR
+         NVL(A_IC(L_SEQ_NO), ' ') = ' ' OR
+         NVL(A_II(L_SEQ_NO), ' ') = ' ' THEN
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+         RAISE STPERROR;
+      END IF;
+
+      
+      
+      
+      IF A_MODIFY_FLAG(L_SEQ_NO) IN (UNAPIGEN.MOD_FLAG_INSERT,
+                                     UNAPIGEN.MOD_FLAG_INSERT_WITH_NODES,
+                                     UNAPIGEN.MOD_FLAG_UPDATE,
+                                     UNAPIGEN.MOD_FLAG_DELETE) THEN
+         L_IE_VERSION := A_IE_VERSION(L_SEQ_NO);
+         L_RET_CODE := UNAPIAUT.GETSDIIAUTHORISATION(A_SD(L_SEQ_NO), A_IC(L_SEQ_NO), A_ICNODE(L_SEQ_NO),
+                                                     A_II(L_SEQ_NO), A_IINODE(L_SEQ_NO), L_IE_VERSION, 
+                                                     L_LC, L_LC_VERSION, L_SS, L_ALLOW_MODIFY,
+                                                     L_ACTIVE, L_LOG_HS, L_LOG_HS_DETAILS);
+         IF L_RET_CODE = UNAPIGEN.DBERR_NOOBJECT THEN
+            L_INSERT := TRUE;
+            L_LOG_HS := '1';
+            L_LOG_HS_DETAILS := '1';
+         ELSIF L_RET_CODE = UNAPIGEN.DBERR_SUCCESS THEN
+            L_INSERT := FALSE;
+         ELSE
+            A_MODIFY_FLAG(L_SEQ_NO) := L_RET_CODE;
+            L_II_RECORD_OK := FALSE;
+         END IF;
+      ELSIF A_MODIFY_FLAG(L_SEQ_NO) = UNAPIGEN.DBERR_SUCCESS THEN
+         
+         
+         
+         L_II_RECORD_OK := FALSE;
+         L_II_HANDLED := FALSE;
+      ELSE
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_INVALMODFLAG;
+         RAISE STPERROR;         
+      END IF;
+
+      
+      
+      
+
+      
+      
+      
+      IF L_II_RECORD_OK AND
+         A_MODIFY_FLAG(L_SEQ_NO) = UNAPIGEN.MOD_FLAG_UPDATE THEN
+
+         
+         
+         
+         IF L_INSERT THEN
+            
+            A_MODIFY_FLAG(L_SEQ_NO) := UNAPIGEN.DBERR_NOOBJECT;
+            L_II_RECORD_OK := FALSE;
+         ELSIF NVL(A_IS_PROTECTED(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_PROTECTED;
+            RAISE STPERROR;
+         ELSIF NVL(A_HIDDEN(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_HIDDEN;
+            RAISE STPERROR;
+         ELSIF NVL(A_MANDATORY(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_MANDATORY;
+            RAISE STPERROR;
+         ELSE
+            
+            
+            
+
+            
+            
+            
+            OPEN L_SDIIOLD_CURSOR(A_SD(L_SEQ_NO),
+                                  A_IC(L_SEQ_NO), A_ICNODE(L_SEQ_NO),
+                                  A_II(L_SEQ_NO), A_IINODE(L_SEQ_NO));
+            FETCH L_SDIIOLD_CURSOR
+            INTO L_SDIIOLD_REC;
+            CLOSE L_SDIIOLD_CURSOR;
+            L_SDIINEW_REC := L_SDIIOLD_REC;
+            L_NEW_VALUE := A_IIVALUE(L_SEQ_NO);
+
+            
+            
+            
+            
+            
+            
+            UPDATE UTSDII
+            SET POS_X          = A_POS_X(L_SEQ_NO),
+                POS_Y          = A_POS_Y(L_SEQ_NO),
+                IS_PROTECTED   = A_IS_PROTECTED(L_SEQ_NO),
+                MANDATORY      = A_MANDATORY(L_SEQ_NO),
+                HIDDEN         = A_HIDDEN(L_SEQ_NO),
+                DSP_TITLE      = A_DSP_TITLE(L_SEQ_NO),
+                DSP_LEN        = A_DSP_LEN(L_SEQ_NO),
+                DSP_TP         = A_DSP_TP(L_SEQ_NO),
+                DSP_ROWS       = A_DSP_ROWS(L_SEQ_NO),
+                II_CLASS       = A_II_CLASS(L_SEQ_NO),
+                LOG_HS         = A_LOG_HS(L_SEQ_NO),
+                LOG_HS_DETAILS = A_LOG_HS_DETAILS(L_SEQ_NO),
+                ALLOW_MODIFY   = '1'
+            WHERE SD = A_SD(L_SEQ_NO)
+              AND IC = A_IC(L_SEQ_NO)
+              AND ICNODE = A_ICNODE(L_SEQ_NO)
+              AND II = A_II(L_SEQ_NO)
+              AND IINODE = A_IINODE(L_SEQ_NO)
+            RETURNING POS_X, POS_Y, IS_PROTECTED, MANDATORY, HIDDEN, DSP_TITLE, DSP_LEN, DSP_TP, 
+                      DSP_ROWS, II_CLASS, LOG_HS, LOG_HS_DETAILS, ALLOW_MODIFY
+            INTO L_SDIINEW_REC.POS_X, L_SDIINEW_REC.POS_Y, L_SDIINEW_REC.IS_PROTECTED, 
+                 L_SDIINEW_REC.MANDATORY, L_SDIINEW_REC.HIDDEN, L_SDIINEW_REC.DSP_TITLE, 
+                 L_SDIINEW_REC.DSP_LEN, L_SDIINEW_REC.DSP_TP, L_SDIINEW_REC.DSP_ROWS, 
+                 L_SDIINEW_REC.II_CLASS, L_SDIINEW_REC.LOG_HS, L_SDIINEW_REC.LOG_HS_DETAILS, 
+                 L_SDIINEW_REC.ALLOW_MODIFY;
+
+            IF (NVL(L_SDIIOLD_REC.IIVALUE, ' ') <> NVL(L_NEW_VALUE, ' ')) OR
+               (L_SDIIOLD_REC.IIVALUE IS NULL AND L_NEW_VALUE IS NOT NULL) OR
+               (L_SDIIOLD_REC.IIVALUE IS NOT NULL AND L_NEW_VALUE IS NULL) THEN
+
+               
+               
+               
+               L_SVIIV_SEQ := L_SVIIV_SEQ + 1;
+               L_SVIIV_SD         (L_SVIIV_SEQ) := A_SD(L_SEQ_NO);
+               L_SVIIV_IC         (L_SVIIV_SEQ) := A_IC(L_SEQ_NO);
+               L_SVIIV_ICNODE     (L_SVIIV_SEQ) := A_ICNODE(L_SEQ_NO);
+               L_SVIIV_II         (L_SVIIV_SEQ) := A_II(L_SEQ_NO);
+               L_SVIIV_IINODE     (L_SVIIV_SEQ) := A_IINODE(L_SEQ_NO);
+               L_SVIIV_IIVALUE    (L_SVIIV_SEQ) := A_IIVALUE(L_SEQ_NO);
+               L_SVIIV_MODIFY_FLAG(L_SVIIV_SEQ) := UNAPIGEN.MOD_FLAG_UPDATE;
+            END IF;
+            
+            
+            
+            
+            L_EVENT_TP := 'SdInfoFieldUpdated';
+         END IF;
+
+      
+      
+      
+      ELSIF L_II_RECORD_OK AND
+            A_MODIFY_FLAG(L_SEQ_NO) IN (UNAPIGEN.MOD_FLAG_INSERT,
+                                        UNAPIGEN.MOD_FLAG_INSERT_WITH_NODES)THEN
+
+         
+         
+         
+         IF NOT L_INSERT THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_IIALREADYEXIST;
+            RAISE STPERROR;
+         ELSIF NVL(A_IS_PROTECTED(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_PROTECTED;
+            RAISE STPERROR;
+         ELSIF NVL(A_HIDDEN(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_HIDDEN;
+            RAISE STPERROR;
+         ELSIF NVL(A_MANDATORY(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_MANDATORY;
+            RAISE STPERROR;
+         ELSE
+            
+            
+            
+            
+
+            
+            IF NVL(A_LC(L_SEQ_NO), ' ') <> ' ' THEN
+               L_LC := A_LC(L_SEQ_NO);
+            END IF;
+            IF NVL(A_LC_VERSION(L_SEQ_NO), ' ') <> ' ' THEN
+               L_LC_VERSION := A_LC_VERSION(L_SEQ_NO);
+            END IF;
+
+            
+            
+            INSERT INTO UTSDII(SD, IC, ICNODE, II, IINODE, IE_VERSION, POS_X,
+                               POS_Y, IS_PROTECTED, MANDATORY, HIDDEN,
+                               DSP_TITLE, DSP_LEN, DSP_TP, DSP_ROWS, II_CLASS,
+                               LOG_HS, LOG_HS_DETAILS, ALLOW_MODIFY, ACTIVE, LC, LC_VERSION, SS)
+            VALUES(A_SD(L_SEQ_NO), A_IC(L_SEQ_NO), A_ICNODE(L_SEQ_NO),
+                   A_II         (L_SEQ_NO),
+                   A_IINODE     (L_SEQ_NO), L_IE_VERSION,
+                   A_POS_X      (L_SEQ_NO), A_POS_Y(L_SEQ_NO),
+                   A_IS_PROTECTED(L_SEQ_NO), A_MANDATORY(L_SEQ_NO),
+                   A_HIDDEN     (L_SEQ_NO), A_DSP_TITLE(L_SEQ_NO),
+                   A_DSP_LEN    (L_SEQ_NO), A_DSP_TP(L_SEQ_NO),
+                   A_DSP_ROWS   (L_SEQ_NO), A_II_CLASS(L_SEQ_NO),
+                   A_LOG_HS     (L_SEQ_NO), A_LOG_HS_DETAILS(L_SEQ_NO), '1', '1', L_LC, L_LC_VERSION, '');
+            UNAPIAUT.UPDATELCINAUTHORISATIONBUFFER('ii', A_SD(L_SEQ_NO) || A_IC(L_SEQ_NO) || TO_CHAR(A_ICNODE(L_SEQ_NO))
+                                                         || A_II(L_SEQ_NO) || TO_CHAR(A_IINODE(L_SEQ_NO)), '', L_LC, L_LC_VERSION);                 
+
+            IF A_IIVALUE(L_SEQ_NO) IS NOT NULL THEN
+
+               
+               
+               
+               L_SVIIV_SEQ := L_SVIIV_SEQ + 1;
+               L_SVIIV_SD         (L_SVIIV_SEQ) := A_SD(L_SEQ_NO);
+               L_SVIIV_IC         (L_SVIIV_SEQ) := A_IC(L_SEQ_NO);
+               L_SVIIV_ICNODE     (L_SVIIV_SEQ) := A_ICNODE(L_SEQ_NO);
+               L_SVIIV_II         (L_SVIIV_SEQ) := A_II(L_SEQ_NO);
+               L_SVIIV_IINODE     (L_SVIIV_SEQ) := A_IINODE(L_SEQ_NO);
+               L_SVIIV_IIVALUE    (L_SVIIV_SEQ) := A_IIVALUE(L_SEQ_NO);
+               L_SVIIV_MODIFY_FLAG(L_SVIIV_SEQ) := UNAPIGEN.MOD_FLAG_UPDATE;
+
+            END IF;
+
+            
+            
+            
+            L_EVENT_TP := 'SdInfoFieldCreated';
+         END IF;
+
+      
+      
+      
+      ELSIF L_II_RECORD_OK AND
+            A_MODIFY_FLAG(L_SEQ_NO) = UNAPIGEN.MOD_FLAG_DELETE THEN
+
+         IF L_INSERT THEN
+            
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJECT;
+            RAISE STPERROR;
+         
+         
+         
+         ELSIF L_ACTIVE = '1' THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_OPACTIVE;
+            RAISE STPERROR;
+         ELSE
+            
+            IF UNAPIGEN.ISSYSTEM21CFR11COMPLIANT = UNAPIGEN.DBERR_SUCCESS THEN
+               UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOTALLOWEDIN21CFR11;
+               RAISE STPERROR;
+            END IF;
+
+            
+            L_OLD_VALUE := '';
+            SELECT IIVALUE
+            INTO   L_OLD_VALUE
+            FROM   UTSDII
+            WHERE SD = A_SD(L_SEQ_NO)
+              AND IC = A_IC(L_SEQ_NO)
+              AND ICNODE = A_ICNODE(L_SEQ_NO)
+              AND II = A_II(L_SEQ_NO)
+              AND IINODE = A_IINODE(L_SEQ_NO);
+
+            
+            
+            
+            DELETE FROM UTSDII
+            WHERE SD = A_SD(L_SEQ_NO)
+              AND IC = A_IC(L_SEQ_NO)
+              AND ICNODE = A_ICNODE(L_SEQ_NO)
+              AND II = A_II(L_SEQ_NO)
+              AND IINODE = A_IINODE(L_SEQ_NO);
+
+            
+            
+            
+            DELETE FROM UTEVTIMED
+            WHERE OBJECT_TP = 'sdii'
+              AND OBJECT_ID = A_II(L_SEQ_NO)
+              AND INSTR(EV_DETAILS, 'sd=' || A_SD(L_SEQ_NO)) <> 0
+              AND INSTR(EV_DETAILS, 'ic=' || A_IC(L_SEQ_NO)) <> 0
+              AND INSTR(EV_DETAILS, 'icnode=' || TO_CHAR(A_ICNODE(L_SEQ_NO))) <> 0
+              AND INSTR(EV_DETAILS, 'iinode=' || TO_CHAR(A_IINODE(L_SEQ_NO))) <> 0;
+
+            DELETE FROM UTEVTIMED
+            WHERE INSTR(EV_DETAILS, 'sd=' || A_SD(L_SEQ_NO)) <> 0
+              AND INSTR(EV_DETAILS, 'ic=' || A_IC(L_SEQ_NO)) <> 0
+              AND INSTR(EV_DETAILS, 'icnode=' || TO_CHAR(A_ICNODE(L_SEQ_NO))) <> 0
+              AND INSTR(EV_DETAILS, 'ii=' || A_II(L_SEQ_NO)) <> 0
+              AND INSTR(EV_DETAILS, 'iinode=' || TO_CHAR(A_IINODE(L_SEQ_NO))) <> 0;
+
+            DELETE FROM UTEVRULESDELAYED
+            WHERE OBJECT_TP = 'sdii'
+              AND OBJECT_ID = A_II(L_SEQ_NO)
+              AND INSTR(EV_DETAILS, 'sd=' || A_SD(L_SEQ_NO)) <> 0
+              AND INSTR(EV_DETAILS, 'ic=' || A_IC(L_SEQ_NO)) <> 0
+              AND INSTR(EV_DETAILS, 'icnode=' || TO_CHAR(A_ICNODE(L_SEQ_NO))) <> 0
+              AND INSTR(EV_DETAILS, 'iinode=' || TO_CHAR(A_IINODE(L_SEQ_NO))) <> 0;
+
+            DELETE FROM UTEVRULESDELAYED
+            WHERE INSTR(EV_DETAILS, 'sd=' || A_SD(L_SEQ_NO)) <> 0
+              AND INSTR(EV_DETAILS, 'ic=' || A_IC(L_SEQ_NO)) <> 0
+              AND INSTR(EV_DETAILS, 'icnode=' || TO_CHAR(A_ICNODE(L_SEQ_NO))) <> 0
+              AND INSTR(EV_DETAILS, 'ii=' || A_II(L_SEQ_NO)) <> 0
+              AND INSTR(EV_DETAILS, 'iinode=' || TO_CHAR(A_IINODE(L_SEQ_NO))) <> 0;
+
+            L_DELETED_NODE := A_IINODE(L_SEQ_NO);
+            A_IINODE(L_SEQ_NO) := 0;
+            
+            
+            
+            L_EVENT_TP := 'SdInfoFieldDeleted';
+         END IF;
+      END IF;
+
+      
+      
+      
+      IF L_II_RECORD_OK THEN
+         L_EV_SEQ_NR := -1;
+         L_EV_DETAILS := 'sd=' || A_SD(L_SEQ_NO) || 
+                         '#ic=' || A_IC(L_SEQ_NO) ||
+                         '#icnode=' || TO_CHAR(A_ICNODE(L_SEQ_NO)) || 
+                         '#iinode=' || TO_CHAR(A_IINODE(L_SEQ_NO)) ||
+                         '#ie_version=' || L_IE_VERSION;
+         IF L_EVENT_TP = 'SdInfoFieldCreated' THEN
+            L_EV_DETAILS := L_EV_DETAILS || '#new_value=' || SUBSTR(A_IIVALUE(L_SEQ_NO),1,40);
+         ELSIF L_EVENT_TP = 'SdInfoFieldDeleted' THEN
+            L_EV_DETAILS := L_EV_DETAILS || '#old_value=' || SUBSTR(L_OLD_VALUE,1,40);
+         END IF;
+
+         L_RESULT := UNAPIEV.INSERTINFOFIELDEVENT('SaveSdInfoField', UNAPIGEN.P_EVMGR_NAME, 
+                                                  'sdii', A_II(L_SEQ_NO), L_LC, L_LC_VERSION, 
+                                                  L_SS, L_EVENT_TP, L_EV_DETAILS, L_EV_SEQ_NR);
+         IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+            UNAPIGEN.P_TXN_ERROR := L_RESULT;
+            RAISE STPERROR;
+         END IF;
+
+         
+         IF L_EV_SEQ_NR = -1 THEN
+            
+            
+            OPEN L_SEQ_EVENT_CURSOR;
+            FETCH L_SEQ_EVENT_CURSOR INTO L_EV_SEQ_NR;
+            CLOSE L_SEQ_EVENT_CURSOR;
+         END IF;
+      ELSE
+         IF L_II_HANDLED THEN
+            L_COMPLETELY_SAVED := FALSE;
+         END IF;
+      END IF;
+
+      
+      
+      
+      IF L_II_RECORD_OK AND L_LOG_HS = '1' THEN
+         IF L_EVENT_TP = 'SdInfoFieldDeleted' THEN
+            INSERT INTO UTSDICHS(SD, IC, ICNODE, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, 
+                                 LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+            VALUES(A_SD(L_SEQ_NO), A_IC(L_SEQ_NO), A_ICNODE(L_SEQ_NO), UNAPIGEN.P_USER, 
+                   UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+                   'info field "'||A_II(L_SEQ_NO)||'" is deleted.', 
+                   L_CURRENT_TIMESTAMP, L_CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+         ELSIF L_EVENT_TP = 'SdInfoFieldCreated' THEN
+            INSERT INTO UTSDICHS(SD, IC, ICNODE, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, 
+                                 LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+            VALUES(A_SD(L_SEQ_NO), A_IC(L_SEQ_NO), A_ICNODE(L_SEQ_NO), UNAPIGEN.P_USER,
+                   UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+                   'info field "'||A_II(L_SEQ_NO)||'" is created.', 
+                   L_CURRENT_TIMESTAMP, L_CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+         ELSE
+            INSERT INTO UTSDICHS(SD, IC, ICNODE, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, 
+                                 LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+            VALUES(A_SD(L_SEQ_NO), A_IC(L_SEQ_NO), A_ICNODE(L_SEQ_NO), UNAPIGEN.P_USER,
+                   UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+                   'info field "'||A_II(L_SEQ_NO)||'" is updated.', 
+                   L_CURRENT_TIMESTAMP, L_CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+         END IF;
+      END IF;
+
+      
+      
+      
+      IF L_II_RECORD_OK AND L_LOG_HS_DETAILS = '1' THEN
+         IF L_EVENT_TP = 'SdInfoFieldDeleted' THEN
+            L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+            INSERT INTO UTSDICHSDETAILS(SD, IC, ICNODE, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+            VALUES(A_SD(L_SEQ_NO), A_IC(L_SEQ_NO), A_ICNODE(L_SEQ_NO), UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, 
+                   L_HS_DETAILS_SEQ_NR, 'info field "'||A_II(L_SEQ_NO)||'" is deleted.');
+         ELSIF L_EVENT_TP = 'SdInfoFieldCreated' THEN
+            L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+            INSERT INTO UTSDICHSDETAILS(SD, IC, ICNODE, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+            VALUES(A_SD(L_SEQ_NO), A_IC(L_SEQ_NO), A_ICNODE(L_SEQ_NO), UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, 
+                   L_HS_DETAILS_SEQ_NR, 'info field "'||A_II(L_SEQ_NO)||'" is created.');
+         ELSE
+            L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+            INSERT INTO UTSDICHSDETAILS(SD, IC, ICNODE, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+            VALUES(A_SD(L_SEQ_NO), A_IC(L_SEQ_NO), A_ICNODE(L_SEQ_NO), UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, 
+                   L_HS_DETAILS_SEQ_NR, 'info field "'||A_II(L_SEQ_NO)||'" is updated.');
+
+            UNAPIHSDETAILS.ADDSDIIHSDETAILS(L_SDIIOLD_REC, L_SDIINEW_REC, UNAPIGEN.P_TR_SEQ, 
+                                            L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR); 
+         END IF;
+      END IF;
+   
+   
+   
+   END LOOP;
+
+   
+   
+   
+   IF L_SVIIV_SEQ <> 0 THEN
+      L_RET_CODE := UNAPISDIC.SAVESDIIVALUE(L_SVIIV_SD, L_SVIIV_IC, L_SVIIV_ICNODE,
+                                 L_SVIIV_II, L_SVIIV_IINODE,
+                                 L_SVIIV_IIVALUE, 
+                                 L_SVIIV_MODIFY_FLAG,
+                                 L_SVIIV_SEQ, A_MODIFY_REASON);
+      IF L_RET_CODE = UNAPIGEN.DBERR_PARTIALSAVE THEN
+         
+         
+         
+         FOR L_ROW IN 1..L_SVIIV_SEQ LOOP
+            IF L_SVIIV_MODIFY_FLAG(L_ROW) > UNAPIGEN.DBERR_SUCCESS THEN
+               UNAPIGEN.P_TXN_ERROR := L_SVIIV_MODIFY_FLAG(L_ROW);
+               L_ERRM := 'sd=' || L_SVIIV_SD(L_ROW) || '#ic=' || L_SVIIV_IC(L_ROW) ||
+                         '#icnode=' || TO_CHAR(L_SVIIV_ICNODE(L_ROW)) ||
+                         '#ii=' || L_SVIIV_II(L_ROW)||
+                         '#iinode=' || TO_CHAR(L_SVIIV_IINODE(L_ROW)) ||
+                         '#SaveSdIiValue#ErrorCode=' || TO_CHAR(L_RET_CODE);
+               RAISE STPERROR;
+            END IF;
+         END LOOP;
+      ELSIF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+         L_ERRM := 'sd=' || L_SVIIV_SD(L_ROW) || '#ic=' || L_SVIIV_IC(L_ROW) ||
+                   '#icnode=' || TO_CHAR(L_SVIIV_ICNODE(L_ROW)) ||
+                   '#ii=' || L_SVIIV_II(L_ROW)||
+                   '#iinode=' || TO_CHAR(L_SVIIV_IINODE(L_ROW)) ||
+                   '#nr_of_rows=' || TO_CHAR(L_SVIIV_SEQ) ||
+                   '#SaveSdIiValue#ErrorCode=' || TO_CHAR(L_RET_CODE);
+         RAISE STPERROR;
+      END IF;                           
+   END IF;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   
+   
+   
+   FOR L_SEQ_NO IN 1..A_NR_OF_ROWS LOOP
+      IF A_MODIFY_FLAG(L_SEQ_NO) < UNAPIGEN.DBERR_SUCCESS THEN
+         A_MODIFY_FLAG(L_SEQ_NO) := UNAPIGEN.DBERR_SUCCESS;
+      END IF;
+   END LOOP;
+
+   IF L_COMPLETELY_SAVED THEN
+      RETURN(UNAPIGEN.DBERR_SUCCESS);
+   ELSE
+      RETURN(UNAPIGEN.DBERR_PARTIALSAVE);
+   END IF;
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('SaveSdInfoField',SQLERRM);
+   ELSIF L_ERRM IS NOT NULL THEN
+      UNAPIGEN.LOGERROR('SaveSdInfoField',L_ERRM);   
+   END IF;
+   IF L_SDIIOLD_CURSOR%ISOPEN THEN
+      CLOSE L_SDIIOLD_CURSOR;
+   END IF;
+   IF L_SEQ_EVENT_CURSOR%ISOPEN THEN
+      CLOSE L_SEQ_EVENT_CURSOR;
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR, 'SaveSdInfoField'));
+END SAVESDINFOFIELD;
+
+FUNCTION SAVESDIIVALUE                                    
+(A_SD               IN       UNAPIGEN.VC20_TABLE_TYPE,    
+ A_IC               IN       UNAPIGEN.VC20_TABLE_TYPE,    
+ A_ICNODE           IN OUT   UNAPIGEN.LONG_TABLE_TYPE,    
+ A_II               IN       UNAPIGEN.VC20_TABLE_TYPE,    
+ A_IINODE           IN OUT   UNAPIGEN.LONG_TABLE_TYPE,    
+ A_IIVALUE          IN       UNAPIGEN.VC2000_TABLE_TYPE,  
+ A_MODIFY_FLAG      IN OUT   UNAPIGEN.NUM_TABLE_TYPE,     
+ A_NR_OF_ROWS       IN       NUMBER,                      
+ A_MODIFY_REASON    IN       VARCHAR2)                    
+RETURN NUMBER IS
+
+L_LC                     VARCHAR2(2);
+L_LC_VERSION             VARCHAR2(20);
+L_SS                     VARCHAR2(2);
+L_LOG_HS                 CHAR(1);
+L_LOG_HS_DETAILS         CHAR(1);
+L_ALLOW_MODIFY           CHAR(1);
+L_ACTIVE                 CHAR(1);
+L_CURRENT_TIMESTAMP                TIMESTAMP WITH TIME ZONE;
+L_SEQ_NO                 INTEGER;
+L_II_RECORD_OK           BOOLEAN;
+L_II_OK                  BOOLEAN;
+L_II_HANDLED             BOOLEAN;
+L_COMPLETELY_SAVED       BOOLEAN;
+L_SCAN_SEQ               INTEGER;
+L_SCAN_PREV_SD           VARCHAR2(20);
+L_SCAN_PREV_IC           VARCHAR2(20);
+L_SCAN_PREV_ICNODE       NUMBER;
+L_IC_EVENT_INSERTED      BOOLEAN;
+L_NEXT_II                VARCHAR2(20);
+L_OLD_NEXT_II            VARCHAR2(20);
+L_DATE_STRING            VARCHAR2(255);
+L_DATE                   TIMESTAMP WITH TIME ZONE;
+L_SQLERRM2               VARCHAR2(255);
+L_HS_DETAILS_SEQ_NR      INTEGER;
+L_IE_VERSION             VARCHAR2(20);
+L_IP_VERSION             VARCHAR2(20);
+L_IC_LOG_HS              CHAR(1);
+L_IC_LOG_HS_DETAILS      CHAR(1);
+L_LINKED_II              BOOLEAN;
+
+
+L_CSNODE                 NUMBER;
+L_OLD_DATE               TIMESTAMP WITH TIME ZONE;
+L_PT_VERSION             VARCHAR2(20);
+L_SD_LC                  VARCHAR2(2);
+L_SD_LC_VERSION          VARCHAR2(20);
+L_SD_SS                  VARCHAR2(2);
+L_SD_LOG_HS              CHAR(1);
+L_SD_LOG_HS_DETAILS      CHAR(1);
+L_SD_ALLOW_MODIFY        CHAR(1);
+L_SD_ACTIVE              CHAR(1);
+
+CURSOR L_NEXT_II_CURSOR (C_SD        VARCHAR2,
+                         C_IC        VARCHAR2,
+                         C_ICNODE    NUMBER) IS
+   SELECT II
+   FROM UTSDII
+   WHERE SD = C_SD
+     AND IC = C_IC
+     AND ICNODE = C_ICNODE
+     AND IIVALUE IS NULL
+   ORDER BY IINODE;
+
+CURSOR L_IEVALUE_CURSOR(A_IC VARCHAR2, A_IP_VERSION VARCHAR2, A_IE VARCHAR2, A_IE_VERSION VARCHAR2) IS
+   SELECT B.IEVALUE, B.FORMAT
+   FROM UTIE B
+   WHERE B.DEF_VAL_TP = 'S'
+     AND B.IE = A_IE
+     AND B.VERSION = A_IE_VERSION
+     AND (B.IE, B.VERSION) NOT IN (SELECT C.IE, UNAPIGEN.VALIDATEVERSION('ie',C.IE,C.IE_VERSION)
+                                   FROM UTIPIE C
+                                   WHERE C.IE = B.IE
+                                     AND UNAPIGEN.VALIDATEVERSION('ie',C.IE,C.IE_VERSION) = B.VERSION
+                                     AND C.IP = A_IC
+                                     AND C.VERSION = A_IP_VERSION
+                                     AND (C.DEF_VAL_TP<>'F' OR C.IEVALUE IS NOT NULL))
+   UNION 
+   SELECT B.IEVALUE, C.FORMAT
+   FROM UTIPIE B, UTIE C
+   WHERE B.IP = A_IC
+     AND B.VERSION = A_IP_VERSION
+     AND B.IE = C.IE
+     AND UNAPIGEN.VALIDATEVERSION('ie',B.IE,B.IE_VERSION) = C.VERSION
+     AND B.DEF_VAL_TP = 'S'
+     AND C.IE = A_IE
+     AND C.VERSION = A_IE_VERSION;
+L_IEVALUE_REC       L_IEVALUE_CURSOR%ROWTYPE;
+
+CURSOR L_SDIIOLD_CURSOR (A_SD IN VARCHAR2,
+                         A_IC IN VARCHAR2, A_ICNODE IN NUMBER,
+                         A_II IN VARCHAR2, A_IINODE IN NUMBER) IS
+   SELECT A.*
+   FROM UDSDII A
+   WHERE A.SD = A_SD
+   AND A.IC = A_IC
+   AND A.ICNODE = A_ICNODE
+   AND A.II = A_II
+   AND A.IINODE = A_IINODE;
+L_SDIIOLD_REC UDSDII%ROWTYPE;
+L_SDIINEW_REC UDSDII%ROWTYPE;
+
+CURSOR L_SD_CURSOR (A_SD IN VARCHAR2) IS
+   SELECT A.*
+   FROM UDSD A
+   WHERE A.SD = A_SD;
+L_SDOLD_REC UDSD%ROWTYPE;
+L_SDNEW_REC UDSD%ROWTYPE;
+
+CURSOR L_IPVERSION_CURSOR (C_SD VARCHAR2, C_IC VARCHAR2, C_ICNODE NUMBER) IS
+   SELECT IP_VERSION
+   FROM UTSDIC
+   WHERE SD     = C_SD
+     AND IC     = C_IC
+     AND ICNODE = C_ICNODE;
+
+CURSOR L_SDIC_CURSOR (C_SD VARCHAR2, C_IC VARCHAR2, C_ICNODE NUMBER) IS
+   SELECT IP_VERSION, NEXT_II, LOG_HS, LOG_HS_DETAILS
+   FROM UTSDIC
+   WHERE SD     = C_SD
+     AND IC     = C_IC
+     AND ICNODE = C_ICNODE;
+
+CURSOR L_SDCS_CURSOR (C_SD IN VARCHAR2) IS
+   SELECT CSNODE
+     FROM UTSDCS
+    WHERE SD = C_SD
+      AND T0_DATE IS NULL;
+
+BEGIN
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   
+   L_CURRENT_TIMESTAMP := CURRENT_TIMESTAMP;
+   L_COMPLETELY_SAVED := TRUE;
+   L_II_OK := FALSE;
+   L_LINKED_II := FALSE;
+
+   L_HS_DETAILS_SEQ_NR := 0;
+
+   
+   
+   
+   OPEN L_SD_CURSOR(A_SD(1));
+   FETCH L_SD_CURSOR
+   INTO L_SDOLD_REC;
+   CLOSE L_SD_CURSOR;
+
+   FOR L_SEQ_NO IN 1..A_NR_OF_ROWS LOOP
+      L_II_RECORD_OK := TRUE;          
+      L_II_HANDLED := TRUE;
+
+      IF NVL(A_SD(L_SEQ_NO), ' ') = ' ' OR
+         NVL(A_IC(L_SEQ_NO), ' ') = ' ' OR
+         NVL(A_ICNODE(L_SEQ_NO), 0) = 0 OR
+         NVL(A_II(L_SEQ_NO), ' ') = ' ' OR
+         NVL(A_IINODE(L_SEQ_NO), 0) = 0 THEN
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+         RAISE STPERROR;
+
+      ELSIF NVL(A_MODIFY_FLAG(L_SEQ_NO), UNAPIGEN.MOD_FLAG_INSERT)
+            NOT IN (UNAPIGEN.DBERR_SUCCESS, UNAPIGEN.MOD_FLAG_UPDATE) THEN
+         
+         
+         
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_INVALMODFLAG;
+         RAISE STPERROR;
+
+      ELSIF A_MODIFY_FLAG(L_SEQ_NO) = UNAPIGEN.DBERR_SUCCESS THEN
+         
+         
+         
+         L_II_RECORD_OK := FALSE; 
+         L_II_HANDLED := FALSE;   
+
+      ELSE
+         
+         
+         
+         L_RET_CODE := UNAPIAUT.GETSDIIAUTHORISATION(A_SD(L_SEQ_NO), A_IC(L_SEQ_NO), A_ICNODE(L_SEQ_NO),
+                                                     A_II(L_SEQ_NO), A_IINODE(L_SEQ_NO), L_IE_VERSION, 
+                                                     L_LC, L_LC_VERSION, L_SS, L_ALLOW_MODIFY,
+                                                     L_ACTIVE, L_LOG_HS, L_LOG_HS_DETAILS);
+        IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+            A_MODIFY_FLAG(L_SEQ_NO) := L_RET_CODE;
+            L_II_RECORD_OK := FALSE;
+         END IF;
+      END IF;
+
+      IF L_II_RECORD_OK THEN
+         
+         
+         L_II_OK := TRUE;
+
+         
+         
+         
+         OPEN L_SDIIOLD_CURSOR(A_SD(L_SEQ_NO),
+                               A_IC(L_SEQ_NO), A_ICNODE(L_SEQ_NO),
+                               A_II(L_SEQ_NO), A_IINODE(L_SEQ_NO));
+         FETCH L_SDIIOLD_CURSOR
+         INTO L_SDIIOLD_REC;
+         CLOSE L_SDIIOLD_CURSOR;
+         L_SDIINEW_REC := L_SDIIOLD_REC;
+
+         
+         
+         
+         
+         
+         
+         UPDATE UTSDII
+         SET IIVALUE      = A_IIVALUE(L_SEQ_NO),
+             ALLOW_MODIFY = '1'
+         WHERE SD = A_SD(L_SEQ_NO)
+           AND IC = A_IC(L_SEQ_NO)
+           AND ICNODE = A_ICNODE(L_SEQ_NO)
+           AND II = A_II(L_SEQ_NO)
+           AND IINODE = A_IINODE(L_SEQ_NO)
+         RETURNING IIVALUE, ALLOW_MODIFY
+         INTO L_SDIINEW_REC.IIVALUE, L_SDIINEW_REC.ALLOW_MODIFY;
+
+         OPEN L_IPVERSION_CURSOR(A_SD(L_SEQ_NO), A_IC(L_SEQ_NO), A_ICNODE(L_SEQ_NO));
+         FETCH L_IPVERSION_CURSOR INTO L_IP_VERSION;
+         CLOSE L_IPVERSION_CURSOR;
+
+         
+         
+         
+         OPEN L_IEVALUE_CURSOR(A_IC(L_SEQ_NO), L_IP_VERSION, A_II(L_SEQ_NO), L_IE_VERSION);
+         FETCH L_IEVALUE_CURSOR
+         INTO L_IEVALUE_REC;
+         IF L_IEVALUE_CURSOR%FOUND THEN
+
+            
+            L_DATE := NULL;
+            IF  L_IEVALUE_REC.IEVALUE IN ('creation_date', 'exec_start_date', 'exec_end_date', 
+                                          't0_date') THEN 
+                L_DATE_STRING := A_IIVALUE(L_SEQ_NO)||'@'||SUBSTR(L_IEVALUE_REC.FORMAT,2);
+                L_RET_CODE := UNAPIGEN.DATEVALID(L_DATE_STRING, L_DATE, L_SQLERRM);
+                IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+                   L_SQLERRM2 := 'UNAPIGEN.DateValid('''||A_IIVALUE(L_SEQ_NO)||'@'||SUBSTR(L_IEVALUE_REC.FORMAT,2)||''') ret_code='||
+                                 TO_CHAR(L_RET_CODE)||'#sd='||A_SD(L_SEQ_NO)||'#ic='||A_IC(L_SEQ_NO)||'#icnode='||TO_CHAR(A_ICNODE(L_SEQ_NO))||
+                                 '#ii='||A_II(L_SEQ_NO)||'#iinode='||TO_CHAR(A_IINODE(L_SEQ_NO));
+                   RAISE STPERROR;
+                END IF;
+            END IF;
+
+            
+            IF L_IEVALUE_REC.IEVALUE = 'sd' THEN
+               
+               NULL;
+               
+            ELSIF L_IEVALUE_REC.IEVALUE = 'pt' THEN
+               
+               UPDATE UTSD SET PT= A_IIVALUE(L_SEQ_NO) WHERE SD=A_SD(L_SEQ_NO);
+               
+            ELSIF L_IEVALUE_REC.IEVALUE = 'description' THEN
+               UPDATE UTSD SET DESCRIPTION= A_IIVALUE(L_SEQ_NO) WHERE SD=A_SD(L_SEQ_NO);
+               
+            ELSIF L_IEVALUE_REC.IEVALUE = 'descr_doc' THEN
+               UPDATE UTSD SET DESCR_DOC= A_IIVALUE(L_SEQ_NO) WHERE SD=A_SD(L_SEQ_NO);
+               
+            ELSIF L_IEVALUE_REC.IEVALUE = 't0_date' THEN
+               UPDATE UTSD SET T0_DATE= L_DATE, T0_DATE_TZ= L_DATE WHERE SD=A_SD(L_SEQ_NO);
+               
+               
+               L_OLD_DATE := NULL;
+               L_DATE_STRING := L_SDIIOLD_REC.IIVALUE||'@'||SUBSTR(L_IEVALUE_REC.FORMAT,2);
+               L_RET_CODE := UNAPIGEN.DATEVALID(L_DATE_STRING, L_OLD_DATE, L_SQLERRM);
+               IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+                  L_SQLERRM2 := 
+                     'UNAPIGEN.DateValid('''||L_SDIIOLD_REC.IIVALUE||'@'||
+                     SUBSTR(L_IEVALUE_REC.FORMAT,2)||''') ret_code='||TO_CHAR(L_RET_CODE)||
+                     '#sd='||A_SD(L_SEQ_NO)||'#ic='||A_IC(L_SEQ_NO)||'#icnode='||
+                     TO_CHAR(A_ICNODE(L_SEQ_NO))||'#ii='||A_II(L_SEQ_NO)||'#iinode='||
+                     TO_CHAR(A_IINODE(L_SEQ_NO));
+                  RAISE STPERROR;
+               END IF;
+
+               
+               L_PT_VERSION := L_SDOLD_REC.PT_VERSION;
+               L_RET_CODE := UNAPIAUT.GETSDAUTHORISATION
+                                (A_SD(L_SEQ_NO), L_PT_VERSION, L_SD_LC, L_SD_LC_VERSION, 
+                                 L_SD_SS, L_SD_ALLOW_MODIFY, L_SD_ACTIVE, L_SD_LOG_HS, 
+                                 L_SD_LOG_HS_DETAILS);
+               IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+                  UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+                  RAISE STPERROR;
+               END IF;
+
+               
+               IF (L_OLD_DATE IS NULL) AND NOT(L_DATE IS NULL) THEN
+                  
+                  FOR L_CS_REC IN L_SDCS_CURSOR(A_SD(L_SEQ_NO)) LOOP
+                     L_CSNODE := L_CS_REC.CSNODE;
+                     UPDATE UTSDCS
+                        SET T0_DATE = L_DATE,  
+                 T0_DATE_TZ = DECODE(L_DATE, T0_DATE_TZ, T0_DATE_TZ, L_DATE) 
+                      WHERE SD     = A_SD(L_SEQ_NO)
+                        AND CSNODE = L_CSNODE; 
+                     L_EV_SEQ_NR  := -1;
+                     L_EVENT_TP   := 'T0_dateSet';
+                     L_EV_DETAILS := 'csnode='||L_CSNODE;
+                     L_RESULT := UNAPIEV.INSERTEVENT
+                                    ('SaveSdIiValue', UNAPIGEN.P_EVMGR_NAME, 'sd', 
+                                     A_SD(L_SEQ_NO), L_SD_LC, L_SD_LC_VERSION, L_SD_SS, 
+                                     L_EVENT_TP, L_EV_DETAILS, L_EV_SEQ_NR);
+                     IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+                        UNAPIGEN.P_TXN_ERROR := L_RESULT;
+                        RAISE STPERROR;
+                     END IF;
+                  END LOOP;
+               END IF;
+               
+            ELSIF L_IEVALUE_REC.IEVALUE = 'creation_date' THEN
+               UPDATE UTSD SET CREATION_DATE= L_DATE, CREATION_DATE_TZ = L_DATE WHERE SD=A_SD(L_SEQ_NO);
+               
+            ELSIF L_IEVALUE_REC.IEVALUE = 'created_by' THEN
+               UPDATE UTSD SET CREATED_BY= A_IIVALUE(L_SEQ_NO) WHERE SD=A_SD(L_SEQ_NO);
+               
+            ELSIF L_IEVALUE_REC.IEVALUE = 'exec_start_date' THEN
+               UPDATE UTSD SET EXEC_START_DATE= L_DATE, EXEC_START_DATE_TZ= L_DATE WHERE SD=A_SD(L_SEQ_NO);
+               
+            ELSIF L_IEVALUE_REC.IEVALUE = 'exec_end_date' THEN
+               UPDATE UTSD SET EXEC_END_DATE= L_DATE, EXEC_END_DATE_TZ= L_DATE WHERE SD=A_SD(L_SEQ_NO);
+
+            ELSIF L_IEVALUE_REC.IEVALUE = 'nr_sc_current' THEN
+               UPDATE UTSD SET NR_SC_CURRENT= A_IIVALUE(L_SEQ_NO) WHERE SD=A_SD(L_SEQ_NO);
+                              
+            ELSIF L_IEVALUE_REC.IEVALUE = 'label_format' THEN
+               UPDATE UTSD SET LABEL_FORMAT= A_IIVALUE(L_SEQ_NO) WHERE SD=A_SD(L_SEQ_NO);
+
+            ELSIF L_IEVALUE_REC.IEVALUE = 'responsible' THEN
+               UPDATE UTSD SET RESPONSIBLE= A_IIVALUE(L_SEQ_NO) WHERE SD=A_SD(L_SEQ_NO);
+               
+             ELSE
+               L_SQLERRM := L_IEVALUE_REC.IEVALUE || ' is not a valid study standard property for info field '||A_II(L_SEQ_NO)||
+                            ' in info profile '||A_IC(L_SEQ_NO) ||' sd=' || A_SD(L_SEQ_NO) || '#icnode=' ||
+                            TO_CHAR(A_ICNODE(L_SEQ_NO)) || '#iinode=' || TO_CHAR(A_IINODE(L_SEQ_NO));
+               RAISE STPERROR;
+            END IF;
+            L_LINKED_II := TRUE;
+         END IF;
+         CLOSE L_IEVALUE_CURSOR;
+
+         
+         
+         
+         L_EV_SEQ_NR := -1;
+         L_EVENT_TP  := 'SdInfoFieldValueChanged';
+         L_EV_DETAILS := 'sd=' || A_SD(L_SEQ_NO) || 
+                         '#ic=' || A_IC(L_SEQ_NO) ||
+                         '#icnode=' || TO_CHAR(A_ICNODE(L_SEQ_NO)) || 
+                         '#iinode=' || TO_CHAR(A_IINODE(L_SEQ_NO)) || 
+                         '#old_value=' || SUBSTR(L_SDIIOLD_REC.IIVALUE, 1,40) || 
+                         '#new_value=' || SUBSTR(L_SDIINEW_REC.IIVALUE, 1,40)  ||
+                         '#ie_version=' || L_IE_VERSION;
+         L_RESULT := UNAPIEV.INSERTINFOFIELDEVENT('SaveSdIiValue', UNAPIGEN.P_EVMGR_NAME,
+                                                  'sdii', A_II(L_SEQ_NO), L_LC, L_LC_VERSION, 
+                                                  L_SS, L_EVENT_TP, L_EV_DETAILS, L_EV_SEQ_NR);
+         IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+            UNAPIGEN.P_TXN_ERROR := L_RESULT;
+            RAISE STPERROR;
+         END IF;
+
+         
+         IF L_EV_SEQ_NR = -1 THEN
+            
+            
+            OPEN L_SEQ_EVENT_CURSOR;
+            FETCH L_SEQ_EVENT_CURSOR INTO L_EV_SEQ_NR;
+            CLOSE L_SEQ_EVENT_CURSOR;
+         END IF;
+
+         IF L_LOG_HS = '1' THEN
+            IF NVL((L_SDIIOLD_REC.IIVALUE <> L_SDIINEW_REC.IIVALUE), TRUE) AND NOT(L_SDIIOLD_REC.IIVALUE IS NULL AND L_SDIINEW_REC.IIVALUE IS NULL)  THEN 
+               INSERT INTO UTSDICHS(SD, IC, ICNODE, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, 
+                                    LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+               VALUES(A_SD(L_SEQ_NO), A_IC(L_SEQ_NO), A_ICNODE(L_SEQ_NO), UNAPIGEN.P_USER, 
+                      UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+                      'info field "'||A_II(L_SEQ_NO)||'" is updated: property <iivalue> changed value from "'||SUBSTR(L_SDIIOLD_REC.IIVALUE,1,40)||'" to "'||SUBSTR(L_SDIINEW_REC.IIVALUE,1,40)||'".',
+                      CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+            END IF;
+         END IF;
+
+         IF L_LOG_HS_DETAILS = '1' THEN
+            UNAPIHSDETAILS.ADDSDIIHSDETAILS(L_SDIIOLD_REC, L_SDIINEW_REC, UNAPIGEN.P_TR_SEQ, 
+                                            L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR); 
+         END IF;
+      ELSE
+         IF L_II_HANDLED THEN
+            L_COMPLETELY_SAVED := FALSE;
+         END IF;
+      END IF;
+   END LOOP;
+
+   IF L_II_OK THEN
+      
+      
+      
+      OPEN L_SD_CURSOR(A_SD(1));
+      FETCH L_SD_CURSOR
+      INTO L_SDNEW_REC;
+      CLOSE L_SD_CURSOR;
+
+      
+      
+      
+      IF (L_SDNEW_REC.LOG_HS = '1') AND L_LINKED_II THEN
+         INSERT INTO UTSDHS(SD, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, 
+                            LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+         VALUES(A_SD(1), UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+                'study "'||A_SD(1)||'" is updated.',
+                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+      END IF;
+      IF (L_SDNEW_REC.LOG_HS_DETAILS = '1') AND L_LINKED_II THEN
+         L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+         INSERT INTO UTSDHSDETAILS(SD, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+         VALUES  (A_SD(1), UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR, 
+                  'study "'||A_SD(1)||'" is updated.');
+
+         UNAPIHSDETAILS.ADDSDHSDETAILS(L_SDOLD_REC, L_SDNEW_REC, UNAPIGEN.P_TR_SEQ, 
+                                       L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR); 
+      END IF;
+   END IF;
+
+   
+   
+   
+   
+   
+   
+   L_SCAN_SEQ := 1;
+   L_SCAN_PREV_SD := NULL;
+   L_SCAN_PREV_IC := NULL;
+   L_SCAN_PREV_ICNODE := NULL;
+   L_IC_EVENT_INSERTED := FALSE;
+   WHILE L_SCAN_SEQ <= A_NR_OF_ROWS LOOP
+
+      OPEN L_SDIC_CURSOR(A_SD(L_SCAN_SEQ), A_IC(L_SCAN_SEQ), A_ICNODE(L_SCAN_SEQ));
+      FETCH L_SDIC_CURSOR INTO L_IP_VERSION, L_OLD_NEXT_II, L_IC_LOG_HS, L_IC_LOG_HS_DETAILS;
+      IF L_SDIC_CURSOR%NOTFOUND THEN
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJECT;
+         RAISE STPERROR;
+      END IF;
+      CLOSE L_SDIC_CURSOR;
+
+      IF NVL(L_SCAN_PREV_SD, ' ') <> NVL(A_SD(L_SCAN_SEQ), ' ') OR
+         NVL(L_SCAN_PREV_IC, ' ') <> NVL(A_IC(L_SCAN_SEQ), ' ') OR
+         NVL(L_SCAN_PREV_ICNODE, -1) <> NVL(A_ICNODE(L_SCAN_SEQ), -1) THEN
+
+         
+         
+         OPEN L_NEXT_II_CURSOR(A_SD(L_SCAN_SEQ), A_IC(L_SCAN_SEQ), A_ICNODE(L_SCAN_SEQ));
+         FETCH L_NEXT_II_CURSOR
+         INTO L_NEXT_II;
+         IF L_NEXT_II_CURSOR%NOTFOUND THEN
+            L_NEXT_II := NULL;   
+         END IF;
+         CLOSE L_NEXT_II_CURSOR;
+
+         
+         
+         UPDATE UTSDIC
+         SET NEXT_II = L_NEXT_II
+         WHERE SD = A_SD(L_SCAN_SEQ)
+           AND IC = A_IC(L_SCAN_SEQ)
+           AND ICNODE = A_ICNODE(L_SCAN_SEQ);
+
+         L_SCAN_PREV_SD := A_SD(L_SCAN_SEQ);
+         L_SCAN_PREV_IC := A_IC(L_SCAN_SEQ);
+         L_SCAN_PREV_ICNODE := A_ICNODE(L_SCAN_SEQ);
+         L_IC_EVENT_INSERTED := FALSE;
+
+      END IF;
+
+      IF A_MODIFY_FLAG(L_SCAN_SEQ) <= UNAPIGEN.DBERR_SUCCESS AND NOT L_IC_EVENT_INSERTED THEN
+         L_EV_SEQ_NR := -1;
+         L_EVENT_TP  := 'SdInfoFieldValuesChanged';
+         L_EV_DETAILS := 'sd=' || A_SD(L_SCAN_SEQ) || 
+                         '#icnode=' || TO_CHAR(A_ICNODE(L_SCAN_SEQ)) ||
+                         '#ip_version=' || L_IP_VERSION;
+         L_RESULT := UNAPIEV.INSERTEVENT('SaveSdIiValue', UNAPIGEN.P_EVMGR_NAME,
+                                         'sdic', A_IC(L_SCAN_SEQ), L_LC, L_LC_VERSION, L_SS,
+                                         L_EVENT_TP, L_EV_DETAILS, L_EV_SEQ_NR);
+         IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+            UNAPIGEN.P_TXN_ERROR := L_RESULT;
+            RAISE STPERROR;
+         END IF;
+
+         IF L_IC_LOG_HS = '1' THEN
+            INSERT INTO UTSDICHS(SD, IC, ICNODE, WHO, WHO_DESCRIPTION, WHAT, 
+                                 WHAT_DESCRIPTION, LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+            VALUES  (A_SD(L_SCAN_SEQ), A_IC(L_SCAN_SEQ), A_ICNODE(L_SCAN_SEQ), UNAPIGEN.P_USER, 
+                     UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+                     'info card "'||A_IC(L_SCAN_SEQ)||'" info field values are updated.',
+                     CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+         END IF;
+
+         IF L_IC_LOG_HS_DETAILS = '1' THEN
+            L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+            INSERT INTO UTSDICHSDETAILS(SD, IC, ICNODE, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+            VALUES  (A_SD(L_SCAN_SEQ), A_IC(L_SCAN_SEQ), A_ICNODE(L_SCAN_SEQ), 
+                     UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR, 
+                     'info card "'||A_IC(L_SCAN_SEQ)||'" info field values are updated.');
+
+            IF NVL((L_OLD_NEXT_II <> L_NEXT_II), TRUE) AND NOT(L_OLD_NEXT_II IS NULL AND L_NEXT_II IS NULL) THEN 
+               L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+               INSERT INTO UTSDICHSDETAILS(SD, IC, ICNODE, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+               VALUES(A_SD(L_SCAN_SEQ), A_IC(L_SCAN_SEQ), A_ICNODE(L_SCAN_SEQ), UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR,
+                      'info card "'||A_IC(L_SCAN_SEQ)||'" is updated: property <next_ii> changed value from "'||L_OLD_NEXT_II||'" to "'||L_NEXT_II||'".');
+            END IF;
+         END IF;
+
+         L_IC_EVENT_INSERTED := TRUE;
+      END IF;
+
+      L_SCAN_SEQ := L_SCAN_SEQ + 1;
+
+   END LOOP;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   
+   
+   
+   FOR L_SEQ_NO IN 1..A_NR_OF_ROWS LOOP
+      IF A_MODIFY_FLAG(L_SEQ_NO) < UNAPIGEN.DBERR_SUCCESS THEN
+         A_MODIFY_FLAG(L_SEQ_NO) := UNAPIGEN.DBERR_SUCCESS;
+      END IF;
+   END LOOP;
+
+   IF L_COMPLETELY_SAVED THEN
+      RETURN(UNAPIGEN.DBERR_SUCCESS);
+   ELSE
+      RETURN(UNAPIGEN.DBERR_PARTIALSAVE);
+   END IF;
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('SaveSdIiValue',SQLERRM);
+   ELSIF L_SQLERRM IS NOT NULL THEN
+      UNAPIGEN.LOGERROR('SaveSdIiValue',L_SQLERRM);
+      IF L_SQLERRM2 IS NOT NULL THEN
+         UNAPIGEN.LOGERROR('SaveSdIiValue',L_SQLERRM2);
+      END IF;      
+   END IF;
+   IF L_NEXT_II_CURSOR%ISOPEN THEN
+      CLOSE L_NEXT_II_CURSOR;
+   END IF;
+   IF L_IEVALUE_CURSOR%ISOPEN THEN
+      CLOSE L_IEVALUE_CURSOR;
+   END IF;
+   IF L_SDIIOLD_CURSOR%ISOPEN THEN
+      CLOSE L_SDIIOLD_CURSOR;
+   END IF;
+   IF L_SD_CURSOR%ISOPEN THEN
+      CLOSE L_SD_CURSOR;
+   END IF;
+   IF L_SEQ_EVENT_CURSOR%ISOPEN THEN
+      CLOSE L_SEQ_EVENT_CURSOR;
+   END IF;
+   IF L_IPVERSION_CURSOR%ISOPEN THEN
+      CLOSE L_IPVERSION_CURSOR;
+   END IF;
+   IF L_SDIC_CURSOR%ISOPEN THEN
+      CLOSE L_SDIC_CURSOR;
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR, 'SaveSdIiValue'));
+END SAVESDIIVALUE;
+
+FUNCTION CREATESDINFODETAILS
+(A_PT             IN        VARCHAR2,                 
+ A_PT_VERSION     IN OUT    VARCHAR2,                 
+ A_SD             IN        VARCHAR2,                 
+ A_FILTER_FREQ    IN        CHAR,                     
+ A_REF_DATE       IN        DATE,                     
+ A_MODIFY_REASON  IN        VARCHAR2)                 
+RETURN NUMBER IS
+
+L_SD                 UNAPIGEN.VC20_TABLE_TYPE;
+L_IC                 UNAPIGEN.VC20_TABLE_TYPE;
+L_IP_VERSION         UNAPIGEN.VC20_TABLE_TYPE;
+L_ICNODE             UNAPIGEN.LONG_TABLE_TYPE;
+L_DESCRIPTION        UNAPIGEN.VC40_TABLE_TYPE;
+L_WINSIZE_X          UNAPIGEN.NUM_TABLE_TYPE;
+L_WINSIZE_Y          UNAPIGEN.NUM_TABLE_TYPE;
+L_IS_PROTECTED       UNAPIGEN.CHAR1_TABLE_TYPE;
+L_HIDDEN             UNAPIGEN.CHAR1_TABLE_TYPE;
+L_MANUALLY_ADDED     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_NEXT_II            UNAPIGEN.VC20_TABLE_TYPE;
+L_IC_CLASS           UNAPIGEN.VC2_TABLE_TYPE;
+L_LOG_HS             UNAPIGEN.CHAR1_TABLE_TYPE;
+L_LOG_HS_DETAILS     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_LC                 UNAPIGEN.VC2_TABLE_TYPE;
+L_LC_VERSION         UNAPIGEN.VC20_TABLE_TYPE;
+L_MODIFY_FLAG        UNAPIGEN.NUM_TABLE_TYPE;
+L_NR_OF_ROWS         NUMBER;
+L_REF_DATE           TIMESTAMP WITH TIME ZONE;
+L_FILTER_FREQ        CHAR(1);
+L_ERRM               VARCHAR2(255);
+L_SEQ                NUMBER(5);
+L_LOG_HS_SD          CHAR(1);
+L_LOG_HS_DETAILS_SD  CHAR(1);
+L_HS_DETAILS_SEQ_NR  INTEGER;
+
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_SD, ' ') = ' ' OR
+      NVL(A_PT, ' ') = ' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   
+   A_PT_VERSION := UNAPIGEN.VALIDATEVERSION('pt', A_PT, A_PT_VERSION);
+
+   IF A_REF_DATE IS NULL THEN
+      L_REF_DATE := CURRENT_TIMESTAMP;
+   ELSE
+      L_REF_DATE := A_REF_DATE;
+   END IF;
+
+   L_ERRM := NULL;
+   L_FILTER_FREQ := NVL(A_FILTER_FREQ, '1');
+
+   
+   
+   
+   L_RET_CODE := UNAPISD.INITSDINFODETAILS(A_PT, A_PT_VERSION, A_SD,
+                                           L_FILTER_FREQ,
+                                           L_REF_DATE, L_IC, L_IP_VERSION,
+                                           L_DESCRIPTION, L_WINSIZE_X,
+                                           L_WINSIZE_Y, L_IS_PROTECTED, L_HIDDEN,
+                                           L_MANUALLY_ADDED, L_NEXT_II, L_IC_CLASS, L_LOG_HS,
+                                           L_LOG_HS_DETAILS, L_LC, L_LC_VERSION, L_NR_OF_ROWS);
+
+
+   IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+      UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+      L_ERRM := 'sd=' || A_SD || '#pt='|| A_PT ||
+                '#filter_freq=' || L_FILTER_FREQ ||
+                '#ref_date=' || L_REF_DATE ||
+                '#nr_of_rows=' || L_NR_OF_ROWS ||
+                '#InitSdInfoDetails#ErrorCode=' || TO_CHAR(L_RET_CODE);
+      RAISE STPERROR;
+   END IF;
+
+   
+   
+   
+   FOR L_ROW IN 1..L_NR_OF_ROWS LOOP
+      L_SD(L_ROW) := A_SD;
+      L_MODIFY_FLAG(L_ROW) := UNAPIGEN.MOD_FLAG_INSERT;
+      L_ICNODE(L_ROW) := 0;
+    END LOOP;
+
+   
+   
+   
+   IF L_NR_OF_ROWS > 0 THEN
+ 
+      L_RET_CODE := UNAPISDIC.SAVESDINFOCARD(L_SD, L_IC, L_ICNODE, L_IP_VERSION, L_DESCRIPTION,
+                                           L_WINSIZE_X, L_WINSIZE_Y,
+                                           L_IS_PROTECTED,
+                                           L_HIDDEN, L_MANUALLY_ADDED, L_NEXT_II, 
+                                           L_IC_CLASS, L_LOG_HS, L_LOG_HS_DETAILS, L_LC, L_LC_VERSION, L_MODIFY_FLAG,
+                                           L_NR_OF_ROWS, A_MODIFY_REASON);
+      IF L_RET_CODE = UNAPIGEN.DBERR_PARTIALSAVE THEN
+         
+         
+         
+         FOR L_ROW IN 1..L_NR_OF_ROWS LOOP
+            IF L_MODIFY_FLAG(L_ROW) > UNAPIGEN.DBERR_SUCCESS THEN
+               UNAPIGEN.P_TXN_ERROR := L_MODIFY_FLAG(L_ROW);
+               L_ERRM := 'sd=' || L_SD(L_ROW) ||
+                          '#ic=' || L_IC(L_ROW) ||
+                          '#icnode=' || TO_CHAR(L_ICNODE(L_ROW)) ||
+                          '#SaveSdInfoCard#ErrorCode='||TO_CHAR(L_RET_CODE);
+               RAISE STPERROR;
+            END IF;
+         END LOOP;
+      ELSIF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+         RAISE STPERROR;
+      END IF;
+   END IF;
+
+   
+   
+   
+   FOR L_ROW IN 1..L_NR_OF_ROWS LOOP
+      
+      
+      
+      
+      L_RET_CODE := UNAPISDIC2.INITANDSAVESDICATTRIBUTES(A_SD, L_IC(L_ROW), L_ICNODE(L_ROW));
+     
+      
+      
+      IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         L_ERRM := 'sd=' || A_SD ||
+                    '#ic=' || L_IC(L_ROW) ||
+                    '#icnode=' || TO_CHAR(L_ICNODE(L_ROW)) ||
+                    '#InitAndSaveSdIcattributes#ErrorCode=' || TO_CHAR(L_RET_CODE);
+         UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+         RAISE STPERROR;
+      END IF;
+
+      
+      
+      
+      L_RET_CODE := UNAPISDIC.CREATESDICDETAILS(A_PT, A_PT_VERSION, L_IC(L_ROW), L_IP_VERSION(L_ROW), L_SEQ,
+                                                A_SD, L_ICNODE(L_ROW),
+                                                A_MODIFY_REASON);
+      
+      
+      
+      IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         L_ERRM := 'sd=' || A_SD|| '#pt='|| A_PT ||
+                    '#ic=' || L_IC(L_ROW) ||
+                    '#icnode=' || TO_CHAR(L_ICNODE(L_ROW)) ||
+                    '#CreateSdIcDetails#ErrorCode=' || TO_CHAR(L_RET_CODE);
+         UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+         RAISE STPERROR;
+      END IF;
+   END LOOP;
+
+   
+   
+   
+   L_EV_SEQ_NR := -1;
+   L_EV_DETAILS := 'pt=' || A_PT || 
+                   '#pt_version=' || A_PT_VERSION;
+   L_EVENT_TP := 'SdInfoCreated';
+   L_RESULT := UNAPIEV.INSERTEVENT('CreateSdInfoDetails', UNAPIGEN.P_EVMGR_NAME, 
+                                   'sd', A_SD, '', '', '', L_EVENT_TP, L_EV_DETAILS, L_EV_SEQ_NR);
+   IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+      UNAPIGEN.P_TXN_ERROR := L_RESULT;
+      RAISE STPERROR;
+   END IF;
+
+   BEGIN
+      SELECT LOG_HS, LOG_HS_DETAILS
+      INTO L_LOG_HS_SD, L_LOG_HS_DETAILS_SD
+      FROM UTSD
+      WHERE SD = A_SD;
+   EXCEPTION
+   WHEN NO_DATA_FOUND THEN  
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJECT;
+      RAISE STPERROR;
+   END;
+
+   IF NVL(L_LOG_HS_SD, ' ') = '1' THEN
+      INSERT INTO UTSDHS (SD, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+      VALUES (A_SD, UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+              'Info cards for study "'||A_SD||'" are created', 
+              CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+   END IF;
+
+   L_HS_DETAILS_SEQ_NR := 0;
+   IF NVL(L_LOG_HS_DETAILS_SD, ' ') = '1' THEN
+      L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+      INSERT INTO UTSDHSDETAILS(SD, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+      VALUES  (A_SD, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR, 
+               'Info cards for study "'||A_SD||'" are created');
+   END IF;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('CreateSdInfoDetails', SQLERRM);
+   ELSIF L_ERRM IS NOT NULL THEN
+      UNAPIGEN.LOGERROR('CreateSdInfoDetails', L_ERRM);
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR,'CreateSdInfoDetails'));
+END CREATESDINFODETAILS;
+
+FUNCTION ADDSDINFODETAILS
+(A_PT             IN        VARCHAR2,                 
+ A_PT_VERSION     IN        VARCHAR2,                 
+ A_SD             IN        VARCHAR2,                 
+ A_IP             IN        VARCHAR2,                 
+ A_IP_VERSION     IN        VARCHAR2,                 
+ A_SEQ            IN        NUMBER,                   
+ A_MODIFY_REASON  IN        VARCHAR2)                 
+RETURN NUMBER IS
+
+L_SD                 UNAPIGEN.VC20_TABLE_TYPE;
+L_IC                 UNAPIGEN.VC20_TABLE_TYPE;
+L_ICNODE             UNAPIGEN.LONG_TABLE_TYPE;
+L_IP_VERSION         UNAPIGEN.VC20_TABLE_TYPE;
+L_DESCRIPTION        UNAPIGEN.VC40_TABLE_TYPE;
+L_WINSIZE_X          UNAPIGEN.NUM_TABLE_TYPE;
+L_WINSIZE_Y          UNAPIGEN.NUM_TABLE_TYPE;
+L_IS_PROTECTED       UNAPIGEN.CHAR1_TABLE_TYPE;
+L_HIDDEN             UNAPIGEN.CHAR1_TABLE_TYPE;
+L_MANUALLY_ADDED     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_NEXT_II            UNAPIGEN.VC20_TABLE_TYPE;
+L_IC_CLASS           UNAPIGEN.VC2_TABLE_TYPE;
+L_LOG_HS             UNAPIGEN.CHAR1_TABLE_TYPE;
+L_LOG_HS_DETAILS     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_LC                 UNAPIGEN.VC2_TABLE_TYPE;
+L_LC_VERSION         UNAPIGEN.VC20_TABLE_TYPE;
+L_MODIFY_FLAG        UNAPIGEN.NUM_TABLE_TYPE;
+L_NR_OF_ROWS         NUMBER;
+L_REF_DATE           TIMESTAMP WITH TIME ZONE;
+L_FILTER_FREQ        CHAR(1);
+L_ERRM               VARCHAR2(255);
+L_SEQ                NUMBER(5);
+L_LOG_HS_SD          CHAR(1);
+L_LOG_HS_DETAILS_SD  CHAR(1);
+L_PT_VERSION         VARCHAR2(20);
+L_HS_DETAILS_SEQ_NR  INTEGER;
+
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_SD, ' ') = ' ' OR
+      NVL(A_PT, ' ') = ' ' OR
+      NVL(A_IP, ' ') = ' ' OR
+      A_SEQ IS NULL THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   
+   L_PT_VERSION := UNAPIGEN.VALIDATEVERSION('pt', A_PT, A_PT_VERSION);
+
+   
+   
+   
+   L_FILTER_FREQ := '0';
+   L_REF_DATE := NULL; 
+   L_ERRM := NULL;
+
+   
+   
+   
+   L_RET_CODE := UNAPISDIC.INITSDINFOCARD(A_IP, A_IP_VERSION, A_SEQ, A_PT, L_PT_VERSION, A_SD,
+                                          L_IP_VERSION, L_DESCRIPTION, L_WINSIZE_X, L_WINSIZE_Y, 
+                                          L_IS_PROTECTED, L_HIDDEN, L_MANUALLY_ADDED, L_NEXT_II, 
+                                          L_IC_CLASS, L_LOG_HS, L_LOG_HS_DETAILS, L_LC, L_LC_VERSION, 
+                                          L_NR_OF_ROWS);
+   IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+      UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+      L_ERRM := 'ip=' || A_IP || '#seq='|| TO_CHAR(A_SEQ) ||
+                '#pt=' || A_PT || '#sd='|| A_SD ||
+                '#nr_of_rows=' || L_NR_OF_ROWS ||
+                '#InitSdInfoCard#ErrorCode=' || TO_CHAR(L_RET_CODE);
+      RAISE STPERROR;
+   END IF;
+
+   
+   
+   
+   FOR L_ROW IN 1..L_NR_OF_ROWS LOOP
+      L_SD(L_ROW) := A_SD;
+      L_MODIFY_FLAG(L_ROW) := UNAPIGEN.MOD_FLAG_INSERT;
+      L_IC(L_ROW) := A_IP;
+      L_ICNODE(L_ROW) := 0;
+      L_IP_VERSION(L_ROW) := A_IP_VERSION;
+   END LOOP;
+
+   
+   
+   
+   IF L_NR_OF_ROWS > 0 THEN
+      L_RET_CODE := UNAPISDIC.SAVESDINFOCARD(L_SD, L_IC, L_ICNODE, L_IP_VERSION, L_DESCRIPTION,
+                                             L_WINSIZE_X, L_WINSIZE_Y, L_IS_PROTECTED,
+                                             L_HIDDEN, L_MANUALLY_ADDED, L_NEXT_II, 
+                                             L_IC_CLASS, L_LOG_HS, L_LOG_HS_DETAILS, L_LC, L_LC_VERSION, 
+                                             L_MODIFY_FLAG, L_NR_OF_ROWS, A_MODIFY_REASON);
+      IF L_RET_CODE = UNAPIGEN.DBERR_PARTIALSAVE THEN
+         
+         
+         
+         FOR L_ROW IN 1..L_NR_OF_ROWS LOOP
+            IF L_MODIFY_FLAG(L_ROW) > UNAPIGEN.DBERR_SUCCESS THEN
+               UNAPIGEN.P_TXN_ERROR := L_MODIFY_FLAG(L_ROW);
+               L_ERRM := 'sd=' || L_SD(L_ROW) ||
+                          '#ic=' || L_IC(L_ROW) ||
+                          '#icnode=' || TO_CHAR(L_ICNODE(L_ROW)) ||
+                          '#SaveSdInfoCard#ErrorCode='||TO_CHAR(L_RET_CODE);
+               RAISE STPERROR;
+            END IF;
+         END LOOP;
+      ELSIF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+         RAISE STPERROR;
+      END IF;
+   END IF;
+
+   
+   
+   
+   FOR L_ROW IN 1..L_NR_OF_ROWS LOOP
+      
+      
+      
+      L_RET_CODE := UNAPISDIC2.INITANDSAVESDICATTRIBUTES(A_SD, L_IC(L_ROW), L_ICNODE(L_ROW));
+     
+      
+      
+      IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         L_ERRM := 'sd=' || A_SD ||
+                    '#ic=' || L_IC(L_ROW) ||
+                    '#icnode=' || TO_CHAR(L_ICNODE(L_ROW)) ||
+                    '#InitAndSaveSdIcattributes#ErrorCode=' || TO_CHAR(L_RET_CODE);
+         UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+         RAISE STPERROR;
+      END IF;
+
+      
+      
+      
+      L_RET_CODE := UNAPISDIC.CREATESDICDETAILS(A_PT, L_PT_VERSION, L_IC(L_ROW), 
+                                                L_IP_VERSION(L_ROW), L_SEQ, A_SD, 
+                                                L_ICNODE(L_ROW), A_MODIFY_REASON);
+      
+      
+      
+      IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         L_ERRM := 'sd=' || A_SD|| '#pt='|| A_PT ||
+                    '#ic=' || L_IC(L_ROW) ||
+                    '#icnode=' || TO_CHAR(L_ICNODE(L_ROW)) ||
+                    '#CreateSdIcDetails#ErrorCode=' || TO_CHAR(L_RET_CODE);
+         UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+         RAISE STPERROR;
+      END IF;
+   END LOOP;
+
+   
+   
+   
+   L_EV_SEQ_NR := -1;
+   L_EV_DETAILS := 'pt=' || A_PT ||
+                   '#pt_version=' || L_PT_VERSION;
+   L_EVENT_TP := 'SdInfoCreated';
+   L_RESULT := UNAPIEV.INSERTEVENT('AddSdInfoDetails', UNAPIGEN.P_EVMGR_NAME, 'sd', A_SD, 
+                                   '', '', '', L_EVENT_TP, L_EV_DETAILS, L_EV_SEQ_NR);
+   IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+      UNAPIGEN.P_TXN_ERROR := L_RESULT;
+      RAISE STPERROR;
+   END IF;
+
+   BEGIN
+      SELECT LOG_HS, LOG_HS_DETAILS
+      INTO L_LOG_HS_SD, L_LOG_HS_DETAILS_SD
+      FROM UTSD
+      WHERE SD = A_SD;
+   EXCEPTION
+   WHEN NO_DATA_FOUND THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJECT;
+      RAISE STPERROR;
+   END;
+
+   IF NVL(L_LOG_HS_SD, ' ') = '1' THEN
+      INSERT INTO UTSDHS (SD, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+      VALUES (A_SD, UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+              'Info cards for study "'||A_SD||'" are created', 
+              CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+   END IF;
+
+   L_HS_DETAILS_SEQ_NR := 0;
+   IF NVL(L_LOG_HS_DETAILS_SD, ' ') = '1' THEN
+      L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+      INSERT INTO UTSDHSDETAILS(SD, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+      VALUES  (A_SD, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR, 
+               'Info cards for study "'||A_SD||'" are created');
+   END IF;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('AddSdInfoDetails', SQLERRM);
+   ELSIF L_ERRM IS NOT NULL THEN
+      UNAPIGEN.LOGERROR('AddSdInfoDetails', L_ERRM);
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR,'AddSdInfoDetails'));
+END ADDSDINFODETAILS;
+
+FUNCTION CREATESDICDETAILS
+(A_PT             IN        VARCHAR2,                 
+ A_PT_VERSION     IN OUT    VARCHAR2,                 
+ A_IP             IN        VARCHAR2,                 
+ A_IP_VERSION     IN OUT    VARCHAR2,                 
+ A_SEQ            IN        NUMBER,                   
+ A_SD             IN        VARCHAR2,                 
+ A_ICNODE         IN        NUMBER,                   
+ A_MODIFY_REASON  IN        VARCHAR2)                 
+RETURN NUMBER IS
+
+L_IE_REC           UTIE%ROWTYPE;
+L_IPIE_REC         UTIPIE%ROWTYPE;
+L_IIVALUE          VARCHAR2(2000);
+L_ICNODE           NUMBER(9);
+L_IINODE           NUMBER(9);
+L_ERRM             VARCHAR2(255);
+L_NEXT_II          VARCHAR2(20);
+L_LOG_HS           CHAR(1);
+L_LOG_HS_DETAILS   CHAR(1);
+L_DEF_LC           VARCHAR2(2);
+L_HS_DETAILS_SEQ_NR     INTEGER;
+
+CURSOR L_NEXT_II_CURSOR (C_SD        VARCHAR2,
+                         C_IC        VARCHAR2,
+                         C_ICNODE    NUMBER) IS
+   SELECT II
+   FROM UTSDII
+   WHERE SD = C_SD
+     AND IC = C_IC
+     AND ICNODE = C_ICNODE
+     AND IIVALUE IS NULL
+   ORDER BY IINODE;
+
+CURSOR L_IE_CURSOR(C_IE VARCHAR2, C_IE_VERSION VARCHAR2) IS
+   SELECT *
+   FROM UTIE
+   WHERE IE = C_IE
+   AND VERSION = C_IE_VERSION;
+
+CURSOR L_IPIE_CURSOR IS
+   SELECT A.*
+   FROM UTIPIE A
+   WHERE A.IP = A_IP
+   AND A.VERSION = A_IP_VERSION
+   ORDER BY A.SEQ;
+
+CURSOR L_OBJECTS_CURSOR (A_OBJECT_TYPE VARCHAR2) IS
+   SELECT LOG_HS, LOG_HS_DETAILS, DEF_LC
+   FROM UTOBJECTS
+   WHERE OBJECT=A_OBJECT_TYPE;
+
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_SD, ' ') = ' ' OR
+      NVL(A_IP, ' ') = ' ' OR
+      NVL(A_ICNODE, 0) = 0 THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   
+   A_PT_VERSION := UNAPIGEN.VALIDATEVERSION('pt', A_PT, A_PT_VERSION);
+   A_IP_VERSION := UNAPIGEN.VALIDATEVERSION('ip', A_IP, A_IP_VERSION);
+   
+   
+   L_LOG_HS := '0';
+   L_LOG_HS_DETAILS := '0';
+   OPEN L_OBJECTS_CURSOR('sdii');
+   FETCH L_OBJECTS_CURSOR INTO L_LOG_HS, L_LOG_HS_DETAILS, L_DEF_LC;
+   CLOSE L_OBJECTS_CURSOR;
+
+   L_IINODE := 0;
+
+   FOR L_IPIE_REC IN L_IPIE_CURSOR LOOP
+
+      L_ERRM := '';
+      L_IIVALUE := '';
+      
+      
+      
+      L_IPIE_REC.IE_VERSION := UNAPIGEN.VALIDATEVERSION('ie', L_IPIE_REC.IE, L_IPIE_REC.IE_VERSION);
+
+      OPEN L_IE_CURSOR(L_IPIE_REC.IE, L_IPIE_REC.IE_VERSION);
+      FETCH L_IE_CURSOR
+      INTO L_IE_REC;
+      IF L_IE_CURSOR%NOTFOUND THEN
+         CLOSE L_IE_CURSOR;
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJECT;
+         RAISE STPERROR;
+      END IF;
+      CLOSE L_IE_CURSOR;
+
+      
+      
+      
+      IF NVL(L_IPIE_REC.IS_PROTECTED, '2') <> '2' THEN
+         L_IE_REC.IS_PROTECTED := L_IPIE_REC.IS_PROTECTED;
+      END IF;
+
+      IF NVL(L_IPIE_REC.MANDATORY, '2') <> '2' THEN
+         L_IE_REC.MANDATORY := L_IPIE_REC.MANDATORY;
+      END IF;
+
+      IF NVL(L_IPIE_REC.HIDDEN, '2') <> '2' THEN
+         L_IE_REC.HIDDEN := L_IPIE_REC.HIDDEN;
+      END IF;
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      IF L_IE_REC.DSP_TP = 'B' THEN  
+         IF NVL(L_IPIE_REC.IEVALUE, ' ') <> '2' THEN
+            L_IE_REC.DEF_VAL_TP := L_IPIE_REC.DEF_VAL_TP;
+            L_IE_REC.DEF_AU_LEVEL := L_IPIE_REC.DEF_AU_LEVEL;
+            L_IE_REC.IEVALUE := L_IPIE_REC.IEVALUE;
+         END IF;
+      ELSE                           
+         IF NVL(L_IPIE_REC.DEF_VAL_TP, 'F') <> 'F' OR
+            NVL(L_IPIE_REC.IEVALUE, ' ') <> ' ' THEN
+            L_IE_REC.DEF_VAL_TP := L_IPIE_REC.DEF_VAL_TP;
+            L_IE_REC.DEF_AU_LEVEL := L_IPIE_REC.DEF_AU_LEVEL;
+            L_IE_REC.IEVALUE := L_IPIE_REC.IEVALUE;
+         END IF;
+      END IF;
+
+      BEGIN
+      L_RET_CODE := FILLSDIIDEFAULTVALUE(A_SD, L_IE_REC.DEF_VAL_TP,
+                                               L_IE_REC.IEVALUE,
+                                               L_IE_REC.DEF_AU_LEVEL,
+                                               L_IE_REC.DATA_TP,
+                                               L_IE_REC.FORMAT, L_IIVALUE);
+      EXCEPTION
+      WHEN OTHERS THEN
+         L_ERRM := 'Warning#sd=' || A_SD||
+                   '#ic='|| A_IP ||
+                   '#ii='|| L_IE_REC.IE ||
+                   '#def_val_tp='|| L_IE_REC.DEF_VAL_TP ||
+                   '#ievalue=' || SUBSTR(L_IE_REC.IEVALUE,1,40) ||
+                   '#def_au_level=' || L_IE_REC.DEF_AU_LEVEL ||
+                   '#data_tp=' || L_IE_REC.DATA_TP ||
+                   '#format=' || L_IE_REC.FORMAT ||
+                   '#FillSdiiDefaultValue#SqlCode=' || TO_CHAR(SQLCODE);
+      END;
+
+      IF L_RET_CODE = UNAPIGEN.DBERR_NODEFVALUE THEN
+         L_IIVALUE := '';
+      ELSIF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS AND L_ERRM IS NULL THEN
+         L_ERRM := 'Warning#sd=' || A_SD ||
+                   '#ic='|| A_IP ||
+                   '#ii='|| L_IE_REC.IE ||
+                   '#def_val_tp='|| L_IE_REC.DEF_VAL_TP ||
+                   '#ievalue=' || SUBSTR(L_IE_REC.IEVALUE,1,40) ||
+                   '#def_au_level=' || L_IE_REC.DEF_AU_LEVEL ||
+                   '#data_tp=' || L_IE_REC.DATA_TP ||
+                   '#format=' || L_IE_REC.FORMAT ||
+                   '#FillSdiiDefaultValue#ErrorCode=' || TO_CHAR(L_RET_CODE);
+      END IF;
+      IF L_ERRM IS NOT NULL THEN
+         INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+         VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+                'CreateSdIcDetails', L_ERRM);
+      END IF;
+
+      
+      
+      IF L_IE_REC.SC_LC IS NOT NULL THEN
+         L_IE_REC.SC_LC_VERSION := UNAPIGEN.VALIDATEVERSION('lc', L_IE_REC.SC_LC, L_IE_REC.SC_LC_VERSION);
+      END IF;
+      
+      L_IINODE := L_IINODE + UNAPIGEN.DEFAULT_NODE_INTERVAL;
+      INSERT INTO UTSDII(SD, IC, ICNODE, II, IINODE, IE_VERSION, IIVALUE,
+                         POS_X, POS_Y, IS_PROTECTED, MANDATORY,
+                         HIDDEN, DSP_TITLE, DSP_LEN, DSP_TP,
+                         DSP_ROWS, LOG_HS, LOG_HS_DETAILS, ALLOW_MODIFY, ACTIVE, LC, LC_VERSION, SS)
+      VALUES(A_SD, A_IP, A_ICNODE, L_IPIE_REC.IE, L_IINODE, L_IPIE_REC.IE_VERSION, L_IIVALUE,
+             L_IPIE_REC.POS_X, L_IPIE_REC.POS_Y,
+             L_IE_REC.IS_PROTECTED, L_IE_REC.MANDATORY,
+             L_IE_REC.HIDDEN, L_IE_REC.DSP_TITLE,
+             L_IE_REC.DSP_LEN, L_IE_REC.DSP_TP,
+             L_IE_REC.DSP_ROWS, L_LOG_HS, L_LOG_HS_DETAILS, '1', '0', L_IE_REC.SC_LC, L_IE_REC.SC_LC_VERSION, '');
+
+      L_EV_SEQ_NR := -1;
+      L_EV_DETAILS := 'sd=' || A_SD || 
+                      '#ic=' || A_IP ||
+                      '#icnode=' || TO_CHAR(A_ICNODE)||
+                      '#iinode=' || TO_CHAR(L_IINODE) || 
+                      '#ie_version=' || L_IPIE_REC.IE_VERSION;
+      IF L_IIVALUE IS NOT NULL THEN
+         L_EV_DETAILS := L_EV_DETAILS || '#new_value=' || SUBSTR(L_IIVALUE,1,40);
+      END IF;                      
+      L_EVENT_TP := 'SdInfoFieldCreated';
+      L_RESULT := UNAPIEV.INSERTINFOFIELDEVENT('CreateSdIcDetails', UNAPIGEN.P_EVMGR_NAME, 'sdii', 
+                                               L_IPIE_REC.IE, L_IE_REC.SC_LC, L_IE_REC.SC_LC_VERSION, 
+                                               '', L_EVENT_TP, L_EV_DETAILS, L_EV_SEQ_NR);
+      IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+         UNAPIGEN.P_TXN_ERROR := L_RESULT;
+         RAISE STPERROR;
+      END IF;
+
+      
+      IF L_EV_SEQ_NR = -1 THEN
+         
+         
+         OPEN L_SEQ_EVENT_CURSOR;
+         FETCH L_SEQ_EVENT_CURSOR INTO L_EV_SEQ_NR;
+         CLOSE L_SEQ_EVENT_CURSOR;
+      END IF;
+   END LOOP;
+
+   IF L_LOG_HS = '1' THEN
+      INSERT INTO UTSDICHS(SD, IC, ICNODE, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, 
+                           LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+      VALUES(A_SD, A_IP, A_ICNODE, UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+             'Info fields for info card "'||A_IP||'" are created',
+             CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+   END IF;
+
+   L_HS_DETAILS_SEQ_NR := 0;
+   IF L_LOG_HS_DETAILS = '1' THEN
+      L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+      INSERT INTO UTSDICHSDETAILS(SD, IC, ICNODE, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+      VALUES  (A_SD, A_IP, A_ICNODE, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR, 
+               'Info fields for info card "'||A_IP||'" are created');
+   END IF;
+
+   
+   OPEN L_NEXT_II_CURSOR(A_SD, A_IP, A_ICNODE);
+   FETCH L_NEXT_II_CURSOR
+   INTO L_NEXT_II;
+   IF L_NEXT_II_CURSOR%NOTFOUND THEN
+      L_NEXT_II := NULL;
+   END IF;
+
+   
+   UPDATE UTSDIC
+   SET NEXT_II = L_NEXT_II
+   WHERE SD = A_SD
+     AND IC = A_IP
+     AND ICNODE = A_ICNODE;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('CreateSdIcDetails',SQLERRM);
+   END IF;
+   IF L_IE_CURSOR%ISOPEN THEN
+      CLOSE L_IE_CURSOR;
+   END IF;
+   IF L_OBJECTS_CURSOR%ISOPEN THEN
+      CLOSE L_OBJECTS_CURSOR;
+   END IF;
+   IF L_SEQ_EVENT_CURSOR%ISOPEN THEN
+      CLOSE L_SEQ_EVENT_CURSOR;
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR, 'CreateSdIcDetails'));
+END CREATESDICDETAILS;
+
+FUNCTION ADDSDICDETAILS
+(A_PT             IN        VARCHAR2,                 
+ A_PT_VERSION     IN        VARCHAR2,                 
+ A_SD             IN        VARCHAR2,                 
+ A_IC             IN        VARCHAR2,                 
+ A_ICNODE         IN        NUMBER,                   
+ A_IE             IN        VARCHAR2,                 
+ A_IE_VERSION     IN        VARCHAR2,                 
+ A_SEQ            IN        NUMBER,                   
+ A_MODIFY_REASON  IN        VARCHAR2)                 
+RETURN NUMBER IS
+
+L_IE_REC           UTIE%ROWTYPE;
+L_IPIE_REC         UTIPIE%ROWTYPE;
+L_IIVALUE          VARCHAR2(2000);
+L_ICNODE           NUMBER(9);
+L_IINODE           NUMBER(9);
+L_ERRM             VARCHAR2(255);
+L_NEXT_II          VARCHAR2(20);
+L_LOG_HS           CHAR(1);
+L_LOG_HS_DETAILS   CHAR(1);
+L_DEF_LC           VARCHAR2(2);
+L_IP_VERSION       VARCHAR2(20);
+L_HS_DETAILS_SEQ_NR     INTEGER;
+
+CURSOR L_NEXT_II_CURSOR (C_SD        VARCHAR2,
+                         C_IC        VARCHAR2,
+                         C_ICNODE    NUMBER) IS
+   SELECT II
+   FROM UTSDII
+   WHERE SD = C_SD
+     AND IC = C_IC
+     AND ICNODE = C_ICNODE
+     AND IIVALUE IS NULL
+   ORDER BY IINODE;
+
+CURSOR L_IE_CURSOR(C_IE VARCHAR2, C_IE_VERSION VARCHAR2) IS
+   SELECT *
+   FROM UTIE
+   WHERE IE = C_IE
+     AND VERSION = UNAPIGEN.VALIDATEVERSION('ie',C_IE,C_IE_VERSION);
+
+CURSOR L_IPVERSION_CURSOR(C_SD VARCHAR2, C_IC VARCHAR2, C_ICNODE NUMBER) IS
+   SELECT IP_VERSION
+   FROM UTSDIC
+   WHERE SD = C_SD
+   AND IC = C_IC
+   AND ICNODE = C_ICNODE;
+
+CURSOR L_IPIE_CURSOR(C_IP_VERSION VARCHAR2) IS
+   SELECT A.*
+   FROM UTIPIE A, UTIE B
+   WHERE A.IP = A_IC
+   AND A.VERSION = C_IP_VERSION
+   AND A.IE = B.IE
+   AND UNAPIGEN.VALIDATEVERSION('ie',A.IE,A.IE_VERSION) = B.VERSION
+   AND A.IE = A_IE
+   AND UNAPIGEN.VALIDATEVERSION('ie',A.IE,A.IE_VERSION) = A_IE_VERSION
+   AND A.SEQ = A_SEQ
+   ORDER BY A.SEQ;
+
+CURSOR L_IINODE_CURSOR (A_IC VARCHAR2, A_ICNODE NUMBER) IS
+   SELECT NVL(MAX(IINODE),0)
+   FROM UTSDII
+   WHERE SD = A_SD
+   AND IC = A_IC
+   AND ICNODE = A_ICNODE;
+
+CURSOR L_OBJECTS_CURSOR (A_OBJECT_TYPE VARCHAR2) IS
+   SELECT LOG_HS, LOG_HS_DETAILS, DEF_LC
+   FROM UTOBJECTS
+   WHERE OBJECT=A_OBJECT_TYPE;
+   
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_SD, ' ') = ' ' OR
+      NVL(A_IC, ' ') = ' ' OR
+      NVL(A_ICNODE, 0) = 0 OR
+      NVL(A_IE, ' ') = ' ' OR 
+      A_SEQ IS NULL THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   
+   L_LOG_HS := '0';
+   L_LOG_HS_DETAILS := '0';
+   OPEN L_OBJECTS_CURSOR('sdii');
+   FETCH L_OBJECTS_CURSOR INTO L_LOG_HS, L_LOG_HS_DETAILS, L_DEF_LC;
+   CLOSE L_OBJECTS_CURSOR;
+
+   OPEN L_IINODE_CURSOR(A_IC, A_ICNODE);
+   FETCH L_IINODE_CURSOR INTO L_IINODE;
+   CLOSE L_IINODE_CURSOR;
+   
+   OPEN L_IPVERSION_CURSOR(A_SD, A_IC, A_ICNODE);
+   FETCH L_IPVERSION_CURSOR INTO L_IP_VERSION;
+   CLOSE L_IPVERSION_CURSOR;
+
+   L_HS_DETAILS_SEQ_NR := 0;
+   FOR L_IPIE_REC IN L_IPIE_CURSOR(L_IP_VERSION) LOOP
+
+      L_ERRM := '';
+      L_IIVALUE := '';
+      L_IPIE_REC.IE_VERSION := UNAPIGEN.VALIDATEVERSION('ie', L_IPIE_REC.IE, L_IPIE_REC.IE_VERSION);
+      
+      
+      
+      
+      OPEN L_IE_CURSOR(L_IPIE_REC.IE, L_IPIE_REC.IE_VERSION);
+      FETCH L_IE_CURSOR
+      INTO L_IE_REC;
+      IF L_IE_CURSOR%NOTFOUND THEN
+         CLOSE L_IE_CURSOR;
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJECT;
+         RAISE STPERROR;
+      END IF;
+      CLOSE L_IE_CURSOR;
+
+      
+      
+      
+      IF NVL(L_IPIE_REC.IS_PROTECTED, '2') <> '2' THEN
+         L_IE_REC.IS_PROTECTED := L_IPIE_REC.IS_PROTECTED;
+      END IF;
+
+      IF NVL(L_IPIE_REC.MANDATORY, '2') <> '2' THEN
+         L_IE_REC.MANDATORY := L_IPIE_REC.MANDATORY;
+      END IF;
+
+      IF NVL(L_IPIE_REC.HIDDEN, '2') <> '2' THEN
+         L_IE_REC.HIDDEN := L_IPIE_REC.HIDDEN;
+      END IF;
+
+      
+      IF L_IE_REC.DSP_TP = 'B' THEN  
+         IF NVL(L_IPIE_REC.IEVALUE, ' ') <> '2' THEN
+            L_IE_REC.DEF_VAL_TP := L_IPIE_REC.DEF_VAL_TP;
+            L_IE_REC.DEF_AU_LEVEL := L_IPIE_REC.DEF_AU_LEVEL;
+            L_IE_REC.IEVALUE := L_IPIE_REC.IEVALUE;
+         END IF;
+      ELSE                           
+         IF NVL(L_IPIE_REC.DEF_VAL_TP, 'F') <> 'F' OR
+            NVL(L_IPIE_REC.IEVALUE, ' ') <> ' ' THEN
+            L_IE_REC.DEF_VAL_TP := L_IPIE_REC.DEF_VAL_TP;
+            L_IE_REC.DEF_AU_LEVEL := L_IPIE_REC.DEF_AU_LEVEL;
+            L_IE_REC.IEVALUE := L_IPIE_REC.IEVALUE;
+         END IF;
+      END IF;
+
+      BEGIN
+      L_RET_CODE := FILLSDIIDEFAULTVALUE(A_SD, L_IE_REC.DEF_VAL_TP,
+                                         L_IE_REC.IEVALUE,
+                                         L_IE_REC.DEF_AU_LEVEL,
+                                         L_IE_REC.DATA_TP,
+                                         L_IE_REC.FORMAT, L_IIVALUE);
+      EXCEPTION
+      WHEN OTHERS THEN
+         L_ERRM := 'Warning#sd=' || A_SD||
+                   '#ic='|| A_IC ||
+                   '#ii='|| L_IE_REC.IE ||
+                   '#def_val_tp='|| L_IE_REC.DEF_VAL_TP ||
+                   '#ievalue=' || SUBSTR(L_IE_REC.IEVALUE,1,40) ||
+                   '#def_au_level=' || L_IE_REC.DEF_AU_LEVEL ||
+                   '#data_tp=' || L_IE_REC.DATA_TP ||
+                   '#format=' || L_IE_REC.FORMAT ||
+                   '#FillSdiiDefaultValue#SqlCode=' || TO_CHAR(SQLCODE);
+      END;
+
+      IF L_RET_CODE = UNAPIGEN.DBERR_NODEFVALUE THEN
+         L_IIVALUE := '';
+      ELSIF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS AND L_ERRM IS NULL THEN
+         L_ERRM := 'Warning#sd=' || A_SD ||
+                   '#ic='|| A_IC ||
+                   '#ii='|| L_IE_REC.IE ||
+                   '#def_val_tp='|| L_IE_REC.DEF_VAL_TP ||
+                   '#ievalue=' || SUBSTR(L_IE_REC.IEVALUE,1,40) ||
+                   '#def_au_level=' || L_IE_REC.DEF_AU_LEVEL ||
+                   '#data_tp=' || L_IE_REC.DATA_TP ||
+                   '#format=' || L_IE_REC.FORMAT ||
+                   '#FillSdiiDefaultValue#ErrorCode=' || TO_CHAR(L_RET_CODE);
+      END IF;
+      IF L_ERRM IS NOT NULL THEN
+         INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+         VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+                'AddSdIcDetails', L_ERRM);
+      END IF;
+
+      
+      
+      IF L_IE_REC.SC_LC IS NOT NULL THEN
+         L_IE_REC.SC_LC_VERSION := UNAPIGEN.VALIDATEVERSION('lc', L_IE_REC.SC_LC, L_IE_REC.SC_LC_VERSION);
+      END IF;
+      
+      L_IINODE := L_IINODE + UNAPIGEN.DEFAULT_NODE_INTERVAL;
+      INSERT INTO UTSDII(SD, IC, ICNODE, II, IINODE, IE_VERSION, IIVALUE,
+                         POS_X, POS_Y, IS_PROTECTED, MANDATORY,
+                         HIDDEN, DSP_TITLE, DSP_LEN, DSP_TP,
+                         DSP_ROWS, LOG_HS, LOG_HS_DETAILS, ALLOW_MODIFY, ACTIVE, LC, LC_VERSION, SS)
+      VALUES(A_SD, A_IC, A_ICNODE, L_IPIE_REC.IE, L_IINODE, L_IPIE_REC.IE_VERSION, L_IIVALUE,
+             L_IPIE_REC.POS_X, L_IPIE_REC.POS_Y,
+             L_IE_REC.IS_PROTECTED, L_IE_REC.MANDATORY,
+             L_IE_REC.HIDDEN, L_IE_REC.DSP_TITLE,
+             L_IE_REC.DSP_LEN, L_IE_REC.DSP_TP,
+             L_IE_REC.DSP_ROWS, L_LOG_HS, L_LOG_HS_DETAILS, '1', '0', L_IE_REC.SC_LC, L_IE_REC.SC_LC_VERSION, '');
+
+      L_EV_SEQ_NR := -1;
+      L_EV_DETAILS := 'sd=' || A_SD || 
+                      '#ic=' || A_IC ||
+                      '#icnode=' || TO_CHAR(A_ICNODE)||
+                      '#iinode=' || TO_CHAR(L_IINODE) ||
+                      '#ie_version=' || L_IPIE_REC.IE_VERSION;
+      IF L_IIVALUE IS NOT NULL THEN
+         L_EV_DETAILS := L_EV_DETAILS || '#new_value=' || SUBSTR(L_IIVALUE,1,40);
+      END IF;                      
+      L_EVENT_TP := 'SdInfoFieldCreated';
+
+      L_RESULT := UNAPIEV.INSERTINFOFIELDEVENT('AddSdIcDetails', UNAPIGEN.P_EVMGR_NAME, 'sdii', 
+                                               L_IPIE_REC.IE, L_IE_REC.SC_LC, L_IE_REC.SC_LC_VERSION, 
+                                               '', L_EVENT_TP, L_EV_DETAILS, L_EV_SEQ_NR);
+      IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+         UNAPIGEN.P_TXN_ERROR := L_RESULT;
+         RAISE STPERROR;
+      END IF;
+
+      
+      IF L_EV_SEQ_NR = -1 THEN
+         
+         
+         OPEN L_SEQ_EVENT_CURSOR;
+         FETCH L_SEQ_EVENT_CURSOR INTO L_EV_SEQ_NR;
+         CLOSE L_SEQ_EVENT_CURSOR;
+      END IF;
+
+      IF L_LOG_HS = '1' THEN
+         INSERT INTO UTSDICHS(SD, IC, ICNODE, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, 
+                              LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+         VALUES(A_SD, A_IC, A_ICNODE, UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+                'Info fields for info card "'||A_IC||'" are created',
+                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+      END IF;
+
+      IF L_LOG_HS_DETAILS = '1' THEN
+         L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+         INSERT INTO UTSDICHSDETAILS(SD, IC, ICNODE, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+         VALUES  (A_SD, A_IC, A_ICNODE, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR, 
+                  'Info fields for info card "'||A_IC||'" are created');
+      END IF;
+   END LOOP;
+
+   
+   OPEN L_NEXT_II_CURSOR(A_SD, A_IC, A_ICNODE);
+   FETCH L_NEXT_II_CURSOR
+   INTO L_NEXT_II;
+   IF L_NEXT_II_CURSOR%NOTFOUND THEN
+      L_NEXT_II := NULL;
+   END IF;
+
+   
+   UPDATE UTSDIC
+   SET NEXT_II = L_NEXT_II
+   WHERE SD = A_SD
+     AND IC = A_IC
+     AND ICNODE = A_ICNODE;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('AddSdIcDetails',SQLERRM);
+   END IF;
+   IF L_IE_CURSOR%ISOPEN THEN
+      CLOSE L_IE_CURSOR;
+   END IF;
+   IF L_IPVERSION_CURSOR%ISOPEN THEN
+      CLOSE L_IPVERSION_CURSOR;
+   END IF;
+   IF L_IINODE_CURSOR%ISOPEN THEN
+      CLOSE L_IINODE_CURSOR;
+   END IF;
+   IF L_OBJECTS_CURSOR%ISOPEN THEN
+      CLOSE L_OBJECTS_CURSOR;
+   END IF;
+   IF L_SEQ_EVENT_CURSOR%ISOPEN THEN
+      CLOSE L_SEQ_EVENT_CURSOR;
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR, 'AddSdIcDetails'));
+END ADDSDICDETAILS;
+
+FUNCTION INITSDINFOCARD
+(A_IP              IN     VARCHAR2,                  
+ A_IP_VERSION_IN   IN     VARCHAR2,                  
+ A_SEQ             IN     NUMBER,                    
+ A_PT              IN     VARCHAR2,                  
+ A_PT_VERSION      IN     VARCHAR2,                  
+ A_SD              IN     VARCHAR2,                  
+ A_IP_VERSION      OUT    UNAPIGEN.VC20_TABLE_TYPE,  
+ A_DESCRIPTION     OUT    UNAPIGEN.VC40_TABLE_TYPE,  
+ A_WINSIZE_X       OUT    UNAPIGEN.NUM_TABLE_TYPE,   
+ A_WINSIZE_Y       OUT    UNAPIGEN.NUM_TABLE_TYPE,   
+ A_IS_PROTECTED    OUT    UNAPIGEN.CHAR1_TABLE_TYPE ,
+ A_HIDDEN          OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_MANUALLY_ADDED  OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_NEXT_II         OUT    UNAPIGEN.VC20_TABLE_TYPE,  
+ A_IC_CLASS        OUT    UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LOG_HS          OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LOG_HS_DETAILS  OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LC              OUT    UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LC_VERSION      OUT    UNAPIGEN.VC20_TABLE_TYPE,  
+ A_NR_OF_ROWS      IN OUT NUMBER)                    
+RETURN NUMBER IS
+
+L_IP_VERSION        VARCHAR2(20);
+L_PT_VERSION        VARCHAR2(20);
+L_DESCRIPTION       VARCHAR2(40);
+L_WINSIZE_X         NUMBER(4);
+L_WINSIZE_Y         NUMBER(4);
+L_IS_PROTECTED      CHAR(1);
+L_HIDDEN            CHAR(1);
+L_MANUALLY_ADDED    CHAR(1);
+L_NEXT_II           VARCHAR2(20);
+L_IC_CLASS          VARCHAR2(2);
+L_LOG_HS            CHAR(1);
+L_LOG_HS_DETAILS    CHAR(1);
+L_LC                VARCHAR2(2);
+L_LC_VERSION        VARCHAR2(20);
+L_CUR_IS_PROTECTED  CHAR(1);
+L_CUR_HIDDEN        CHAR(1);
+L_PTIP_CURSOR       INTEGER;
+
+CURSOR L_IP_CURSOR (C_IP VARCHAR2, C_IP_VERSION VARCHAR2) IS
+   SELECT DESCRIPTION, WINSIZE_X, WINSIZE_Y, IS_PROTECTED, HIDDEN,
+          IP_CLASS, SC_LC, UNAPIGEN.USEVERSION('lc', SC_LC, SC_LC_VERSION) SC_LC_VERSION
+   FROM UTIP
+   WHERE IP = C_IP
+   AND VERSION = C_IP_VERSION;
+
+CURSOR L_OBJECTS_CURSOR (A_OBJECT_TYPE VARCHAR2) IS
+   SELECT LOG_HS, LOG_HS_DETAILS
+   FROM UTOBJECTS
+   WHERE OBJECT=A_OBJECT_TYPE;
+
+BEGIN
+
+   IF NVL(A_NR_OF_ROWS, 0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN(UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+
+   IF NVL(A_IP, ' ') = ' ' THEN
+      RETURN(UNAPIGEN.DBERR_NOOBJID);
+   END IF;
+
+   IF NVL(A_SD, ' ') = ' ' THEN
+      RETURN(UNAPIGEN.DBERR_NOOBJID);
+   END IF;
+
+   
+   L_IP_VERSION := UNAPIGEN.VALIDATEVERSION('ip', A_IP, A_IP_VERSION_IN);
+   
+   L_PT_VERSION := UNAPIGEN.VALIDATEVERSION('pt', A_PT, A_PT_VERSION);
+
+   L_WHERE_CLAUSE := 'WHERE pt = ''' || REPLACE(A_PT, '''', '''''') || 
+                     ''' AND version = ''' || REPLACE(L_PT_VERSION, '''', '''''') || 
+                     ''' AND ip = ''' || REPLACE(A_IP, '''', '''''') || 
+                     ''' AND UNAPIGEN.ValidateVersion(''ip'', ip, ip_version) = ''' || REPLACE(L_IP_VERSION, '''', '''''') || ''''; 
+   IF NVL(A_SEQ, 0) <> 0 THEN
+      L_WHERE_CLAUSE := L_WHERE_CLAUSE || ' AND seq = ' || A_SEQ || 
+                       ' ORDER BY seq';
+   ELSE
+      L_WHERE_CLAUSE := L_WHERE_CLAUSE || ' ORDER BY seq '; 
+   END IF;
+
+   
+   L_MANUALLY_ADDED := '1';
+   L_IC_CLASS := NULL;
+   L_NEXT_II := NULL;
+
+   
+   
+   
+   OPEN L_IP_CURSOR(A_IP, L_IP_VERSION);
+   FETCH L_IP_CURSOR
+   INTO L_DESCRIPTION, L_WINSIZE_X, L_WINSIZE_Y, L_IS_PROTECTED,
+        L_HIDDEN, L_IC_CLASS, L_LC, L_LC_VERSION;
+
+   IF L_IP_CURSOR%NOTFOUND THEN
+      CLOSE L_IP_CURSOR;
+      RETURN(UNAPIGEN.DBERR_NOOBJECT);
+   END IF;
+
+   CLOSE L_IP_CURSOR;
+
+   
+   
+   
+   IF NVL(A_PT, ' ') <> ' ' THEN
+      L_PTIP_CURSOR := DBMS_SQL.OPEN_CURSOR;
+      L_SQL_STRING := 'SELECT is_protected, hidden FROM dd'||
+                      UNAPIGEN.P_DD || '.uvptip '|| L_WHERE_CLAUSE;
+
+      DBMS_SQL.PARSE(L_PTIP_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+      DBMS_SQL.DEFINE_COLUMN_CHAR(L_PTIP_CURSOR, 1, L_CUR_IS_PROTECTED, 1);
+      DBMS_SQL.DEFINE_COLUMN_CHAR(L_PTIP_CURSOR, 2, L_CUR_HIDDEN, 1);
+      L_RESULT := DBMS_SQL.EXECUTE_AND_FETCH(L_PTIP_CURSOR);
+
+      IF L_RESULT <> 0 THEN
+         DBMS_SQL.COLUMN_VALUE_CHAR(L_PTIP_CURSOR, 1, L_CUR_IS_PROTECTED);
+         DBMS_SQL.COLUMN_VALUE_CHAR(L_PTIP_CURSOR, 2, L_CUR_HIDDEN);
+
+         IF NVL(L_CUR_IS_PROTECTED, '2') <> '2' THEN
+            L_IS_PROTECTED := L_CUR_IS_PROTECTED;
+         END IF;
+         IF NVL(L_CUR_HIDDEN, '2') <> '2' THEN
+            L_HIDDEN := L_CUR_HIDDEN;
+         END IF;
+      END IF;
+      DBMS_SQL.CLOSE_CURSOR(L_PTIP_CURSOR);
+   END IF;
+
+   
+   L_LOG_HS := '0';
+   L_LOG_HS_DETAILS := '0';
+   OPEN L_OBJECTS_CURSOR('sdic');
+   FETCH L_OBJECTS_CURSOR INTO L_LOG_HS, L_LOG_HS_DETAILS;
+   CLOSE L_OBJECTS_CURSOR;
+
+   
+   
+   
+   
+
+   L_FETCHED_ROWS := 1;
+   FOR L_ROWS IN 1..L_FETCHED_ROWS LOOP
+      A_IP_VERSION      (L_ROWS) := L_IP_VERSION;
+      A_DESCRIPTION     (L_ROWS) := L_DESCRIPTION;
+      A_WINSIZE_X       (L_ROWS) := L_WINSIZE_X;
+      A_WINSIZE_Y       (L_ROWS) := L_WINSIZE_Y;
+      A_IS_PROTECTED    (L_ROWS) := L_IS_PROTECTED;
+      A_HIDDEN          (L_ROWS) := L_HIDDEN;
+      A_MANUALLY_ADDED  (L_ROWS) := L_MANUALLY_ADDED;
+      A_NEXT_II         (L_ROWS) := L_NEXT_II;
+      A_IC_CLASS        (L_ROWS) := L_IC_CLASS;
+      A_LOG_HS          (L_ROWS) := L_LOG_HS;
+      A_LOG_HS_DETAILS  (L_ROWS) := L_LOG_HS_DETAILS;
+      A_LC              (L_ROWS) := L_LC;
+      A_LC_VERSION      (L_ROWS) := L_LC_VERSION;
+   END LOOP;
+
+   
+   
+   
+   
+   IF L_FETCHED_ROWS > A_NR_OF_ROWS THEN
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+             'InitScInfoCard','a_nr_of_rows ('||A_NR_OF_ROWS||
+             ') too small for required InfoCard initialisation');
+   END IF;
+
+   A_NR_OF_ROWS := L_FETCHED_ROWS;
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+              'InitSdInfoCard', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      IF L_OBJECTS_CURSOR%ISOPEN THEN
+         CLOSE L_OBJECTS_CURSOR;
+      END IF;      
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END INITSDINFOCARD;
+
+
+
+
+
+
+
+FUNCTION FILLSDIIDEFAULTVALUE               
+(A_SD                 IN      VARCHAR2,     
+ A_DEF_VAL_TP         IN      CHAR,         
+ A_IEVALUE            IN      VARCHAR2,     
+ A_DEF_AU_LEVEL       IN      VARCHAR2,     
+ A_DATA_TP            IN      CHAR,         
+ A_FORMAT             IN      VARCHAR2,     
+ A_IIVALUE            OUT     VARCHAR2)     
+RETURN NUMBER IS
+
+L_RETURN         INTEGER;
+L_FORMAT_TYPE    CHAR(1);
+L_FORMAT_VALUE   VARCHAR2(40);
+L_DIVIDE_POS     INTEGER;
+L_DOT_POS        INTEGER;
+L_TO_CHAR_FORMAT VARCHAR2(40);
+L_IEVALUE        VARCHAR2(2000);
+L_IEVALUE_F      NUMBER;
+L_IIVALUE        VARCHAR2(2000);
+L_ROUND_VALUE    NUMBER;
+L_DATE_CURSOR    INTEGER;
+L_DATE           TIMESTAMP WITH TIME ZONE;
+
+CURSOR L_PTAU_CURSOR IS
+   SELECT VALUE
+   FROM UTPTAU
+   WHERE (PT,VERSION) = (SELECT PT,PT_VERSION 
+                         FROM UTSD
+                         WHERE SD = A_SD)
+     AND AU = A_IEVALUE
+     AND ROWNUM = 1
+   ORDER BY AUSEQ;
+
+CURSOR L_SDAU_CURSOR IS
+   SELECT VALUE
+   FROM UTSDAU
+   WHERE SD = A_SD
+     AND AU = A_IEVALUE
+     AND ROWNUM = 1
+   ORDER BY AUSEQ;
+
+BEGIN
+   A_IIVALUE := '';
+   L_RET_CODE := UNAPIGEN.DBERR_SUCCESS;
+
+   
+   
+   
+   IF A_DEF_VAL_TP = 'S' THEN
+      
+      IF A_IEVALUE = 'sd' THEN                          
+         SELECT SD
+         INTO L_IEVALUE
+         FROM UTSD
+         WHERE SD = A_SD;
+      ELSIF A_IEVALUE = 'pt' THEN                       
+         SELECT PT
+         INTO L_IEVALUE
+         FROM UTSD
+         WHERE SD = A_SD;
+      ELSIF A_IEVALUE = 'description' THEN              
+         SELECT DESCRIPTION
+         INTO L_IEVALUE
+         FROM UTSD
+         WHERE SD = A_SD;
+      ELSIF A_IEVALUE = 'descr_doc' THEN               
+         SELECT DESCR_DOC
+         INTO L_IEVALUE
+         FROM UTSD
+         WHERE SD = A_SD;
+      ELSIF A_IEVALUE = 'creation_date' THEN            
+         SELECT TO_CHAR(CREATION_DATE, SUBSTR(A_FORMAT,2))
+         INTO L_IEVALUE
+         FROM UTSD
+         WHERE SD = A_SD;
+      ELSIF A_IEVALUE = 'created_by' THEN               
+         SELECT CREATED_BY
+         INTO L_IEVALUE
+         FROM UTSD
+         WHERE SD = A_SD;
+      ELSIF A_IEVALUE = 'exec_start_date' THEN          
+         SELECT TO_CHAR(EXEC_START_DATE, SUBSTR(A_FORMAT,2))
+         INTO L_IEVALUE
+         FROM UTSD
+         WHERE SD = A_SD;
+      ELSIF A_IEVALUE = 'exec_end_date' THEN            
+         SELECT TO_CHAR(EXEC_END_DATE, SUBSTR(A_FORMAT,2))
+         INTO L_IEVALUE
+         FROM UTSD
+         WHERE SD = A_SD;
+      ELSIF A_IEVALUE = 't0_date' THEN                 
+         SELECT TO_CHAR(T0_DATE, SUBSTR(A_FORMAT,2))
+         INTO L_IEVALUE
+         FROM UTSD
+         WHERE SD = A_SD;
+      ELSIF A_IEVALUE = 'nr_sc_current' THEN                 
+         SELECT TO_CHAR(NR_SC_CURRENT)
+         INTO L_IEVALUE
+         FROM UTSD
+         WHERE SD = A_SD;
+      ELSIF A_IEVALUE = 'label_format' THEN             
+         SELECT LABEL_FORMAT
+         INTO L_IEVALUE
+         FROM UTSD
+         WHERE SD = A_SD;
+      ELSIF A_IEVALUE = 'responsible' THEN              
+         SELECT RESPONSIBLE
+         INTO L_IEVALUE
+         FROM UTSD
+         WHERE SD = A_SD;
+
+      ELSE
+         RETURN(UNAPIGEN.DBERR_DEFVALUETP);
+      END IF;
+      A_IIVALUE := L_IEVALUE;
+   
+   
+   
+   ELSIF A_DEF_VAL_TP = 'A' THEN
+      IF A_DEF_AU_LEVEL = 'pt' THEN                     
+         OPEN L_PTAU_CURSOR;
+         FETCH L_PTAU_CURSOR
+         INTO L_IEVALUE;
+         IF L_PTAU_CURSOR%NOTFOUND THEN
+            L_IEVALUE := '';
+         END IF;
+         CLOSE L_PTAU_CURSOR;
+
+      ELSIF A_DEF_AU_LEVEL = 'sd' THEN                  
+         OPEN L_SDAU_CURSOR;
+         FETCH L_SDAU_CURSOR
+         INTO L_IEVALUE;
+         IF L_SDAU_CURSOR%NOTFOUND THEN
+            L_IEVALUE := '';
+         END IF;
+         CLOSE L_SDAU_CURSOR;
+      ELSIF A_DEF_AU_LEVEL IN ('sc','st') THEN                  
+         
+         NULL;
+         L_IEVALUE := '';
+      ELSE
+         RETURN(UNAPIGEN.DBERR_AULEVEL);
+      END IF;
+      A_IIVALUE := L_IEVALUE;
+
+   
+   
+   
+   ELSIF NVL(A_DEF_VAL_TP, 'F') = 'F' THEN
+      IF A_DATA_TP IN ('D', 'M') AND
+         NVL(A_IEVALUE, ' ') <> ' ' THEN             
+
+         BEGIN
+            L_DATE_CURSOR := DBMS_SQL.OPEN_CURSOR;
+            IF SUBSTR(A_IEVALUE, 1, 1) = '=' THEN
+               L_SQL_STRING := 'BEGIN :l_date :' || A_IEVALUE || '; END;';
+            ELSE
+               L_SQL_STRING := 'BEGIN :l_date := ' || A_IEVALUE || '; END;';
+            END IF;
+            DBMS_SQL.PARSE(L_DATE_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+            DBMS_SQL.BIND_VARIABLE(L_DATE_CURSOR, ':l_date', L_DATE);
+            L_RESULT := DBMS_SQL.EXECUTE(L_DATE_CURSOR);
+            DBMS_SQL.VARIABLE_VALUE(L_DATE_CURSOR, ':l_date', L_DATE);
+            DBMS_SQL.CLOSE_CURSOR(L_DATE_CURSOR);
+
+            L_IEVALUE := TO_CHAR(L_DATE, SUBSTR(A_FORMAT,2));
+
+         EXCEPTION
+         WHEN OTHERS THEN
+            IF DBMS_SQL.IS_OPEN(L_DATE_CURSOR) THEN
+               DBMS_SQL.CLOSE_CURSOR(L_DATE_CURSOR);
+            END IF;
+            RAISE;     
+         END;
+      ELSE
+         L_IEVALUE := A_IEVALUE;
+      END IF;
+      A_IIVALUE := L_IEVALUE;
+
+   
+   
+   
+   ELSE
+      RETURN(UNAPIGEN.DBERR_DEFVALUETP);
+   END IF;
+
+
+   
+   
+   
+   IF A_DATA_TP = 'A' THEN     
+      
+      IF SUBSTR(A_FORMAT,1,1)='C' THEN
+         IF LENGTH(A_FORMAT)>1 THEN
+            A_IIVALUE := SUBSTR(L_IEVALUE,1,SUBSTR(A_FORMAT,2));
+         ELSE
+            A_IIVALUE := L_IEVALUE;
+         END IF;
+      ELSIF SUBSTR(A_FORMAT,1,1)='D' THEN
+         L_IIVALUE := L_IEVALUE||'@'||SUBSTR(A_FORMAT,2);
+         L_RET_CODE := UNAPIGEN.DATEVALID(L_IIVALUE, L_ERRM);
+         IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+            RETURN(L_RET_CODE);
+         END IF;         
+      ELSE
+         L_IEVALUE_F := TO_NUMBER(L_IEVALUE);
+         L_IIVALUE := '';
+         L_RET_CODE := UNAPIGEN.FORMATRESULT(L_IEVALUE_F, A_FORMAT, L_IIVALUE);
+         IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+            RETURN(L_RET_CODE);
+         END IF;
+         A_IIVALUE := L_IIVALUE;         
+      END IF;
+   ELSIF A_DATA_TP IN ('D','M') THEN            
+      L_IIVALUE := L_IEVALUE||'@'||SUBSTR(A_FORMAT,2);
+      L_RET_CODE := UNAPIGEN.DATEVALID(L_IIVALUE, L_ERRM);
+      IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         RETURN(L_RET_CODE);
+      END IF;         
+   ELSIF A_DATA_TP IN ('I','F') THEN            
+      L_IEVALUE_F := TO_NUMBER(L_IEVALUE);
+      L_IIVALUE := '';
+      L_RET_CODE := UNAPIGEN.FORMATRESULT(L_IEVALUE_F, A_FORMAT, L_IIVALUE);
+      IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         RETURN(L_RET_CODE);
+      END IF;
+      A_IIVALUE := L_IIVALUE;
+   END IF;
+   RETURN(L_RET_CODE);
+
+EXCEPTION
+  WHEN NO_DATA_FOUND THEN
+     A_IIVALUE := '';
+     RETURN(UNAPIGEN.DBERR_NODEFVALUE);
+END FILLSDIIDEFAULTVALUE;
+
+FUNCTION INITSDICATTRIBUTE
+(A_SD               IN     VARCHAR2,                  
+ A_PT               IN     VARCHAR2,                  
+ A_PT_VERSION       IN     VARCHAR2,                  
+ A_IP               IN     VARCHAR2,                  
+ A_IP_VERSION       IN     VARCHAR2,                  
+ A_AU               OUT    UNAPIGEN.VC20_TABLE_TYPE,  
+ A_AU_VERSION       OUT    UNAPIGEN.VC20_TABLE_TYPE,  
+ A_VALUE            OUT    UNAPIGEN.VC40_TABLE_TYPE,  
+ A_DESCRIPTION      OUT    UNAPIGEN.VC40_TABLE_TYPE,  
+ A_IS_PROTECTED     OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_SINGLE_VALUED    OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_NEW_VAL_ALLOWED  OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_STORE_DB         OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_VALUE_LIST_TP    OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_RUN_MODE         OUT    UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_SERVICE          OUT    UNAPIGEN.VC255_TABLE_TYPE, 
+ A_CF_VALUE         OUT    UNAPIGEN.VC20_TABLE_TYPE,  
+ A_NR_OF_ROWS       IN OUT NUMBER)                    
+RETURN NUMBER IS
+
+L_PT             VARCHAR2(20);
+L_PT_VERSION     VARCHAR2(20);
+
+CURSOR L_PTIP_CURSOR(C_PT VARCHAR2, C_PT_VERSION VARCHAR2, C_IP VARCHAR2, C_IP_VERSION VARCHAR2) IS
+   SELECT PT
+   FROM UTPTIP
+   WHERE PT = C_PT
+   AND VERSION = C_PT_VERSION
+   AND IP = C_IP
+   AND UNAPIGEN.VALIDATEVERSION('ip', IP, IP_VERSION) = C_IP_VERSION;
+L_PTIP_REC L_PTIP_CURSOR%ROWTYPE;
+
+CURSOR L_PTIPAU_CURSOR (C_PT VARCHAR2, C_PT_VERSION VARCHAR2, C_IP VARCHAR2, C_IP_VERSION VARCHAR2) IS
+   
+   
+   
+   
+   SELECT A.AU, A.AUSEQ, D.VERSION, A.VALUE, D.DESCRIPTION, D.IS_PROTECTED, D.SINGLE_VALUED,
+       D.NEW_VAL_ALLOWED, D.STORE_DB, D.VALUE_LIST_TP,
+       D.RUN_MODE, D.SERVICE, D.CF_VALUE
+   FROM UTIPAU A, UTIP B, UTPTIP C, UTAU D
+   WHERE A.IP = C_IP
+     AND A.VERSION = C_IP_VERSION
+     AND A.IP = B.IP
+     AND A.VERSION = B.VERSION     
+     AND A.AU = D.AU
+     AND UNAPIGEN.VALIDATEVERSION('au', A.AU, A.AU_VERSION) = D.VERSION     
+     AND C.PT = C_PT
+     AND C.VERSION = C_PT_VERSION     
+     AND C.IP = B.IP
+     AND UNAPIGEN.VALIDATEVERSION('ip', C.IP, C.IP_VERSION) = B.VERSION     
+     AND DECODE(D.INHERIT_AU,'0',DECODE(C.INHERIT_AU,'2',B.INHERIT_AU,C.INHERIT_AU),D.INHERIT_AU) = '1'
+     AND A.AU NOT IN (SELECT DISTINCT J.AU
+                      FROM UTPTIPAU J, UTPTIP K, UTIP L, UTAU M
+                      WHERE J.IP = L.IP
+                        AND UNAPIGEN.VALIDATEVERSION('ip', J.IP, J.IP_VERSION) = L.VERSION                      
+                        AND J.PT = C_PT
+                        AND J.VERSION = C_PT_VERSION                        
+                        AND J.IP = C_IP
+                        AND UNAPIGEN.VALIDATEVERSION('ip', J.IP, J.IP_VERSION) = C_IP_VERSION
+                        AND J.IP = K.IP
+                        AND UNAPIGEN.VALIDATEVERSION('ip', J.IP, J.IP_VERSION) = UNAPIGEN.VALIDATEVERSION('ip', K.IP, K.IP_VERSION)                        
+                        AND J.PT = K.PT
+                        AND J.VERSION = K.VERSION
+                        AND DECODE(M.INHERIT_AU,'0',DECODE(K.INHERIT_AU,'2',L.INHERIT_AU,K.INHERIT_AU),M.INHERIT_AU) = '1'
+                        AND M.AU = J.AU
+                        AND M.VERSION = UNAPIGEN.VALIDATEVERSION('au', J.AU, J.AU_VERSION))
+   
+   
+   
+   
+   UNION
+   SELECT V.AU, V.AUSEQ+500, Y.VERSION, V.VALUE, Y.DESCRIPTION, Y.IS_PROTECTED, Y.SINGLE_VALUED,
+       Y.NEW_VAL_ALLOWED, Y.STORE_DB, Y.VALUE_LIST_TP,
+       Y.RUN_MODE, Y.SERVICE, Y.CF_VALUE
+   FROM UTPTIPAU V, UTPTIP W, UTIP X, UTAU Y
+   WHERE V.IP = X.IP
+     AND UNAPIGEN.VALIDATEVERSION('ip', V.IP, V.IP_VERSION) = X.VERSION   
+     AND V.PT = C_PT
+     AND V.VERSION = C_PT_VERSION
+     AND V.IP = C_IP
+     AND UNAPIGEN.VALIDATEVERSION('ip', V.IP, V.IP_VERSION) = C_IP_VERSION
+     AND V.PT = W.PT
+     AND V.VERSION = W.VERSION     
+     AND V.IP = W.IP
+     AND UNAPIGEN.VALIDATEVERSION('ip', V.IP, V.IP_VERSION) = UNAPIGEN.VALIDATEVERSION('ip', W.IP, W.IP_VERSION)
+     AND DECODE(Y.INHERIT_AU,'0',DECODE(W.INHERIT_AU,'2',X.INHERIT_AU,W.INHERIT_AU),Y.INHERIT_AU) = '1' 
+     AND V.AU = Y.AU
+     AND UNAPIGEN.VALIDATEVERSION('au', V.AU, V.AU_VERSION) = Y.VERSION
+   ORDER BY 2;
+
+CURSOR L_IPAU_CURSOR (C_IP VARCHAR2, C_IP_VERSION VARCHAR2) IS
+   
+   
+   
+   
+   SELECT A.AU, A.AUSEQ, D.VERSION, A.VALUE, D.DESCRIPTION, D.IS_PROTECTED, D.SINGLE_VALUED,
+       D.NEW_VAL_ALLOWED, D.STORE_DB, D.VALUE_LIST_TP,
+       D.RUN_MODE, D.SERVICE, D.CF_VALUE
+   FROM UTIPAU A, UTIP B, UTAU D
+   WHERE A.IP = C_IP
+     AND A.VERSION = C_IP_VERSION
+     AND A.IP = B.IP
+     AND A.VERSION = B.VERSION
+     AND A.AU = D.AU
+     AND UNAPIGEN.VALIDATEVERSION('au', A.AU, A.AU_VERSION) = D.VERSION     
+     AND DECODE(D.INHERIT_AU, '0', B.INHERIT_AU, D.INHERIT_AU) = '1'
+     ORDER BY 2;
+
+BEGIN
+
+   IF NVL(A_NR_OF_ROWS,0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN(UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+
+   IF NVL(A_IP, ' ') = ' ' THEN
+      RETURN(UNAPIGEN.DBERR_NOOBJID);
+   END IF;
+   IF NVL(A_IP_VERSION, ' ') = ' ' THEN
+      RETURN(UNAPIGEN.DBERR_IPVERSION);
+   END IF;
+   
+   IF NVL(A_PT, ' ') = ' ' THEN
+      SELECT PT, PT_VERSION
+      INTO L_PT, L_PT_VERSION
+      FROM UTSD
+      WHERE SD = A_SD;
+   ELSE
+      L_PT := A_PT;
+      IF NVL(A_PT_VERSION, ' ') = ' ' THEN
+         RETURN(UNAPIGEN.DBERR_PTVERSION);
+      END IF;      
+      L_PT_VERSION := A_PT_VERSION;      
+   END IF;
+
+   IF L_PT IS NULL AND
+      A_SD IS NULL THEN
+      RETURN(UNAPIGEN.DBERR_NOOBJECT);
+   END IF;
+
+   IF L_PT IS NOT NULL THEN
+      
+      
+      
+      
+      OPEN L_PTIP_CURSOR(L_PT, L_PT_VERSION, A_IP, A_IP_VERSION);
+      FETCH L_PTIP_CURSOR
+      INTO L_PTIP_REC;
+      IF L_PTIP_CURSOR%NOTFOUND THEN
+         L_PT := NULL;
+      END IF;
+      CLOSE L_PTIP_CURSOR;
+   END IF;
+   
+   L_FETCHED_ROWS := 0;
+
+   IF L_PT IS NOT NULL THEN   
+      FOR L_PTIPAU_REC IN L_PTIPAU_CURSOR(L_PT, L_PT_VERSION, A_IP, A_IP_VERSION) LOOP
+         L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+         A_AU(L_FETCHED_ROWS) := L_PTIPAU_REC.AU;
+         A_AU_VERSION(L_FETCHED_ROWS) := L_PTIPAU_REC.VERSION;
+         A_VALUE(L_FETCHED_ROWS) := L_PTIPAU_REC.VALUE;
+         A_DESCRIPTION(L_FETCHED_ROWS) := L_PTIPAU_REC.DESCRIPTION;
+         A_IS_PROTECTED(L_FETCHED_ROWS) := L_PTIPAU_REC.IS_PROTECTED;
+         A_SINGLE_VALUED(L_FETCHED_ROWS) := L_PTIPAU_REC.SINGLE_VALUED;
+         A_NEW_VAL_ALLOWED(L_FETCHED_ROWS) := L_PTIPAU_REC.NEW_VAL_ALLOWED;
+         A_STORE_DB(L_FETCHED_ROWS) := L_PTIPAU_REC.STORE_DB;
+         A_VALUE_LIST_TP(L_FETCHED_ROWS) := L_PTIPAU_REC.VALUE_LIST_TP;
+         A_RUN_MODE(L_FETCHED_ROWS) := L_PTIPAU_REC.RUN_MODE;
+         A_SERVICE(L_FETCHED_ROWS) := L_PTIPAU_REC.SERVICE;
+         A_CF_VALUE(L_FETCHED_ROWS) := L_PTIPAU_REC.CF_VALUE;
+         EXIT WHEN L_FETCHED_ROWS >= A_NR_OF_ROWS;
+      END LOOP;
+   ELSE
+
+      FOR L_IPAU_REC IN L_IPAU_CURSOR(A_IP, A_IP_VERSION) LOOP
+         L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+         A_AU              (L_FETCHED_ROWS) := L_IPAU_REC.AU;
+         A_AU_VERSION      (L_FETCHED_ROWS) := L_IPAU_REC.VERSION;
+         A_VALUE           (L_FETCHED_ROWS) := L_IPAU_REC.VALUE;
+         A_DESCRIPTION     (L_FETCHED_ROWS) := L_IPAU_REC.DESCRIPTION;
+         A_IS_PROTECTED    (L_FETCHED_ROWS) := L_IPAU_REC.IS_PROTECTED;
+         A_SINGLE_VALUED   (L_FETCHED_ROWS) := L_IPAU_REC.SINGLE_VALUED;
+         A_NEW_VAL_ALLOWED (L_FETCHED_ROWS) := L_IPAU_REC.NEW_VAL_ALLOWED;
+         A_STORE_DB        (L_FETCHED_ROWS) := L_IPAU_REC.STORE_DB;
+         A_VALUE_LIST_TP   (L_FETCHED_ROWS) := L_IPAU_REC.VALUE_LIST_TP;
+         A_RUN_MODE        (L_FETCHED_ROWS) := L_IPAU_REC.RUN_MODE;
+         A_SERVICE         (L_FETCHED_ROWS) := L_IPAU_REC.SERVICE;
+         A_CF_VALUE        (L_FETCHED_ROWS) := L_IPAU_REC.CF_VALUE;
+         EXIT WHEN L_FETCHED_ROWS >= A_NR_OF_ROWS;
+      END LOOP;
+   
+   END IF;
+
+   IF L_FETCHED_ROWS = 0 THEN
+      A_NR_OF_ROWS := 0;
+      L_RET_CODE := UNAPIGEN.DBERR_NORECORDS;
+   ELSE
+      L_RET_CODE := UNAPIGEN.DBERR_SUCCESS;
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+   END IF;
+
+   RETURN(L_RET_CODE);
+
+EXCEPTION
+WHEN NO_DATA_FOUND THEN
+   RETURN(UNAPIGEN.DBERR_NOOBJECT);
+WHEN OTHERS THEN
+   L_SQLERRM := SQLERRM;
+   UNAPIGEN.U4ROLLBACK;
+   INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+   VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+          'InitSdIcAttribute', L_SQLERRM);
+   UNAPIGEN.U4COMMIT;
+   RETURN(UNAPIGEN.DBERR_GENFAIL);
+END INITSDICATTRIBUTE;
+
+FUNCTION INITSDICDETAILS
+(A_IP              IN     VARCHAR2,                   
+ A_IP_VERSION      IN OUT VARCHAR2,                   
+ A_SD              IN     VARCHAR2,                   
+ A_II              OUT    UNAPIGEN.VC20_TABLE_TYPE,   
+ A_IE_VERSION      OUT    UNAPIGEN.VC20_TABLE_TYPE,   
+ A_IIVALUE         OUT    UNAPIGEN.VC2000_TABLE_TYPE, 
+ A_POS_X           OUT    UNAPIGEN.NUM_TABLE_TYPE,    
+ A_POS_Y           OUT    UNAPIGEN.NUM_TABLE_TYPE,    
+ A_IS_PROTECTED    OUT    UNAPIGEN.CHAR1_TABLE_TYPE,  
+ A_MANDATORY       OUT    UNAPIGEN.CHAR1_TABLE_TYPE,  
+ A_HIDDEN          OUT    UNAPIGEN.CHAR1_TABLE_TYPE,  
+ A_DSP_TITLE       OUT    UNAPIGEN.VC40_TABLE_TYPE,   
+ A_DSP_LEN         OUT    UNAPIGEN.NUM_TABLE_TYPE,    
+ A_DSP_TP          OUT    UNAPIGEN.CHAR1_TABLE_TYPE,  
+ A_DSP_ROWS        OUT    UNAPIGEN.NUM_TABLE_TYPE,    
+ A_II_CLASS        OUT    UNAPIGEN.VC2_TABLE_TYPE,    
+ A_LOG_HS          OUT    UNAPIGEN.CHAR1_TABLE_TYPE,  
+ A_LOG_HS_DETAILS  OUT    UNAPIGEN.CHAR1_TABLE_TYPE,  
+ A_LC              OUT    UNAPIGEN.VC2_TABLE_TYPE,    
+ A_LC_VERSION      OUT    UNAPIGEN.VC20_TABLE_TYPE,   
+ A_NR_OF_ROWS      IN OUT NUMBER,                     
+ A_NEXT_ROWS       IN     NUMBER)                     
+RETURN NUMBER IS
+
+L_IE_REC           UTIE%ROWTYPE;
+L_IPIE_REC         UTIPIE%ROWTYPE;
+L_IIVALUE          VARCHAR2(2000);
+L_ERRM             VARCHAR2(255);
+L_LOG_HS           CHAR(1);
+L_LOG_HS_DETAILS   CHAR(1);
+
+CURSOR L_IE_CURSOR(C_IE VARCHAR2, C_IE_VERSION VARCHAR2) IS
+   SELECT *
+   FROM UTIE
+   WHERE IE = C_IE
+     AND VERSION = C_IE_VERSION;
+
+CURSOR L_OBJECTS_CURSOR (A_OBJECT_TYPE VARCHAR2) IS
+   SELECT LOG_HS, LOG_HS_DETAILS
+   FROM UTOBJECTS
+   WHERE OBJECT=A_OBJECT_TYPE;
+
+BEGIN
+
+   IF NVL(A_IP, ' ') = ' ' OR
+      NVL(A_SD, ' ') = ' ' THEN
+      RETURN(UNAPIGEN.DBERR_NOOBJID);
+   END IF;
+
+   IF NVL(A_NEXT_ROWS, 0) NOT IN (-1, 0, 1) THEN
+      RETURN(UNAPIGEN.DBERR_NEXTROWS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = -1 THEN
+      IF P_IPIE_CURSOR%ISOPEN THEN
+         CLOSE P_IPIE_CURSOR;
+      END IF;
+      RETURN (UNAPIGEN.DBERR_SUCCESS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = 1 THEN
+      IF NOT P_IPIE_CURSOR%ISOPEN THEN
+         RETURN(UNAPIGEN.DBERR_NOCURSOR);
+      END IF;
+   END IF;
+
+   IF NVL(A_NR_OF_ROWS, 0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN(UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+
+   
+   A_IP_VERSION := UNAPIGEN.VALIDATEVERSION('ip', A_IP, A_IP_VERSION);
+
+   
+   L_LOG_HS := '0';
+   L_LOG_HS_DETAILS := '0';
+   OPEN L_OBJECTS_CURSOR('sdii');
+   FETCH L_OBJECTS_CURSOR INTO L_LOG_HS, L_LOG_HS_DETAILS;
+   CLOSE L_OBJECTS_CURSOR;
+
+   
+   
+   
+   
+   IF NVL(A_NEXT_ROWS,0) = 0 THEN
+      IF P_IPIE_CURSOR%ISOPEN THEN
+         CLOSE P_IPIE_CURSOR;
+      END IF;
+      OPEN P_IPIE_CURSOR(A_IP, A_IP_VERSION);
+   END IF;
+
+   
+   
+   
+   
+   FETCH P_IPIE_CURSOR
+   INTO L_IPIE_REC;
+   L_FETCHED_ROWS := 0;
+   
+   LOOP
+
+      EXIT WHEN P_IPIE_CURSOR%NOTFOUND OR L_FETCHED_ROWS >= A_NR_OF_ROWS;
+
+      L_ERRM := '';
+      L_IIVALUE := '';
+      
+      
+      
+      L_IPIE_REC.IE_VERSION := UNAPIGEN.VALIDATEVERSION('ie', L_IPIE_REC.IE, L_IPIE_REC.IE_VERSION);
+      
+      OPEN L_IE_CURSOR(L_IPIE_REC.IE, L_IPIE_REC.IE_VERSION);
+      FETCH L_IE_CURSOR
+      INTO L_IE_REC;
+      
+      
+      
+      
+      
+      
+      
+
+      IF L_IE_CURSOR%FOUND THEN
+      
+         
+         
+         
+         IF NVL(L_IPIE_REC.IS_PROTECTED, '2') <> '2' THEN
+            L_IE_REC.IS_PROTECTED := L_IPIE_REC.IS_PROTECTED;
+         END IF;
+
+         IF NVL(L_IPIE_REC.MANDATORY, '2') <> '2' THEN
+            L_IE_REC.MANDATORY := L_IPIE_REC.MANDATORY;
+         END IF;
+
+         IF NVL(L_IPIE_REC.HIDDEN, '2') <> '2' THEN
+            L_IE_REC.HIDDEN := L_IPIE_REC.HIDDEN;
+         END IF;
+
+         
+         
+         
+         IF L_IE_REC.DSP_TP = 'B' THEN  
+            IF NVL(L_IPIE_REC.IEVALUE, ' ') <> '2' THEN
+               L_IE_REC.DEF_VAL_TP := L_IPIE_REC.DEF_VAL_TP;
+               L_IE_REC.DEF_AU_LEVEL := L_IPIE_REC.DEF_AU_LEVEL;
+               L_IE_REC.IEVALUE := L_IPIE_REC.IEVALUE;
+            END IF;
+         ELSE                           
+            IF NVL(L_IPIE_REC.DEF_VAL_TP, 'F') <> 'F' OR
+               NVL(L_IPIE_REC.IEVALUE, ' ') <> ' ' THEN
+               L_IE_REC.DEF_VAL_TP := L_IPIE_REC.DEF_VAL_TP;
+               L_IE_REC.DEF_AU_LEVEL := L_IPIE_REC.DEF_AU_LEVEL;
+               L_IE_REC.IEVALUE := L_IPIE_REC.IEVALUE;
+            END IF;
+         END IF;
+
+         BEGIN
+            L_RET_CODE := FILLSDIIDEFAULTVALUE(A_SD, L_IE_REC.DEF_VAL_TP,
+                                             L_IE_REC.IEVALUE,
+                                             L_IE_REC.DEF_AU_LEVEL, L_IE_REC.DATA_TP,
+                                             L_IE_REC.FORMAT, L_IIVALUE);
+         EXCEPTION
+         WHEN OTHERS THEN
+            L_ERRM := 'Warning#sd=' || A_SD||
+                      '#ic='|| A_IP ||
+                      '#ii='|| L_IE_REC.IE ||
+                      '#def_val_tp='|| L_IE_REC.DEF_VAL_TP ||
+                      '#ievalue=' || SUBSTR(L_IE_REC.IEVALUE,1,40) ||
+                      '#def_au_level=' || L_IE_REC.DEF_AU_LEVEL ||
+                      '#data_tp=' || L_IE_REC.DATA_TP ||
+                      '#format=' || L_IE_REC.FORMAT ||
+                      '#FillSdiiDefaultValue#SqlCode=' || TO_CHAR(SQLCODE);
+         END;
+
+         IF L_RET_CODE = UNAPIGEN.DBERR_NODEFVALUE THEN
+            L_IIVALUE := '';
+         ELSIF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+            L_ERRM := 'Warning#sd=' || A_SD ||
+                      '#ic='|| A_IP ||
+                      '#ii='|| L_IE_REC.IE ||
+                      '#def_val_tp='|| L_IE_REC.DEF_VAL_TP ||
+                      '#ievalue=' || SUBSTR(L_IE_REC.IEVALUE,1,40) ||
+                      '#def_au_level=' || L_IE_REC.DEF_AU_LEVEL ||
+                      '#data_tp=' || L_IE_REC.DATA_TP ||
+                      '#format=' || L_IE_REC.FORMAT ||
+                      '#FillSdiiDefaultValue#ErrorCode=' || TO_CHAR(L_RET_CODE);
+         END IF;
+
+         IF L_ERRM IS NOT NULL THEN
+            INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+            VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+                   'CreateSdIcDetails', L_ERRM);
+         END IF;
+
+         
+         
+         
+         L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+         A_II             (L_FETCHED_ROWS) := L_IPIE_REC.IE;
+         A_IE_VERSION     (L_FETCHED_ROWS) := L_IPIE_REC.IE_VERSION;      
+         A_IIVALUE        (L_FETCHED_ROWS) := L_IIVALUE;
+         A_POS_X          (L_FETCHED_ROWS) := L_IPIE_REC.POS_X;
+         A_POS_Y          (L_FETCHED_ROWS) := L_IPIE_REC.POS_Y;
+         A_IS_PROTECTED   (L_FETCHED_ROWS) := L_IE_REC.IS_PROTECTED;
+         A_MANDATORY      (L_FETCHED_ROWS) := L_IE_REC.MANDATORY;
+         A_HIDDEN         (L_FETCHED_ROWS) := L_IE_REC.HIDDEN;
+         A_DSP_TITLE      (L_FETCHED_ROWS) := L_IE_REC.DSP_TITLE;
+         A_DSP_LEN        (L_FETCHED_ROWS) := L_IE_REC.DSP_LEN;
+         A_DSP_TP         (L_FETCHED_ROWS) := L_IE_REC.DSP_TP;
+         A_DSP_ROWS       (L_FETCHED_ROWS) := L_IE_REC.DSP_ROWS;
+         A_II_CLASS       (L_FETCHED_ROWS) := L_IE_REC.IE_CLASS;
+         A_LOG_HS         (L_FETCHED_ROWS) := L_LOG_HS;
+         A_LOG_HS_DETAILS (L_FETCHED_ROWS) := L_LOG_HS_DETAILS;
+         A_LC             (L_FETCHED_ROWS) := L_IE_REC.SC_LC;
+         A_LC_VERSION     (L_FETCHED_ROWS) := L_IE_REC.SC_LC_VERSION;
+      END IF;
+      CLOSE L_IE_CURSOR;
+
+      IF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+         FETCH P_IPIE_CURSOR
+         INTO L_IPIE_REC;
+      END IF;
+   END LOOP;
+
+   
+   IF (L_FETCHED_ROWS = 0) THEN
+      CLOSE P_IPIE_CURSOR;
+      RETURN(UNAPIGEN.DBERR_NORECORDS);
+   ELSIF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+      CLOSE P_IPIE_CURSOR;
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+   END IF;
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+             'InitSdIcDetails', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      IF P_IPIE_CURSOR%ISOPEN THEN
+         CLOSE P_IPIE_CURSOR;
+      END IF;
+      IF L_IE_CURSOR%ISOPEN THEN
+         CLOSE L_IE_CURSOR;
+      END IF;
+      IF L_OBJECTS_CURSOR%ISOPEN THEN
+         CLOSE L_OBJECTS_CURSOR;
+      END IF;      
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END INITSDICDETAILS;
+
+FUNCTION INITSDINFODETAILS
+(A_PT             IN        VARCHAR2,                  
+ A_PT_VERSION     IN OUT    VARCHAR2,                 
+ A_SD             IN        VARCHAR2,                  
+ A_FILTER_FREQ    IN        CHAR,                      
+ A_REF_DATE       IN        DATE,                      
+ A_IC             OUT       UNAPIGEN.VC20_TABLE_TYPE,  
+ A_IP_VERSION     OUT       UNAPIGEN.VC20_TABLE_TYPE,  
+ A_DESCRIPTION    OUT       UNAPIGEN.VC40_TABLE_TYPE,  
+ A_WINSIZE_X      OUT       UNAPIGEN.NUM_TABLE_TYPE,   
+ A_WINSIZE_Y      OUT       UNAPIGEN.NUM_TABLE_TYPE,   
+ A_IS_PROTECTED   OUT       UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_HIDDEN         OUT       UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_MANUALLY_ADDED OUT       UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_NEXT_II        OUT       UNAPIGEN.VC20_TABLE_TYPE,  
+ A_IC_CLASS       OUT       UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LOG_HS         OUT       UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LOG_HS_DETAILS OUT       UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LC             OUT       UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LC_VERSION     OUT       UNAPIGEN.VC20_TABLE_TYPE,  
+ A_NR_OF_ROWS     IN OUT    NUMBER)                    
+RETURN NUMBER IS
+
+L_IC               UNAPIGEN.VC20_TABLE_TYPE;
+L_IP_VERSION       UNAPIGEN.VC20_TABLE_TYPE;
+L_DESCRIPTION      UNAPIGEN.VC40_TABLE_TYPE;
+L_WINSIZE_X        UNAPIGEN.NUM_TABLE_TYPE;
+L_WINSIZE_Y        UNAPIGEN.NUM_TABLE_TYPE;
+L_IS_PROTECTED     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_HIDDEN           UNAPIGEN.CHAR1_TABLE_TYPE;
+L_MANUALLY_ADDED   UNAPIGEN.CHAR1_TABLE_TYPE;
+L_NEXT_II          UNAPIGEN.VC20_TABLE_TYPE;
+L_IC_CLASS         UNAPIGEN.VC2_TABLE_TYPE;
+L_LOG_HS           UNAPIGEN.CHAR1_TABLE_TYPE;
+L_LOG_HS_DETAILS   UNAPIGEN.CHAR1_TABLE_TYPE;
+L_LC               UNAPIGEN.VC2_TABLE_TYPE;
+L_LC_VERSION       UNAPIGEN.VC20_TABLE_TYPE;
+L_REF_DATE         TIMESTAMP WITH TIME ZONE;
+L_NR_OF_ROWS       NUMBER;
+L_TOT_NR_ROWS      NUMBER;
+L_ASSIGN           BOOLEAN;
+L_FILTER_FREQ      CHAR(1);
+L_DYN_CURSOR       INTEGER;
+
+CURSOR L_PTIP_CURSOR(C_PT VARCHAR2, C_PT_VERSION VARCHAR2) IS
+   SELECT PT, VERSION PT_VERSION,  IP,  IP_VERSION,  SEQ,  IS_PROTECTED,  HIDDEN,
+         FREQ_TP,  FREQ_VAL,  FREQ_UNIT,  INVERT_FREQ,  
+         LAST_SCHED,  LAST_CNT,  LAST_VAL,  INHERIT_AU
+   FROM UTPTIP
+   WHERE PT = C_PT
+   AND VERSION = C_PT_VERSION
+   ORDER BY SEQ;
+
+   
+   PROCEDURE ASSIGN(A_IP_TO_ASSIGN IN VARCHAR2) IS
+
+   L_ROW      INTEGER;
+
+   BEGIN
+      FOR L_ROW IN 1..L_NR_OF_ROWS LOOP
+         
+         
+         
+         A_IC(L_TOT_NR_ROWS + L_ROW) := A_IP_TO_ASSIGN;
+         A_IP_VERSION(L_TOT_NR_ROWS + L_ROW) := L_IP_VERSION(L_ROW);
+         A_DESCRIPTION(L_TOT_NR_ROWS + L_ROW) := L_DESCRIPTION(L_ROW);
+         A_WINSIZE_X(L_TOT_NR_ROWS + L_ROW) := L_WINSIZE_X(L_ROW);
+         A_WINSIZE_Y(L_TOT_NR_ROWS + L_ROW) := L_WINSIZE_Y(L_ROW);
+         A_IS_PROTECTED(L_TOT_NR_ROWS + L_ROW) := L_IS_PROTECTED(L_ROW);
+         A_HIDDEN(L_TOT_NR_ROWS + L_ROW) := L_HIDDEN(L_ROW);
+         A_MANUALLY_ADDED(L_TOT_NR_ROWS + L_ROW) := L_MANUALLY_ADDED(L_ROW);
+         A_NEXT_II(L_TOT_NR_ROWS + L_ROW) := L_NEXT_II(L_ROW);
+         A_IC_CLASS(L_TOT_NR_ROWS + L_ROW) := L_IC_CLASS(L_ROW);
+         A_LOG_HS(L_TOT_NR_ROWS + L_ROW) := L_LOG_HS(L_ROW);
+         A_LOG_HS_DETAILS(L_TOT_NR_ROWS + L_ROW) := L_LOG_HS_DETAILS(L_ROW);
+         A_LC(L_TOT_NR_ROWS + L_ROW) := L_LC(L_ROW);
+         A_LC_VERSION(L_TOT_NR_ROWS + L_ROW) := L_LC_VERSION(L_ROW);
+      END LOOP;
+   END ASSIGN;
+
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_NR_OF_ROWS, 0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NROFROWS;
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_SD, ' ') = ' ' OR
+      NVL(A_PT, ' ') = ' ' OR
+      NVL(A_PT_VERSION, ' ') = ' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   
+   
+   
+   L_FILTER_FREQ := NVL(A_FILTER_FREQ, '1');
+   L_REF_DATE := NVL(A_REF_DATE, CURRENT_TIMESTAMP);
+   L_NR_OF_ROWS := 0;
+   L_TOT_NR_ROWS := 0;
+
+   
+   A_PT_VERSION := UNAPIGEN.VALIDATEVERSION('pt', A_PT, A_PT_VERSION);
+
+   
+   
+   
+   FOR L_PTIP_REC IN L_PTIP_CURSOR(A_PT, A_PT_VERSION) LOOP
+
+      L_PTIP_REC.IP_VERSION := UNAPIGEN.VALIDATEVERSION('ip', L_PTIP_REC.IP, L_PTIP_REC.IP_VERSION);
+      L_ASSIGN := FALSE;
+      
+      
+      
+      IF L_FILTER_FREQ = '0' THEN
+         L_ASSIGN := TRUE;
+      ELSIF L_FILTER_FREQ = '1' THEN
+         L_ASSIGN := TRUE;
+         IF L_PTIP_REC.FREQ_TP = 'C' THEN
+            
+            
+            
+            L_SQL_STRING := 'BEGIN :l_ret_code := UNFREQ.'|| L_PTIP_REC.FREQ_UNIT ||
+                '(:a_sd, :a_pt, :a_pt_version, :a_ip, :a_ip_version, :a_freq_val, :a_invert_freq, :a_ref_date, ' ||
+                ':a_last_sched, :a_last_cnt, :a_last_val); END;';
+
+            L_DYN_CURSOR := DBMS_SQL.OPEN_CURSOR;
+
+            DBMS_SQL.PARSE(L_DYN_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':l_ret_code', L_RET_CODE);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_sd', A_SD, 20);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_pt', A_PT, 20);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_pt_version', A_PT_VERSION, 20);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_ip', L_PTIP_REC.IP, 20);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_ip_version', L_PTIP_REC.IP_VERSION, 20);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_freq_val', L_PTIP_REC.FREQ_VAL);
+            DBMS_SQL.BIND_VARIABLE_CHAR(L_DYN_CURSOR, ':a_invert_freq', L_PTIP_REC.INVERT_FREQ, 1);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_ref_date', L_REF_DATE);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_last_sched', L_PTIP_REC.LAST_SCHED);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_last_cnt', L_PTIP_REC.LAST_CNT);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_last_val', L_PTIP_REC.LAST_VAL, 40);
+
+            L_RESULT := DBMS_SQL.EXECUTE(L_DYN_CURSOR);
+            DBMS_SQL.VARIABLE_VALUE(L_DYN_CURSOR, ':l_ret_code', L_RET_CODE);
+            DBMS_SQL.VARIABLE_VALUE(L_DYN_CURSOR, ':a_last_sched', L_PTIP_REC.LAST_SCHED);
+            DBMS_SQL.VARIABLE_VALUE(L_DYN_CURSOR, ':a_last_cnt', L_PTIP_REC.LAST_CNT);
+            DBMS_SQL.VARIABLE_VALUE(L_DYN_CURSOR, ':a_last_val', L_PTIP_REC.LAST_VAL);
+               
+            DBMS_SQL.CLOSE_CURSOR(L_DYN_CURSOR);
+   
+            IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+               L_ASSIGN := FALSE;
+            END IF;
+         ELSE
+            IF NOT UNAPIAUT.EVALASSIGNMENTFREQ('pt', A_PT, A_PT_VERSION, 
+                              'ic', L_PTIP_REC.IP, L_PTIP_REC.IP_VERSION,
+                                               L_PTIP_REC.FREQ_TP,
+                                               L_PTIP_REC.FREQ_VAL,
+                                               L_PTIP_REC.FREQ_UNIT,
+                                               L_PTIP_REC.INVERT_FREQ,
+                                               L_REF_DATE,
+                                               L_PTIP_REC.LAST_SCHED,
+                                               L_PTIP_REC.LAST_CNT,
+                                               L_PTIP_REC.LAST_VAL) THEN
+               L_ASSIGN := FALSE;
+            END IF;
+         END IF;
+         
+         
+         
+         
+         UPDATE UTPTIP
+         SET LAST_SCHED = L_PTIP_REC.LAST_SCHED,
+        LAST_SCHED_TZ =  DECODE(L_PTIP_REC.LAST_SCHED, LAST_SCHED_TZ, LAST_SCHED_TZ, L_PTIP_REC.LAST_SCHED),
+             LAST_CNT = L_PTIP_REC.LAST_CNT,
+             LAST_VAL = L_PTIP_REC.LAST_VAL
+         WHERE PT = L_PTIP_REC.PT
+           AND VERSION = L_PTIP_REC.PT_VERSION
+           AND IP = L_PTIP_REC.IP
+           AND UNAPIGEN.VALIDATEVERSION('ip',IP,IP_VERSION) = UNAPIGEN.VALIDATEVERSION('ip',L_PTIP_REC.IP,L_PTIP_REC.IP_VERSION)
+           AND SEQ = L_PTIP_REC.SEQ;
+      END IF;
+
+      IF L_ASSIGN THEN
+         
+         
+         
+         L_NR_OF_ROWS := 0;
+         L_RET_CODE := UNAPISDIC.INITSDINFOCARD(L_PTIP_REC.IP, L_PTIP_REC.IP_VERSION,
+                                   L_PTIP_REC.SEQ, A_PT, A_PT_VERSION, A_SD,
+                                   L_IP_VERSION, L_DESCRIPTION, L_WINSIZE_X, L_WINSIZE_Y,
+                                   L_IS_PROTECTED, L_HIDDEN, L_MANUALLY_ADDED,
+                                   L_NEXT_II, L_IC_CLASS, L_LOG_HS, L_LOG_HS_DETAILS, L_LC, L_LC_VERSION, L_NR_OF_ROWS);
+         IF L_RET_CODE NOT IN (UNAPIGEN.DBERR_SUCCESS, UNAPIGEN.DBERR_NORECORDS) THEN
+            
+            UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+            RAISE STPERROR;
+         END IF;
+
+        
+        
+        
+        IF L_NR_OF_ROWS > 0 THEN
+           ASSIGN(L_PTIP_REC.IP);
+           L_TOT_NR_ROWS := L_TOT_NR_ROWS + L_NR_OF_ROWS;
+        END IF;
+      END IF;
+   END LOOP;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   
+   
+   
+   IF L_TOT_NR_ROWS > A_NR_OF_ROWS THEN
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+             'InitSdInfoDetails','a_nr_of_rows ('||A_NR_OF_ROWS||
+             ') too small for required InfoCard initialisation');
+   END IF;
+
+   A_NR_OF_ROWS := L_TOT_NR_ROWS;
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('InitSdInfoDetails', SQLERRM);
+   ELSIF L_SQLERRM IS NOT NULL THEN
+      UNAPIGEN.LOGERROR('InitSdInfoDetails', L_SQLERRM);
+   END IF;
+   IF DBMS_SQL.IS_OPEN(L_DYN_CURSOR) THEN
+      DBMS_SQL.CLOSE_CURSOR(L_DYN_CURSOR);
+   END IF;   
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR, 'InitSdInfoDetails'));
+END INITSDINFODETAILS;
+
+END UNAPISDIC;
