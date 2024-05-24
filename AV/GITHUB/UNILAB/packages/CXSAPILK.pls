@@ -1,0 +1,289 @@
+PACKAGE cxsapilk AS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TYPE VC20_TABLE_TYPE  IS TABLE OF VARCHAR2(20)       INDEX BY BINARY_INTEGER;
+TYPE VC40_TABLE_TYPE  IS TABLE OF VARCHAR2(40)       INDEX BY BINARY_INTEGER;
+TYPE VC255_TABLE_TYPE IS TABLE OF VARCHAR2(255)      INDEX BY BINARY_INTEGER;
+TYPE NUM_TABLE_TYPE   IS TABLE OF NUMBER             INDEX BY BINARY_INTEGER;
+TYPE DATE_TABLE_TYPE  IS TABLE OF VARCHAR2(30)       INDEX BY BINARY_INTEGER;
+TYPE BLOB_TABLE_TYPE   IS TABLE OF BLOB             INDEX BY BINARY_INTEGER;
+TYPE RAW16_TABLE_TYPE  IS TABLE OF RAW(16)          INDEX BY BINARY_INTEGER;
+TYPE RAW160_TABLE_TYPE  IS TABLE OF RAW(160)        INDEX BY BINARY_INTEGER;
+TYPE RAW1020_TABLE_TYPE  IS TABLE OF RAW(1020)      INDEX BY BINARY_INTEGER;
+
+
+DBERR_SUCCESS                  CONSTANT INTEGER := 0;
+DBERR_GENFAIL                  CONSTANT INTEGER := 1;
+DBERR_NORECORDS                CONSTANT INTEGER := 11;
+DBERR_OK_NO_ALM                CONSTANT INTEGER := 1100;
+DBERR_INVALIDLICENSE           CONSTANT INTEGER := 1101;
+DBERR_LICENSEEXPIRED           CONSTANT INTEGER := 1102;
+DBERR_NOLICENSE4APP            CONSTANT INTEGER := 1103;
+DBERR_TOOMANYUSERS4ALM         CONSTANT INTEGER := 1104;
+
+
+P_DEFAULT_CHUNK_SIZE   NUMBER DEFAULT 100;
+P_MAX_CHUNK_SIZE       NUMBER DEFAULT 5000;
+
+FUNCTION GETVERSION
+RETURN VARCHAR2;
+
+FUNCTION SAVELICENSE
+(A_SERIAL_ID            IN          VARCHAR2,                   
+ A_SHORTNAME            IN          VARCHAR2,                   
+ A_SETTING_NAME         IN          CXSAPILK.VC40_TABLE_TYPE,   
+ A_SETTING_VALUE        IN          CXSAPILK.VC255_TABLE_TYPE,  
+ A_NR_OF_ROWS           IN          NUMBER,                     
+ A_HASH_CODE_CLIENT     IN          VARCHAR2,                   
+ A_ERROR_MESSAGE           OUT      VARCHAR2)                   
+RETURN NUMBER;
+
+FUNCTION DELETELICENSE
+(A_SERIAL_ID            IN          VARCHAR2,                   
+ A_SHORTNAME            IN          VARCHAR2,                   
+ A_ERROR_MESSAGE           OUT      VARCHAR2)                   
+RETURN NUMBER;
+
+FUNCTION SAVELICENSETEMPLATE
+(A_SERIAL_ID            IN          VARCHAR2,                   
+ A_SHORTNAME            IN          VARCHAR2,                   
+ A_TEMPLATE             IN          BLOB,                       
+ A_ERROR_MESSAGE           OUT      VARCHAR2)                   
+RETURN NUMBER;
+
+FUNCTION SAVELICENSETEMPLATE
+(A_SERIAL_ID            IN          CXSAPILK.VC40_TABLE_TYPE,   
+ A_SHORTNAME            IN          CXSAPILK.VC40_TABLE_TYPE,   
+ A_TEMPLATE             IN          CXSAPILK.BLOB_TABLE_TYPE,   
+ A_NR_OF_ROWS           IN          NUMBER,                     
+ A_ERROR_MESSAGE           OUT      VARCHAR2)                   
+RETURN NUMBER;
+
+FUNCTION DELETELICENSETEMPLATE
+(A_SERIAL_ID            IN          CXSAPILK.VC40_TABLE_TYPE,   
+ A_SHORTNAME            IN          CXSAPILK.VC40_TABLE_TYPE,   
+ A_NR_OF_ROWS           IN          NUMBER,                     
+ A_ERROR_MESSAGE           OUT      VARCHAR2)                   
+RETURN NUMBER;
+
+FUNCTION GETLICENSE
+(A_SERIAL_ID               OUT      CXSAPILK.VC40_TABLE_TYPE,   
+ A_SHORTNAME               OUT      CXSAPILK.VC40_TABLE_TYPE,   
+ A_SETTING_NAME            OUT      CXSAPILK.VC40_TABLE_TYPE,   
+ A_SETTING_VALUE           OUT      CXSAPILK.VC255_TABLE_TYPE,  
+ A_NR_OF_ROWS           IN OUT      NUMBER,                     
+ A_SEARCH_CRITERIA1     IN          VARCHAR2,                   
+ A_SEARCH_ID1           IN          VARCHAR2,                   
+ A_SEARCH_CRITERIA2     IN          VARCHAR2,                   
+ A_SEARCH_ID2           IN          VARCHAR2,                   
+ A_NEXT_ROWS            IN          NUMBER,                     
+ A_ERROR_MESSAGE           OUT      VARCHAR2)                   
+RETURN NUMBER;
+
+FUNCTION GETLICENSETEMPLATE
+(A_SERIAL_ID            IN          VARCHAR2,                   
+ A_SHORTNAME            IN          VARCHAR2,                   
+ A_TEMPLATE                OUT      BLOB,                       
+ A_ERROR_MESSAGE           OUT      VARCHAR2)                   
+RETURN NUMBER;
+
+FUNCTION GETLICENSETEMPLATE
+(A_SERIAL_ID               OUT      CXSAPILK.VC40_TABLE_TYPE,   
+ A_SHORTNAME               OUT      CXSAPILK.VC40_TABLE_TYPE,   
+ A_TEMPLATE                OUT      CXSAPILK.BLOB_TABLE_TYPE,   
+ A_NR_OF_ROWS           IN OUT      NUMBER,                     
+ A_SEARCH_CRITERIA1     IN          VARCHAR2,                   
+ A_SEARCH_ID1           IN          VARCHAR2,                   
+ A_SEARCH_CRITERIA2     IN          VARCHAR2,                   
+ A_SEARCH_ID2           IN          VARCHAR2,                   
+ A_ERROR_MESSAGE           OUT      VARCHAR2)                   
+RETURN NUMBER;
+
+FUNCTION CHECKLICENSE
+(A_APP_ID               IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_APP_VERSION          IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_LIC_CHECK_OK_4_APP      OUT      CXSAPILK.NUM_TABLE_TYPE,    
+ A_MAX_USERS_4_APP         OUT      CXSAPILK.NUM_TABLE_TYPE,    
+ A_NR_OF_ROWS           IN          NUMBER,                     
+ A_ERROR_MESSAGE           OUT      VARCHAR2)                   
+RETURN NUMBER;
+
+FUNCTION CHECKLICENSE
+(A_APP_ID               IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_APP_VERSION          IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_APP_CUSTOM_PARAM     IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_LIC_CHECK_OK_4_APP      OUT      CXSAPILK.NUM_TABLE_TYPE,    
+ A_MAX_USERS_4_APP         OUT      CXSAPILK.NUM_TABLE_TYPE,    
+ A_NR_OF_ROWS           IN          NUMBER,                     
+ A_ERROR_MESSAGE           OUT      VARCHAR2)                   
+RETURN NUMBER;
+
+FUNCTION GRANTLICENSE
+(A_APP_ID               IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_APP_VERSION          IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_LOGON_STATION        IN          CXSAPILK.VC40_TABLE_TYPE,   
+ A_USER_SID             IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_USER_NAME            IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_NR_OF_ROWS           IN          NUMBER,                     
+ A_ERROR_CODE              OUT      CXSAPILK.NUM_TABLE_TYPE,    
+ A_ERROR_MESSAGE           OUT      VARCHAR2)                   
+RETURN NUMBER;
+
+
+FUNCTION GRANTLICENSE
+(A_APP_ID               IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_APP_VERSION          IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_APP_CUSTOM_PARAM     IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_LOGON_STATION        IN          CXSAPILK.VC40_TABLE_TYPE,   
+ A_USER_SID             IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_USER_NAME            IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_NR_OF_ROWS           IN          NUMBER,                     
+ A_ERROR_CODE              OUT      CXSAPILK.NUM_TABLE_TYPE,    
+ A_ERROR_MESSAGE           OUT      VARCHAR2)                   
+RETURN NUMBER;
+
+FUNCTION PINGLICENSE
+(A_APP_ID               IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_APP_VERSION          IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_LOGON_STATION        IN          CXSAPILK.VC40_TABLE_TYPE,   
+ A_USER_SID             IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_USER_NAME            IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_NR_OF_ROWS           IN          NUMBER,                     
+ A_ERROR_CODE              OUT      CXSAPILK.NUM_TABLE_TYPE,    
+ A_ERROR_MESSAGE           OUT      VARCHAR2)                   
+RETURN NUMBER;
+
+FUNCTION PINGLICENSE
+(A_APP_ID               IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_APP_VERSION          IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_APP_CUSTOM_PARAM     IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_LOGON_STATION        IN          CXSAPILK.VC40_TABLE_TYPE,   
+ A_USER_SID             IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_USER_NAME            IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_NR_OF_ROWS           IN          NUMBER,                     
+ A_ERROR_CODE              OUT      CXSAPILK.NUM_TABLE_TYPE,    
+ A_ERROR_MESSAGE           OUT      VARCHAR2)                   
+RETURN NUMBER;
+
+FUNCTION FREELICENSE
+(A_APP_ID               IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_APP_VERSION          IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_LOGON_STATION        IN          CXSAPILK.VC40_TABLE_TYPE,   
+ A_USER_SID             IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_USER_NAME            IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_NR_OF_ROWS           IN          NUMBER,                     
+ A_ERROR_CODE              OUT      CXSAPILK.NUM_TABLE_TYPE,    
+ A_ERROR_MESSAGE           OUT      VARCHAR2)                   
+RETURN NUMBER;
+
+FUNCTION FREELICENSE
+(A_APP_ID               IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_APP_VERSION          IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_APP_CUSTOM_PARAM     IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_LOGON_STATION        IN          CXSAPILK.VC40_TABLE_TYPE,   
+ A_USER_SID             IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_USER_NAME            IN          CXSAPILK.VC20_TABLE_TYPE,   
+ A_NR_OF_ROWS           IN          NUMBER,                     
+ A_ERROR_CODE              OUT      CXSAPILK.NUM_TABLE_TYPE,    
+ A_ERROR_MESSAGE           OUT      VARCHAR2)                   
+RETURN NUMBER;
+
+FUNCTION GETACTUALLICENSEUSAGE
+(A_APP_ID                  OUT      CXSAPILK.VC20_TABLE_TYPE,   
+ A_APP_VERSION             OUT      CXSAPILK.VC20_TABLE_TYPE,   
+ A_LOGON_STATION           OUT      CXSAPILK.VC40_TABLE_TYPE,   
+ A_USER_SID                OUT      CXSAPILK.VC20_TABLE_TYPE,   
+ A_USER_NAME               OUT      CXSAPILK.VC40_TABLE_TYPE,   
+ A_LOGON_DATE              OUT      CXSAPILK.DATE_TABLE_TYPE,   
+ A_LAST_HEARTBEAT          OUT      CXSAPILK.DATE_TABLE_TYPE,   
+ A_LIC_CONSUMED            OUT      CXSAPILK.NUM_TABLE_TYPE,    
+ A_EXECUTABLE              OUT      CXSAPILK.VC20_TABLE_TYPE,   
+ A_NR_OF_ROWS          IN  OUT      NUMBER,                     
+ A_SEARCH_CRITERIA     IN           VARCHAR2,                   
+ A_SEARCH_ID           IN           VARCHAR2,                   
+ A_NEXT_ROWS           IN           NUMBER,                     
+ A_ERROR_MESSAGE           OUT      VARCHAR2)                   
+RETURN NUMBER;
+
+FUNCTION GETACTUALLICENSEUSAGE
+(A_APP_ID                  OUT      CXSAPILK.VC20_TABLE_TYPE,   
+ A_APP_VERSION             OUT      CXSAPILK.VC20_TABLE_TYPE,   
+ A_LOGON_STATION           OUT      CXSAPILK.VC40_TABLE_TYPE,   
+ A_USER_SID                OUT      CXSAPILK.VC20_TABLE_TYPE,   
+ A_USER_NAME               OUT      CXSAPILK.VC40_TABLE_TYPE,   
+ A_LOGON_DATE              OUT      CXSAPILK.DATE_TABLE_TYPE,   
+ A_LAST_HEARTBEAT          OUT      CXSAPILK.DATE_TABLE_TYPE,   
+ A_LIC_CONSUMED            OUT      CXSAPILK.NUM_TABLE_TYPE,    
+ A_EXECUTABLE              OUT      CXSAPILK.VC20_TABLE_TYPE,   
+ A_LIC_CONSUMED_SERIAL_ID  OUT      CXSAPILK.VC40_TABLE_TYPE,   
+ A_LIC_CONSUMED_SHORTNAME  OUT      CXSAPILK.VC40_TABLE_TYPE,   
+ A_NR_OF_ROWS          IN  OUT      NUMBER,                     
+ A_SEARCH_CRITERIA     IN           VARCHAR2,                   
+ A_SEARCH_ID           IN           VARCHAR2,                   
+ A_NEXT_ROWS           IN           NUMBER,                     
+ A_ERROR_MESSAGE           OUT      VARCHAR2)                   
+RETURN NUMBER;
+
+FUNCTION GETACTUALLICENSEUSAGE
+(A_APP_ID                  OUT      CXSAPILK.VC20_TABLE_TYPE,   
+ A_APP_VERSION             OUT      CXSAPILK.VC20_TABLE_TYPE,   
+ A_APP_CUSTOM_PARAM        OUT      CXSAPILK.VC20_TABLE_TYPE,   
+ A_LOGON_STATION           OUT      CXSAPILK.VC40_TABLE_TYPE,   
+ A_USER_SID                OUT      CXSAPILK.VC20_TABLE_TYPE,   
+ A_USER_NAME               OUT      CXSAPILK.VC40_TABLE_TYPE,   
+ A_LOGON_DATE              OUT      CXSAPILK.DATE_TABLE_TYPE,   
+ A_LAST_HEARTBEAT          OUT      CXSAPILK.DATE_TABLE_TYPE,   
+ A_LIC_CONSUMED            OUT      CXSAPILK.NUM_TABLE_TYPE,    
+ A_EXECUTABLE              OUT      CXSAPILK.VC20_TABLE_TYPE,   
+ A_LIC_CONSUMED_SERIAL_ID  OUT      CXSAPILK.VC40_TABLE_TYPE,   
+ A_LIC_CONSUMED_SHORTNAME  OUT      CXSAPILK.VC40_TABLE_TYPE,   
+ A_NR_OF_ROWS          IN  OUT      NUMBER,                     
+ A_SEARCH_CRITERIA     IN           VARCHAR2,                   
+ A_SEARCH_ID           IN           VARCHAR2,                   
+ A_NEXT_ROWS           IN           NUMBER,                     
+ A_ERROR_MESSAGE           OUT      VARCHAR2)                   
+RETURN NUMBER;
+
+PROCEDURE CONVERTOLDINTERSPECLICENSE
+(A_ISPCDBA_SCHEMA   IN VARCHAR2);
+
+PROCEDURE CONVERTOLDUNILABLICENSE
+(A_ULDBA_SCHEMA   IN VARCHAR2);
+
+FUNCTION ISDBAUSER
+RETURN NUMBER;
+
+PROCEDURE TESTHASHCODE(A_STRING_TO_HASH IN VARCHAR2);
+
+PROCEDURE INSERTRECOVERYRECORD;
+
+PROCEDURE DISPLAYLICENSEEXPIRATIONDATE;
+
+
+PROCEDURE DEBUGME(A_FLAG IN CHAR);
+
+END CXSAPILK;
