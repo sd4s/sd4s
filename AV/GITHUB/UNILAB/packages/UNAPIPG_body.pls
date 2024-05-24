@@ -1,0 +1,4534 @@
+PACKAGE BODY unapipg AS
+
+L_SQLERRM         VARCHAR2(255);
+L_SQL_STRING      VARCHAR2(2000);
+L_WHERE_CLAUSE    VARCHAR2(1000);
+L_EVENT_TP        UTEV.EV_TP%TYPE;
+L_TIMED_EVENT_TP  UTEVTIMED.EV_TP%TYPE;
+L_RET_CODE        NUMBER;
+L_RESULT          NUMBER;
+L_FETCHED_ROWS    NUMBER;
+L_EV_SEQ_NR       NUMBER;
+L_EV_DETAILS      VARCHAR2(255);
+STPERROR          EXCEPTION;
+
+TYPE BOOLEAN_TABLE_TYPE IS TABLE OF BOOLEAN INDEX BY BINARY_INTEGER;
+
+FUNCTION GETVERSION
+   RETURN VARCHAR2
+IS
+BEGIN
+   RETURN('06.07.00.00_21.01');
+EXCEPTION
+   WHEN OTHERS THEN
+      RETURN (NULL);
+END GETVERSION;
+
+FUNCTION GETSCPARAMETERGROUP
+(A_SC                     OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PG                     OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PGNODE                 OUT     UNAPIGEN.LONG_TABLE_TYPE,  
+ A_PP_VERSION             OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY1                OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY2                OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY3                OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY4                OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY5                OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_DESCRIPTION            OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_VALUE_F                OUT     UNAPIGEN.FLOAT_TABLE_TYPE, 
+ A_VALUE_S                OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_UNIT                   OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_EXEC_START_DATE        OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_EXEC_END_DATE          OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_EXECUTOR               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PLANNED_EXECUTOR       OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_MANUALLY_ENTERED       OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_ASSIGN_DATE            OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_ASSIGNED_BY            OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_MANUALLY_ADDED         OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_FORMAT                 OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_CONFIRM_ASSIGN         OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_ALLOW_ANY_PR           OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_NEVER_CREATE_METHODS   OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_DELAY                  OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_DELAY_UNIT             OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_LOG_HS                 OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LOG_HS_DETAILS         OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_REANALYSIS             OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_PG_CLASS               OUT     UNAPIGEN.VC2_TABLE_TYPE,   
+ A_ALLOW_MODIFY           OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_ACTIVE                 OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LC                     OUT     UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LC_VERSION             OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_SS                     OUT     UNAPIGEN.VC2_TABLE_TYPE,   
+ A_NR_OF_ROWS             IN OUT  NUMBER,                    
+ A_WHERE_CLAUSE           IN      VARCHAR2)                  
+RETURN NUMBER IS
+
+L_SC                      VARCHAR2(20);
+L_PG                      VARCHAR2(20);
+L_PGNODE                  NUMBER(9);
+L_PP_VERSION              VARCHAR2(20);
+L_PP_KEY1                 VARCHAR2(20);
+L_PP_KEY2                 VARCHAR2(20);
+L_PP_KEY3                 VARCHAR2(20);
+L_PP_KEY4                 VARCHAR2(20);
+L_PP_KEY5                 VARCHAR2(20);
+L_DESCRIPTION             VARCHAR2(40);
+L_VALUE_F                 FLOAT;
+L_VALUE_S                 VARCHAR2(40);
+L_UNIT                    VARCHAR2(20);
+L_EXEC_START_DATE         TIMESTAMP WITH TIME ZONE;
+L_EXEC_END_DATE           TIMESTAMP WITH TIME ZONE;
+L_EXECUTOR                VARCHAR2(20);
+L_PLANNED_EXECUTOR        VARCHAR2(20);
+L_MANUALLY_ENTERED        CHAR(1);
+L_ASSIGN_DATE             TIMESTAMP WITH TIME ZONE;
+L_ASSIGNED_BY             VARCHAR2(20);
+L_MANUALLY_ADDED          CHAR(1);
+L_FORMAT                  VARCHAR2(40);
+L_CONFIRM_ASSIGN          CHAR(1);
+L_ALLOW_ANY_PR            CHAR(1);
+L_NEVER_CREATE_METHODS    CHAR(1);
+L_DELAY                   NUMBER(3);
+L_DELAY_UNIT              VARCHAR2(20);
+L_REANALYSIS              NUMBER(3);
+L_PG_CLASS                VARCHAR2(2);
+L_LOG_HS                  CHAR(1);
+L_LOG_HS_DETAILS          CHAR(1);
+L_ALLOW_MODIFY            CHAR(1);
+L_ACTIVE                  CHAR(1);
+L_LC                      VARCHAR2(2);
+L_LC_VERSION              VARCHAR2(20);
+L_SS                      VARCHAR2(2);
+L_PG_CURSOR               INTEGER;
+
+BEGIN
+
+   IF NVL(A_NR_OF_ROWS, 0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN(UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+
+   IF NVL(A_WHERE_CLAUSE, ' ') = ' ' THEN
+      RETURN(UNAPIGEN.DBERR_WHERECLAUSE);
+   ELSIF
+      UPPER(SUBSTR(A_WHERE_CLAUSE,1,6)) <> 'WHERE ' THEN
+      L_WHERE_CLAUSE := 'WHERE sc = ''' || REPLACE(A_WHERE_CLAUSE, '''', '''''') || 
+                        ''' ORDER BY sc, pgnode';
+   ELSE
+      L_WHERE_CLAUSE := A_WHERE_CLAUSE; 
+   END IF;
+
+   L_PG_CURSOR := DBMS_SQL.OPEN_CURSOR;
+   L_SQL_STRING := 'SELECT sc, pg, pgnode, pp_version, pp_key1, pp_key2, pp_key3, pp_key4, pp_key5,'||
+                   'description, value_f, value_s, '||
+                   'unit, exec_start_date, exec_end_date, executor, '||
+                   'planned_executor, manually_entered, assign_date, '||
+                   'assigned_by, manually_added, format, confirm_assign, '||
+                   'allow_any_pr, never_create_methods, delay, delay_unit, reanalysis,'||
+                   'pg_class, log_hs, log_hs_details, allow_modify, active, lc, lc_version, ss FROM dd'||
+                   UNAPIGEN.P_DD || '.uvscpg '||L_WHERE_CLAUSE;
+
+   DBMS_SQL.PARSE(L_PG_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           1,                         L_SC,                  20 );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           2,                         L_PG,                  20 );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           3,                         L_PGNODE               );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           4,                         L_PP_VERSION,          20 );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           5,                         L_PP_KEY1,             20 );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           6,                         L_PP_KEY2,             20 );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           7,                         L_PP_KEY3,             20 );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           8,                         L_PP_KEY4,             20 );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           9,                         L_PP_KEY5,             20 );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           10,                        L_DESCRIPTION,         40 );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           11,                        L_VALUE_F              );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           12,                        L_VALUE_S,             40);
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           13,                        L_UNIT,                20);
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           14,                        L_EXEC_START_DATE      );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           15,                        L_EXEC_END_DATE        );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           16,                        L_EXECUTOR,            20 );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           17,                        L_PLANNED_EXECUTOR,    20 );
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_PG_CURSOR,      18,                        L_MANUALLY_ENTERED,    1  );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           19,                        L_ASSIGN_DATE          );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           20,                        L_ASSIGNED_BY,         20 );
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_PG_CURSOR,      21,                        L_MANUALLY_ADDED,      1  );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           22,                        L_FORMAT,              40 );
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_PG_CURSOR,      23,                        L_CONFIRM_ASSIGN,      1  );
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_PG_CURSOR,      24,                        L_ALLOW_ANY_PR,        1  );
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_PG_CURSOR,      25,                        L_NEVER_CREATE_METHODS,1  );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           26,                        L_DELAY                );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           27,                        L_DELAY_UNIT,          20 );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           28,                        L_REANALYSIS           );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           29,                        L_PG_CLASS,            2  );
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_PG_CURSOR,      30,                        L_LOG_HS,              1  );
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_PG_CURSOR,      31,                        L_LOG_HS_DETAILS,      1  );
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_PG_CURSOR,      32,                        L_ALLOW_MODIFY,        1  );
+   DBMS_SQL.DEFINE_COLUMN_CHAR(L_PG_CURSOR,      33,                        L_ACTIVE,              1  );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           34,                        L_LC,                  2  );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           35,                        L_LC_VERSION,          20 );
+   DBMS_SQL.DEFINE_COLUMN(L_PG_CURSOR,           36,                        L_SS,                  2  );
+   L_RESULT := DBMS_SQL.EXECUTE_AND_FETCH(L_PG_CURSOR);
+   L_FETCHED_ROWS := 0;
+
+   LOOP
+      EXIT WHEN L_RESULT = 0 OR L_FETCHED_ROWS >= A_NR_OF_ROWS;
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        1,          L_SC);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        2,          L_PG);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        3,          L_PGNODE);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        4,          L_PP_VERSION);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        5,          L_PP_KEY1);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        6,          L_PP_KEY2);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        7,          L_PP_KEY3);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        8,          L_PP_KEY4);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        9,          L_PP_KEY5);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        10,         L_DESCRIPTION);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        11,         L_VALUE_F);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        12,         L_VALUE_S);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        13,         L_UNIT);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        14,         L_EXEC_START_DATE);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        15,         L_EXEC_END_DATE);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        16,         L_EXECUTOR);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        17,         L_PLANNED_EXECUTOR);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_PG_CURSOR,   18,         L_MANUALLY_ENTERED);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        19,         L_ASSIGN_DATE);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        20,         L_ASSIGNED_BY);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_PG_CURSOR,   21,         L_MANUALLY_ADDED);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        22,         L_FORMAT);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_PG_CURSOR,   23,         L_CONFIRM_ASSIGN);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_PG_CURSOR,   24,         L_ALLOW_ANY_PR);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_PG_CURSOR,   25,         L_NEVER_CREATE_METHODS);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        26,         L_DELAY);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        27,         L_DELAY_UNIT);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        28,         L_REANALYSIS);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        29,         L_PG_CLASS);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_PG_CURSOR,   30,         L_LOG_HS);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_PG_CURSOR,   31,         L_LOG_HS_DETAILS);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_PG_CURSOR,   32,         L_ALLOW_MODIFY);
+      DBMS_SQL.COLUMN_VALUE_CHAR(L_PG_CURSOR,   33,         L_ACTIVE);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        34,         L_LC);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        35,         L_LC_VERSION);
+      DBMS_SQL.COLUMN_VALUE(L_PG_CURSOR,        36,         L_SS);
+
+      L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+      A_SC(L_FETCHED_ROWS)                  := L_SC;
+      A_PG(L_FETCHED_ROWS)                  := L_PG;
+      A_PGNODE(L_FETCHED_ROWS)              := L_PGNODE;
+      A_PP_VERSION(L_FETCHED_ROWS)          := L_PP_VERSION;
+      A_PP_KEY1(L_FETCHED_ROWS)             := L_PP_KEY1;
+      A_PP_KEY2(L_FETCHED_ROWS)             := L_PP_KEY2;
+      A_PP_KEY3(L_FETCHED_ROWS)             := L_PP_KEY3;
+      A_PP_KEY4(L_FETCHED_ROWS)             := L_PP_KEY4;
+      A_PP_KEY5(L_FETCHED_ROWS)             := L_PP_KEY5;
+      A_DESCRIPTION(L_FETCHED_ROWS)         := L_DESCRIPTION;
+      A_VALUE_F(L_FETCHED_ROWS)             := L_VALUE_F;
+      A_VALUE_S(L_FETCHED_ROWS)             := L_VALUE_S;
+      A_UNIT(L_FETCHED_ROWS)                := L_UNIT;
+      A_EXEC_START_DATE(L_FETCHED_ROWS)     := L_EXEC_START_DATE;
+      A_EXEC_END_DATE(L_FETCHED_ROWS)       := L_EXEC_END_DATE;
+      A_EXECUTOR(L_FETCHED_ROWS)            := L_EXECUTOR;
+      A_PLANNED_EXECUTOR(L_FETCHED_ROWS)    := L_PLANNED_EXECUTOR;
+      A_MANUALLY_ENTERED(L_FETCHED_ROWS)    := L_MANUALLY_ENTERED;
+      A_ASSIGN_DATE(L_FETCHED_ROWS)         := L_ASSIGN_DATE;
+      A_ASSIGNED_BY(L_FETCHED_ROWS)         := L_ASSIGNED_BY;
+      A_MANUALLY_ADDED(L_FETCHED_ROWS)      := L_MANUALLY_ADDED;
+      A_FORMAT(L_FETCHED_ROWS)              := L_FORMAT;
+      A_CONFIRM_ASSIGN(L_FETCHED_ROWS)      := L_CONFIRM_ASSIGN;
+      A_ALLOW_ANY_PR(L_FETCHED_ROWS)        := L_ALLOW_ANY_PR;
+      A_NEVER_CREATE_METHODS(L_FETCHED_ROWS):= L_NEVER_CREATE_METHODS;
+      A_DELAY(L_FETCHED_ROWS)               := L_DELAY;
+      A_DELAY_UNIT(L_FETCHED_ROWS)          := L_DELAY_UNIT;
+      A_REANALYSIS(L_FETCHED_ROWS)          := L_REANALYSIS;
+      A_PG_CLASS(L_FETCHED_ROWS)            := L_PG_CLASS;
+      A_LOG_HS(L_FETCHED_ROWS)              := L_LOG_HS;
+      A_LOG_HS_DETAILS(L_FETCHED_ROWS)      := L_LOG_HS_DETAILS;
+      A_ALLOW_MODIFY(L_FETCHED_ROWS)        := L_ALLOW_MODIFY;
+      A_ACTIVE(L_FETCHED_ROWS)              := L_ACTIVE;
+      A_LC(L_FETCHED_ROWS)                  := L_LC;
+      A_LC_VERSION(L_FETCHED_ROWS)          := L_LC_VERSION;
+      A_SS(L_FETCHED_ROWS)                  := L_SS;
+
+      IF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+         L_RESULT := DBMS_SQL.FETCH_ROWS(L_PG_CURSOR);
+      END IF;
+   END LOOP;
+
+   DBMS_SQL.CLOSE_CURSOR(L_PG_CURSOR);
+
+   IF L_FETCHED_ROWS = 0 THEN
+      L_RET_CODE := UNAPIGEN.DBERR_NORECORDS;
+   ELSE
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+      L_RET_CODE := UNAPIGEN.DBERR_SUCCESS;
+   END IF;
+
+   RETURN(L_RET_CODE);
+
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+              'GetScParameterGroup', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      IF DBMS_SQL.IS_OPEN(L_PG_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR(L_PG_CURSOR);
+      END IF;
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END GETSCPARAMETERGROUP;
+
+FUNCTION INITSCPARAMETERGROUP
+(A_PP                     IN      VARCHAR2,                  
+ A_PP_VERSION_IN          IN      VARCHAR2,                  
+ A_PP_KEY1                IN      VARCHAR2,                  
+ A_PP_KEY2                IN      VARCHAR2,                  
+ A_PP_KEY3                IN      VARCHAR2,                  
+ A_PP_KEY4                IN      VARCHAR2,                  
+ A_PP_KEY5                IN      VARCHAR2,                  
+ A_SEQ                    IN      NUMBER,                    
+ A_SC                     IN      VARCHAR2,                  
+ A_PP_VERSION             OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_DESCRIPTION            OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_VALUE_F                OUT     UNAPIGEN.FLOAT_TABLE_TYPE, 
+ A_VALUE_S                OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_UNIT                   OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_EXEC_START_DATE        OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_EXEC_END_DATE          OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_EXECUTOR               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PLANNED_EXECUTOR       OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_MANUALLY_ENTERED       OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_ASSIGN_DATE            OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_ASSIGNED_BY            OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_MANUALLY_ADDED         OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_FORMAT                 OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_CONFIRM_ASSIGN         OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_ALLOW_ANY_PR           OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_NEVER_CREATE_METHODS   OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_DELAY                  OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_DELAY_UNIT             OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_REANALYSIS             OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_PG_CLASS               OUT     UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LOG_HS                 OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LOG_HS_DETAILS         OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LC                     OUT     UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LC_VERSION             OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_NR_OF_ROWS             IN OUT  NUMBER)                    
+RETURN NUMBER IS
+
+L_PP_VERSION_IN           VARCHAR2(20);
+L_PP_VERSION              VARCHAR2(20);
+L_DESCRIPTION             VARCHAR2(40);
+L_VALUE_F                 FLOAT;
+L_VALUE_S                 VARCHAR2(40);
+L_UNIT                    VARCHAR2(20);
+L_EXEC_START_DATE         TIMESTAMP WITH TIME ZONE;
+L_EXEC_END_DATE           TIMESTAMP WITH TIME ZONE;
+L_PLANNED_EXECUTOR        VARCHAR2(20);
+L_EXECUTOR                VARCHAR2(20);
+L_MANUALLY_ENTERED        CHAR(1);
+L_ASSIGN_DATE             TIMESTAMP WITH TIME ZONE;
+L_ASSIGNED_BY             VARCHAR2(20);
+L_MANUALLY_ADDED          CHAR(1);
+L_FORMAT                  VARCHAR2(40);
+L_CONFIRM_ASSIGN          CHAR(1);
+L_ALLOW_ANY_PR            CHAR(1);
+L_NEVER_CREATE_METHODS    CHAR(1);
+L_DELAY                   NUMBER(3);
+L_DELAY_UNIT              VARCHAR2(20);
+L_LOG_HS                  CHAR(1);
+L_LOG_HS_DETAILS          CHAR(1);
+L_REANALYSIS              NUMBER(3);
+L_PG_CLASS                VARCHAR2(2);
+L_LC                      VARCHAR2(2);
+L_LC_VERSION              VARCHAR2(20);
+L_COUNT_PP                INTEGER;
+L_PP_DEFINITION_EXISTS    BOOLEAN;
+
+CURSOR L_PP_CURSOR (C_PP VARCHAR2, C_PP_VERSION VARCHAR2, C_PP_KEY1 VARCHAR2, C_PP_KEY2 VARCHAR2, C_PP_KEY3 VARCHAR2, C_PP_KEY4 VARCHAR2, C_PP_KEY5 VARCHAR2) IS
+   SELECT VERSION, DESCRIPTION, UNIT, FORMAT, CONFIRM_ASSIGN, DELAY, DELAY_UNIT, ALLOW_ANY_PR,
+          NEVER_CREATE_METHODS, PP_CLASS, SC_LC, SC_LC_VERSION
+   FROM UTPP
+   WHERE PP = C_PP
+   AND VERSION = C_PP_VERSION
+   AND PP_KEY1 = C_PP_KEY1
+   AND PP_KEY2 = C_PP_KEY2
+   AND PP_KEY3 = C_PP_KEY3
+   AND PP_KEY4 = C_PP_KEY4
+   AND PP_KEY5 = C_PP_KEY5;
+
+CURSOR L_OBJECTS_CURSOR (A_OBJECT_TYPE VARCHAR2) IS
+   SELECT LOG_HS, LOG_HS_DETAILS
+   FROM UTOBJECTS
+   WHERE OBJECT=A_OBJECT_TYPE;
+   
+BEGIN
+
+   IF NVL(A_NR_OF_ROWS, 0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN(UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+
+   IF NVL(A_PP, ' ') = ' ' THEN
+      RETURN(UNAPIGEN.DBERR_NOOBJID);
+   END IF;
+
+   IF NVL(A_SC, ' ') = ' ' THEN
+      RETURN(UNAPIGEN.DBERR_NOOBJID);
+   END IF;
+
+   
+   BEGIN
+      L_PP_VERSION_IN := UNAPIGEN.VALIDATEPPVERSION(A_PP, A_PP_VERSION_IN, A_PP_KEY1, A_PP_KEY2, A_PP_KEY3, A_PP_KEY4, A_PP_KEY5);
+      L_PP_DEFINITION_EXISTS := TRUE;
+   EXCEPTION
+   WHEN OTHERS THEN
+      
+      
+      
+      
+      
+      SELECT COUNT(*)
+      INTO L_COUNT_PP
+      FROM UTPP
+      WHERE PP = A_PP;
+      
+      IF L_COUNT_PP >= 1 THEN
+         RAISE;
+      END IF;
+      L_PP_DEFINITION_EXISTS := FALSE;
+      
+   END;
+   
+
+   L_VALUE_F := NULL;
+   L_VALUE_S := NULL;
+   L_EXEC_START_DATE := NULL;
+   L_EXEC_END_DATE := NULL;
+   L_EXECUTOR := NULL;
+   L_PLANNED_EXECUTOR := NULL;
+   L_MANUALLY_ENTERED := '0';
+   L_ASSIGN_DATE := CURRENT_TIMESTAMP;
+   L_ASSIGNED_BY := UNAPIGEN.P_USER;
+   L_MANUALLY_ADDED := '1';
+   L_REANALYSIS := 0;
+   L_PG_CLASS := '';
+
+   
+   L_LOG_HS := '0';
+   L_LOG_HS_DETAILS := '0';
+   OPEN L_OBJECTS_CURSOR('pg');
+   FETCH L_OBJECTS_CURSOR INTO L_LOG_HS, L_LOG_HS_DETAILS;
+   CLOSE L_OBJECTS_CURSOR;
+
+   
+   
+   
+   IF A_PP = '/' OR L_PP_DEFINITION_EXISTS = FALSE THEN
+      L_PP_VERSION := UNVERSION.P_NO_VERSION;
+      L_DESCRIPTION := A_PP;
+      L_UNIT := '';
+      L_FORMAT := UNAPIGEN.P_DEFAULT_FORMAT;
+      L_CONFIRM_ASSIGN := '0';
+      L_DELAY := 0;
+      L_DELAY_UNIT := 'DD';
+      L_ALLOW_ANY_PR := '1';
+      L_NEVER_CREATE_METHODS := '0';
+      L_PG_CLASS := '';
+      L_LC := '';
+      L_LC_VERSION := '';
+   ELSE
+      OPEN L_PP_CURSOR(A_PP, L_PP_VERSION_IN, A_PP_KEY1, A_PP_KEY2, A_PP_KEY3, A_PP_KEY4, A_PP_KEY5);
+      FETCH L_PP_CURSOR
+      INTO L_PP_VERSION, L_DESCRIPTION, L_UNIT, L_FORMAT, L_CONFIRM_ASSIGN, L_DELAY, 
+           L_DELAY_UNIT, L_ALLOW_ANY_PR, L_NEVER_CREATE_METHODS, L_PG_CLASS, L_LC, L_LC_VERSION;
+      IF L_PP_CURSOR%NOTFOUND THEN
+          CLOSE L_PP_CURSOR;
+          RETURN(UNAPIGEN.DBERR_NOOBJECT);
+      END IF;
+      CLOSE L_PP_CURSOR;
+   END IF;
+   
+   
+   
+   
+   
+
+   L_FETCHED_ROWS := 1;
+   A_PP_VERSION(L_FETCHED_ROWS) := L_PP_VERSION;
+   A_DESCRIPTION(L_FETCHED_ROWS) := L_DESCRIPTION;
+   A_VALUE_F(L_FETCHED_ROWS) := L_VALUE_F;
+   A_VALUE_S(L_FETCHED_ROWS) := L_VALUE_S;
+   A_UNIT(L_FETCHED_ROWS) := L_UNIT;
+   A_EXEC_START_DATE(L_FETCHED_ROWS) := L_EXEC_START_DATE;
+   A_EXEC_END_DATE(L_FETCHED_ROWS) := L_EXEC_END_DATE;
+   A_EXECUTOR(L_FETCHED_ROWS) := L_EXECUTOR;
+   A_PLANNED_EXECUTOR(L_FETCHED_ROWS) := L_PLANNED_EXECUTOR;
+   A_MANUALLY_ENTERED(L_FETCHED_ROWS) := L_MANUALLY_ENTERED;
+   A_ASSIGN_DATE(L_FETCHED_ROWS) := L_ASSIGN_DATE;
+   A_ASSIGNED_BY(L_FETCHED_ROWS) := L_ASSIGNED_BY;
+   A_MANUALLY_ADDED(L_FETCHED_ROWS) := L_MANUALLY_ADDED;
+   A_FORMAT(L_FETCHED_ROWS) := L_FORMAT;
+   A_CONFIRM_ASSIGN(L_FETCHED_ROWS) := L_CONFIRM_ASSIGN;
+   A_ALLOW_ANY_PR(L_FETCHED_ROWS) := L_ALLOW_ANY_PR;
+   A_NEVER_CREATE_METHODS(L_FETCHED_ROWS) := L_NEVER_CREATE_METHODS;
+   A_DELAY(L_FETCHED_ROWS) := L_DELAY;
+   A_DELAY_UNIT(L_FETCHED_ROWS) := L_DELAY_UNIT;
+   A_REANALYSIS(L_FETCHED_ROWS) := L_REANALYSIS;
+   A_PG_CLASS(L_FETCHED_ROWS) := L_PG_CLASS;
+   A_LOG_HS(L_FETCHED_ROWS) := L_LOG_HS;
+   A_LOG_HS_DETAILS(L_FETCHED_ROWS) := L_LOG_HS_DETAILS;
+   A_LC(L_FETCHED_ROWS) := L_LC;
+   A_LC_VERSION(L_FETCHED_ROWS) := L_LC_VERSION;
+
+   
+   
+   
+   IF L_FETCHED_ROWS > A_NR_OF_ROWS THEN
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+             'InitScParameterGroup','a_nr_of_rows ('||A_NR_OF_ROWS||
+             ') too small for required ParameterGroup initialisation');
+   END IF;
+
+   A_NR_OF_ROWS := L_FETCHED_ROWS;
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 
+              'InitScParameterGroup', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      IF L_PP_CURSOR%ISOPEN THEN
+         CLOSE L_PP_CURSOR;
+      END IF;
+      IF L_OBJECTS_CURSOR%ISOPEN THEN
+         CLOSE L_OBJECTS_CURSOR;
+      END IF;
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END INITSCPARAMETERGROUP;
+
+FUNCTION INITSCPGDETAILS
+(A_ST               IN      VARCHAR2,                  
+ A_ST_VERSION       IN OUT  VARCHAR2,                  
+ A_PP               IN      VARCHAR2,                  
+ A_PP_VERSION       IN OUT  VARCHAR2,                  
+ A_PP_KEY1          IN      VARCHAR2,                  
+ A_PP_KEY2          IN      VARCHAR2,                  
+ A_PP_KEY3          IN      VARCHAR2,                  
+ A_PP_KEY4          IN      VARCHAR2,                  
+ A_PP_KEY5          IN      VARCHAR2,                  
+ A_SC               IN      VARCHAR2,                  
+ A_FILTER_FREQ      IN      CHAR,                      
+ A_REF_DATE         IN      DATE,                      
+ A_PA               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PR_VERSION       OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_DESCRIPTION      OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_VALUE_F          OUT     UNAPIGEN.FLOAT_TABLE_TYPE, 
+ A_VALUE_S          OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_UNIT             OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_EXEC_START_DATE  OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_EXEC_END_DATE    OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_EXECUTOR         OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PLANNED_EXECUTOR OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_MANUALLY_ENTERED OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_ASSIGN_DATE      OUT     UNAPIGEN.DATE_TABLE_TYPE,  
+ A_ASSIGNED_BY      OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_MANUALLY_ADDED   OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_FORMAT           OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_TD_INFO          OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_TD_INFO_UNIT     OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_CONFIRM_UID      OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_ALLOW_ANY_ME     OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_DELAY            OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_DELAY_UNIT       OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_MIN_NR_RESULTS   OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_CALC_METHOD      OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_CALC_CF          OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_ALARM_ORDER      OUT     UNAPIGEN.VC3_TABLE_TYPE,   
+ A_VALID_SPECSA     OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_VALID_SPECSB     OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_VALID_SPECSC     OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_VALID_LIMITSA    OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_VALID_LIMITSB    OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_VALID_LIMITSC    OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_VALID_TARGETA    OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_VALID_TARGETB    OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_VALID_TARGETC    OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_MT               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_MT_VERSION       OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_MT_NR_MEASUR     OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_LOG_EXCEPTIONS   OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_REANALYSIS       OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_PA_CLASS         OUT     UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LOG_HS           OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LOG_HS_DETAILS   OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LC               OUT     UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LC_VERSION       OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_NR_OF_ROWS       IN OUT  NUMBER)                    
+RETURN NUMBER IS
+
+L_SUPPLIER                    VARCHAR2(20);
+L_CUSTOMER                    VARCHAR2(20);
+L_REF_DATE                    TIMESTAMP WITH TIME ZONE;
+L_FREQ_FROM                   CHAR(2);
+L_ASSIGN                      BOOLEAN;
+L_ROW                         INTEGER;
+L_FILTER_FREQ                 CHAR(1);
+L_FREQ_TP                     CHAR(1);
+L_FREQ_VAL                    NUMBER;
+L_FREQ_UNIT                   VARCHAR2(20);
+L_INVERT_FREQ                 CHAR(1);
+L_LAST_SCHED                  TIMESTAMP WITH TIME ZONE;
+L_LAST_CNT                    NUMBER(5);
+L_LAST_VAL                    VARCHAR2(40);
+L_DYN_CURSOR                  INTEGER;
+
+L_PA                          UNAPIGEN.VC20_TABLE_TYPE;
+L_PR_VERSION                  UNAPIGEN.VC20_TABLE_TYPE;
+L_DESCRIPTION                 UNAPIGEN.VC40_TABLE_TYPE;
+L_VALUE_F                     UNAPIGEN.FLOAT_TABLE_TYPE;
+L_VALUE_S                     UNAPIGEN.VC40_TABLE_TYPE;
+L_UNIT                        UNAPIGEN.VC20_TABLE_TYPE;
+L_EXEC_START_DATE             UNAPIGEN.DATE_TABLE_TYPE;
+L_EXEC_END_DATE               UNAPIGEN.DATE_TABLE_TYPE;
+L_EXECUTOR                    UNAPIGEN.VC20_TABLE_TYPE;
+L_PLANNED_EXECUTOR            UNAPIGEN.VC20_TABLE_TYPE;
+L_MANUALLY_ENTERED            UNAPIGEN.CHAR1_TABLE_TYPE;
+L_ASSIGN_DATE                 UNAPIGEN.DATE_TABLE_TYPE;
+L_ASSIGNED_BY                 UNAPIGEN.VC20_TABLE_TYPE;
+L_MANUALLY_ADDED              UNAPIGEN.CHAR1_TABLE_TYPE;
+L_FORMAT                      UNAPIGEN.VC40_TABLE_TYPE;
+L_TD_INFO                     UNAPIGEN.NUM_TABLE_TYPE;
+L_TD_INFO_UNIT                UNAPIGEN.VC20_TABLE_TYPE;
+L_CONFIRM_UID                 UNAPIGEN.CHAR1_TABLE_TYPE;
+L_ALLOW_ANY_ME                UNAPIGEN.CHAR1_TABLE_TYPE;
+L_DELAY                       UNAPIGEN.NUM_TABLE_TYPE;
+L_DELAY_UNIT                  UNAPIGEN.VC20_TABLE_TYPE;
+L_MIN_NR_RESULTS              UNAPIGEN.NUM_TABLE_TYPE;
+L_CALC_METHOD                 UNAPIGEN.CHAR1_TABLE_TYPE;
+L_CALC_CF                     UNAPIGEN.VC20_TABLE_TYPE;
+L_ALARM_ORDER                 UNAPIGEN.VC3_TABLE_TYPE;
+L_VALID_SPECSA                UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_SPECSB                UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_SPECSC                UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_LIMITSA               UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_LIMITSB               UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_LIMITSC               UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_TARGETA               UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_TARGETB               UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_TARGETC               UNAPIGEN.CHAR1_TABLE_TYPE;
+L_MT                          UNAPIGEN.VC20_TABLE_TYPE;
+L_MT_VERSION                  UNAPIGEN.VC20_TABLE_TYPE;
+L_MT_NR_MEASUR                UNAPIGEN.NUM_TABLE_TYPE;
+L_LOG_EXCEPTIONS              UNAPIGEN.CHAR1_TABLE_TYPE;
+L_REANALYSIS                  UNAPIGEN.NUM_TABLE_TYPE;
+L_PA_CLASS                    UNAPIGEN.VC2_TABLE_TYPE;
+L_LOG_HS                      UNAPIGEN.CHAR1_TABLE_TYPE;
+L_LOG_HS_DETAILS              UNAPIGEN.CHAR1_TABLE_TYPE;
+L_LC                          UNAPIGEN.VC2_TABLE_TYPE;
+L_LC_VERSION                  UNAPIGEN.VC20_TABLE_TYPE;
+L_NR_OF_ROWS                  NUMBER;
+L_TOT_NR_ROWS                 NUMBER;
+
+CURSOR L_IIVALUE_CURSOR (C_II VARCHAR2) IS
+   SELECT SUBSTR(IIVALUE,1,20) IIVALUE
+   FROM UTSCII
+   WHERE SC = A_SC
+     AND II = C_II
+   ORDER BY ICNODE, IINODE;
+
+CURSOR L_PPPR_CURSOR(C_PP              VARCHAR2,
+                     C_PP_VERSION      VARCHAR2,
+                     C_PP_KEY1         VARCHAR2,
+                     C_PP_KEY2         VARCHAR2,
+                     C_PP_KEY3         VARCHAR2,
+                     C_PP_KEY4         VARCHAR2,
+                     C_PP_KEY5         VARCHAR2) IS
+   
+   
+   
+   SELECT 1 MAINSEQ, A.SEQ, A.PP, A.VERSION PP_VERSION, A.PR, A.PR_VERSION, A.NR_MEASUR, A.DELAY, A.DELAY_UNIT,
+          A.ALLOW_ADD, A.FREQ_TP, A.FREQ_VAL, A.FREQ_UNIT, A.INVERT_FREQ,
+          A.ST_BASED_FREQ, A.LAST_SCHED, A.LAST_CNT, A.LAST_VAL, A.INHERIT_AU,
+          '0' INHERITED, A.PP_KEY1, A.PP_KEY2, A.PP_KEY3, A.PP_KEY4, A.PP_KEY5
+   FROM UTPPPRBUFFER A, UTPR B
+   WHERE A.PP = C_PP
+   AND A.VERSION = C_PP_VERSION
+   AND A.PP_KEY1 = C_PP_KEY1
+   AND A.PP_KEY2 = C_PP_KEY2
+   AND A.PP_KEY3 = C_PP_KEY3
+   AND A.PP_KEY4 = C_PP_KEY4
+   AND A.PP_KEY5 = C_PP_KEY5
+   AND A.PR = B.PR
+   AND UNAPIGEN.VALIDATEVERSION('pr', A.PR, A.PR_VERSION) = B.VERSION
+   AND A.IS_PP = '0'
+ORDER BY 1,2;
+
+   PROCEDURE CLEARLOCAL IS 
+
+   L_ROW    INTEGER;
+
+   BEGIN
+      IF L_NR_OF_ROWS > 0 THEN
+         FOR L_ROW IN 1..L_NR_OF_ROWS LOOP
+            L_PR_VERSION(L_ROW)       := NULL;
+            L_DESCRIPTION(L_ROW)      := NULL;
+            L_VALUE_F(L_ROW)          := NULL;
+            L_VALUE_S(L_ROW)          := NULL;
+            L_UNIT(L_ROW)             := NULL;
+            L_EXEC_START_DATE(L_ROW)  := NULL;
+            L_EXEC_END_DATE(L_ROW)    := NULL;
+            L_EXECUTOR(L_ROW)         := NULL;
+            L_PLANNED_EXECUTOR(L_ROW) := NULL;
+            L_MANUALLY_ENTERED(L_ROW) := NULL;
+            L_ASSIGN_DATE(L_ROW)      := NULL;
+            L_ASSIGNED_BY(L_ROW)      := NULL;
+            L_MANUALLY_ADDED(L_ROW)   := NULL;
+            L_FORMAT(L_ROW)           := NULL;
+            L_TD_INFO(L_ROW)          := NULL;
+            L_TD_INFO_UNIT(L_ROW)     := NULL;
+            L_CONFIRM_UID(L_ROW)      := NULL;
+            L_ALLOW_ANY_ME(L_ROW)     := NULL;
+            L_DELAY(L_ROW)            := NULL;
+            L_DELAY_UNIT(L_ROW)       := NULL;
+            L_MIN_NR_RESULTS(L_ROW)   := NULL;
+            L_CALC_METHOD(L_ROW)      := NULL;
+            L_CALC_CF(L_ROW)          := NULL;
+            L_ALARM_ORDER(L_ROW)      := NULL;
+            L_VALID_SPECSA(L_ROW)     := NULL;
+            L_VALID_SPECSB(L_ROW)     := NULL;
+            L_VALID_SPECSC(L_ROW)     := NULL;
+            L_VALID_LIMITSA(L_ROW)    := NULL;
+            L_VALID_LIMITSB(L_ROW)    := NULL;
+            L_VALID_LIMITSC(L_ROW)    := NULL;
+            L_VALID_TARGETA(L_ROW)    := NULL;
+            L_VALID_TARGETB(L_ROW)    := NULL;
+            L_VALID_TARGETC(L_ROW)    := NULL;
+            L_MT(L_ROW)               := NULL;
+            L_MT_VERSION(L_ROW)       := NULL;
+            L_MT_NR_MEASUR(L_ROW)     := NULL;
+            L_LOG_EXCEPTIONS(L_ROW)   := NULL;
+            L_REANALYSIS(L_ROW)       := NULL;
+            L_PA_CLASS(L_ROW)         := NULL;
+            L_LOG_HS(L_ROW)           := NULL;
+            L_LOG_HS_DETAILS(L_ROW)   := NULL;
+            L_LC(L_ROW)               := NULL;
+            L_LC_VERSION(L_ROW)       := NULL;
+         END LOOP;
+      END IF;
+   END;
+
+   PROCEDURE ASSIGN 
+   (A_PR_TO_ASSIGN IN VARCHAR2) IS
+
+   L_ROW      INTEGER;
+
+   BEGIN
+      IF L_NR_OF_ROWS > 0 THEN
+         FOR L_ROW IN 1..L_NR_OF_ROWS LOOP
+            
+            
+            
+            
+            A_ASSIGN_DATE(L_TOT_NR_ROWS + L_ROW)      := L_REF_DATE;
+            A_ASSIGNED_BY(L_TOT_NR_ROWS + L_ROW)      := UNAPIGEN.P_USER;
+
+            
+            
+            
+            A_PA(L_TOT_NR_ROWS + L_ROW) := A_PR_TO_ASSIGN;
+
+            A_PR_VERSION(L_TOT_NR_ROWS + L_ROW)       := L_PR_VERSION(L_ROW);
+            A_DESCRIPTION(L_TOT_NR_ROWS + L_ROW)      := L_DESCRIPTION(L_ROW);
+            A_VALUE_F(L_TOT_NR_ROWS + L_ROW)          := L_VALUE_F(L_ROW);
+            A_VALUE_S(L_TOT_NR_ROWS + L_ROW)          := L_VALUE_S(L_ROW);
+            A_UNIT(L_TOT_NR_ROWS + L_ROW)             := L_UNIT(L_ROW);
+            A_EXEC_START_DATE(L_TOT_NR_ROWS + L_ROW)  := L_EXEC_START_DATE(L_ROW);
+            A_EXEC_END_DATE(L_TOT_NR_ROWS + L_ROW)    := L_EXEC_END_DATE(L_ROW);
+            A_EXECUTOR(L_TOT_NR_ROWS + L_ROW)         := L_EXECUTOR(L_ROW);
+            A_PLANNED_EXECUTOR(L_TOT_NR_ROWS + L_ROW) := L_PLANNED_EXECUTOR(L_ROW);
+            A_MANUALLY_ENTERED(L_TOT_NR_ROWS + L_ROW) := L_MANUALLY_ENTERED(L_ROW);
+            A_MANUALLY_ADDED(L_TOT_NR_ROWS + L_ROW)   := L_MANUALLY_ADDED(L_ROW);
+            A_FORMAT(L_TOT_NR_ROWS + L_ROW)           := L_FORMAT(L_ROW);
+            A_TD_INFO(L_TOT_NR_ROWS + L_ROW)          := L_TD_INFO(L_ROW);
+            A_TD_INFO_UNIT(L_TOT_NR_ROWS + L_ROW)     := L_TD_INFO_UNIT(L_ROW);
+            A_CONFIRM_UID(L_TOT_NR_ROWS + L_ROW)      := L_CONFIRM_UID(L_ROW);
+            A_ALLOW_ANY_ME(L_TOT_NR_ROWS + L_ROW)     := L_ALLOW_ANY_ME(L_ROW);
+            A_DELAY(L_TOT_NR_ROWS + L_ROW)            := L_DELAY(L_ROW);
+            A_DELAY_UNIT(L_TOT_NR_ROWS + L_ROW)       := L_DELAY_UNIT(L_ROW);
+            A_MIN_NR_RESULTS(L_TOT_NR_ROWS + L_ROW)   := L_MIN_NR_RESULTS(L_ROW);
+            A_CALC_METHOD(L_TOT_NR_ROWS + L_ROW)      := L_CALC_METHOD(L_ROW);
+            A_CALC_CF(L_TOT_NR_ROWS + L_ROW)          := L_CALC_CF(L_ROW);
+            A_ALARM_ORDER(L_TOT_NR_ROWS + L_ROW)      := L_ALARM_ORDER(L_ROW);
+            A_VALID_SPECSA(L_TOT_NR_ROWS + L_ROW)     := L_VALID_SPECSA(L_ROW);
+            A_VALID_SPECSB(L_TOT_NR_ROWS + L_ROW)     := L_VALID_SPECSB(L_ROW);
+            A_VALID_SPECSC(L_TOT_NR_ROWS + L_ROW)     := L_VALID_SPECSC(L_ROW);
+            A_VALID_LIMITSA(L_TOT_NR_ROWS + L_ROW)    := L_VALID_LIMITSA(L_ROW);
+            A_VALID_LIMITSB(L_TOT_NR_ROWS + L_ROW)    := L_VALID_LIMITSB(L_ROW);
+            A_VALID_LIMITSC(L_TOT_NR_ROWS + L_ROW)    := L_VALID_LIMITSC(L_ROW);
+            A_VALID_TARGETA(L_TOT_NR_ROWS + L_ROW)    := L_VALID_TARGETA(L_ROW);
+            A_VALID_TARGETB(L_TOT_NR_ROWS + L_ROW)    := L_VALID_TARGETB(L_ROW);
+            A_VALID_TARGETC(L_TOT_NR_ROWS + L_ROW)    := L_VALID_TARGETC(L_ROW);
+            A_MT(L_TOT_NR_ROWS + L_ROW)               := L_MT(L_ROW);
+            A_MT_VERSION(L_TOT_NR_ROWS + L_ROW)       := L_MT_VERSION(L_ROW);
+            A_MT_NR_MEASUR(L_TOT_NR_ROWS + L_ROW)     := L_MT_NR_MEASUR(L_ROW);
+            A_LOG_EXCEPTIONS(L_TOT_NR_ROWS + L_ROW)   := L_LOG_EXCEPTIONS(L_ROW);
+            A_REANALYSIS(L_TOT_NR_ROWS + L_ROW)       := L_REANALYSIS(L_ROW);
+            A_PA_CLASS(L_TOT_NR_ROWS + L_ROW)         := L_PA_CLASS(L_ROW);
+            A_LOG_HS(L_TOT_NR_ROWS + L_ROW)           := L_LOG_HS(L_ROW);
+            A_LOG_HS_DETAILS(L_TOT_NR_ROWS + L_ROW)   := L_LOG_HS_DETAILS(L_ROW);
+            A_LC(L_TOT_NR_ROWS + L_ROW)               := L_LC(L_ROW);
+            A_LC_VERSION(L_TOT_NR_ROWS + L_ROW)       := L_LC_VERSION(L_ROW);
+         END LOOP;
+      L_TOT_NR_ROWS := L_TOT_NR_ROWS + L_NR_OF_ROWS;
+      END IF;
+   END;
+
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <>
+      UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_NR_OF_ROWS, 0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NROFROWS;
+      RAISE STPERROR;
+   END IF;
+
+   L_NR_OF_ROWS := 0;
+   L_TOT_NR_ROWS := 0;
+
+   
+   
+   
+   
+   
+   
+   
+   IF NVL(A_ST, ' ')=' ' AND
+      NVL(A_PP, ' ')=' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_SC, ' ')=' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+   
+   A_ST_VERSION := UNAPIGEN.VALIDATEVERSION('st', A_ST, A_ST_VERSION);
+   A_PP_VERSION := UNAPIGEN.VALIDATEPPVERSION(A_PP, A_PP_VERSION, A_PP_KEY1, A_PP_KEY2, A_PP_KEY3, A_PP_KEY4, A_PP_KEY5);
+
+   L_REF_DATE := A_REF_DATE;
+   IF L_REF_DATE IS NULL THEN
+      SELECT SAMPLING_DATE
+      INTO L_REF_DATE
+      FROM UTSC
+      WHERE SC = A_SC;      
+   END IF;
+   IF L_REF_DATE IS NULL THEN
+      L_REF_DATE := CURRENT_TIMESTAMP;
+   END IF;
+
+   IF NVL(A_FILTER_FREQ, ' ') = ' ' THEN
+      L_FILTER_FREQ := '1';
+   ELSE
+      L_FILTER_FREQ := A_FILTER_FREQ;
+   END IF;
+   
+      
+   
+   
+   
+   L_RET_CODE := UNAPIAUT.INITPPPRBUFFER (A_PP, A_PP_VERSION,A_PP_KEY1,A_PP_KEY2,A_PP_KEY3,A_PP_KEY4,A_PP_KEY5) ;
+   
+   FOR L_PPPR_REC IN L_PPPR_CURSOR(A_PP, A_PP_VERSION,A_PP_KEY1,A_PP_KEY2,A_PP_KEY3,A_PP_KEY4,A_PP_KEY5) LOOP
+
+      
+      
+      
+      
+      
+      
+      
+      L_ASSIGN := FALSE;
+      IF L_FILTER_FREQ = '0' THEN
+         L_ASSIGN := TRUE;
+      ELSIF L_FILTER_FREQ = '1' THEN
+         
+         
+         
+         BEGIN
+
+            IF L_PPPR_REC.INHERITED = '1' OR 
+               L_PPPR_REC.ST_BASED_FREQ = '0' THEN
+               RAISE NO_DATA_FOUND;
+            END IF;
+
+            L_RET_CODE := UNAPIAUT.INITSTPRFREQBUFFER (A_ST, A_ST_VERSION, 
+                                          A_PP, A_PP_VERSION, A_PP_KEY1, A_PP_KEY2, A_PP_KEY3, A_PP_KEY4, A_PP_KEY5,
+                                          L_PPPR_REC.PR, L_PPPR_REC.PR_VERSION) ;
+
+            SELECT FREQ_TP, FREQ_VAL, FREQ_UNIT, INVERT_FREQ,
+                   LAST_SCHED, LAST_CNT, LAST_VAL
+            INTO L_FREQ_TP, L_FREQ_VAL, L_FREQ_UNIT, L_INVERT_FREQ,
+                 L_LAST_SCHED, L_LAST_CNT, L_LAST_VAL
+            FROM UTSTPRFREQBUFFER
+            WHERE ST = A_ST
+              AND VERSION = A_ST_VERSION
+              AND PP = A_PP
+              AND NVL(PP_VERSION, '~Current~') = NVL(A_PP_VERSION, '~Current~')
+              AND PP_KEY1 = A_PP_KEY1
+              AND PP_KEY2 = A_PP_KEY2
+              AND PP_KEY3 = A_PP_KEY3
+              AND PP_KEY4 = A_PP_KEY4
+              AND PP_KEY5 = A_PP_KEY5
+              AND PR = L_PPPR_REC.PR
+              AND NVL(PR_VERSION, '~Current~') = NVL(L_PPPR_REC.PR_VERSION, '~Current~');
+
+            L_FREQ_FROM := 'st';
+
+         EXCEPTION
+         WHEN NO_DATA_FOUND THEN
+            L_FREQ_FROM := 'pp';
+            L_FREQ_TP   := L_PPPR_REC.FREQ_TP;
+            L_FREQ_VAL  := L_PPPR_REC.FREQ_VAL;
+            L_FREQ_UNIT := L_PPPR_REC.FREQ_UNIT;
+            L_INVERT_FREQ := L_PPPR_REC.INVERT_FREQ;
+            L_LAST_SCHED  := L_PPPR_REC.LAST_SCHED;
+            L_LAST_CNT    := L_PPPR_REC.LAST_CNT;
+            L_LAST_VAL    := L_PPPR_REC.LAST_VAL;
+         END;
+
+         
+         
+         
+         IF L_PPPR_REC.INHERITED = '1' THEN
+            L_ASSIGN := TRUE;
+         ELSIF L_FREQ_TP = 'C' THEN
+            L_ASSIGN := TRUE;
+            
+            
+            
+            L_SQL_STRING := 'BEGIN :l_ret_code := UNFREQ.'|| L_FREQ_UNIT ||
+                '(:a_sc, :a_st, :a_st_version, :a_pp, :a_pp_version, '||
+                ':a_pp_key1, :a_pp_key2, :a_pp_key3, :a_pp_key4, :a_pp_key5, ' || 
+                ':a_pr, :a_pr_version, :a_freq_val, ' || 
+                ':a_invert_freq,:a_ref_date, :a_last_sched, :a_last_cnt, :a_last_val); END;';
+
+            L_DYN_CURSOR := DBMS_SQL.OPEN_CURSOR;
+
+            DBMS_SQL.PARSE(L_DYN_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':l_ret_code', L_RET_CODE);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_sc', A_SC, 20);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_st', A_ST, 20);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_st_version', A_ST_VERSION, 20);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_pp', A_PP, 20);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_pp_version', A_PP_VERSION, 20);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_pp_key1', A_PP_KEY1, 20);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_pp_key2', A_PP_KEY2, 20);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_pp_key3', A_PP_KEY3, 20);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_pp_key4', A_PP_KEY4, 20);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_pp_key5', A_PP_KEY5, 20);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_pr', L_PPPR_REC.PR, 20);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_pr_version', L_PPPR_REC.PR_VERSION, 20);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_freq_val', L_FREQ_VAL);
+            DBMS_SQL.BIND_VARIABLE_CHAR(L_DYN_CURSOR, ':a_invert_freq', L_INVERT_FREQ, 1);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_ref_date', L_REF_DATE);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_last_sched', L_LAST_SCHED);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_last_cnt', L_LAST_CNT);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_last_val', L_LAST_VAL, 40);
+
+            L_RESULT := DBMS_SQL.EXECUTE(L_DYN_CURSOR);
+            DBMS_SQL.VARIABLE_VALUE(L_DYN_CURSOR, ':l_ret_code', L_RET_CODE);
+            DBMS_SQL.VARIABLE_VALUE(L_DYN_CURSOR, ':a_last_sched', L_LAST_SCHED);
+            DBMS_SQL.VARIABLE_VALUE(L_DYN_CURSOR, ':a_last_cnt', L_LAST_CNT);
+            DBMS_SQL.VARIABLE_VALUE(L_DYN_CURSOR, ':a_last_val', L_LAST_VAL);
+               
+            DBMS_SQL.CLOSE_CURSOR(L_DYN_CURSOR);
+   
+            IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+               L_ASSIGN := FALSE;
+            END IF;
+         ELSE
+            L_ASSIGN := TRUE;
+            IF NOT UNAPIAUT.EVALASSIGNMENTFREQ('sc',A_SC, '', 'pg', A_PP, A_PP_VERSION,
+                                               L_FREQ_TP, L_FREQ_VAL, L_FREQ_UNIT,
+                                               L_INVERT_FREQ, 
+                                               L_REF_DATE,
+                                               L_LAST_SCHED,
+                                               L_LAST_CNT, L_LAST_VAL) THEN
+               
+               
+               
+               L_ASSIGN := FALSE;
+            END IF;
+         END IF;
+         
+          
+         
+         IF L_FREQ_FROM = 'st' THEN
+            
+            UPDATE UTSTPRFREQBUFFER
+            SET LAST_SCHED = L_LAST_SCHED,
+                LAST_SCHED_TZ =  DECODE(L_LAST_SCHED, LAST_SCHED_TZ, LAST_SCHED_TZ, L_LAST_SCHED),
+                LAST_CNT = L_LAST_CNT,
+                LAST_VAL = L_LAST_VAL,
+                HANDLED = 'Y'
+            WHERE ST = A_ST
+              AND VERSION = A_ST_VERSION
+              AND PP = A_PP
+              AND PP_VERSION = A_PP_VERSION
+              AND PP_KEY1 = A_PP_KEY1
+              AND PP_KEY2 = A_PP_KEY2
+              AND PP_KEY3 = A_PP_KEY3
+              AND PP_KEY4 = A_PP_KEY4
+              AND PP_KEY5 = A_PP_KEY5
+              AND PR = L_PPPR_REC.PR
+              AND PR_VERSION = L_PPPR_REC.PR_VERSION;
+
+            UPDATE UTPPPRBUFFER
+            SET LAST_SCHED = L_LAST_SCHED,
+                LAST_SCHED_TZ = DECODE(L_LAST_SCHED, LAST_SCHED_TZ, LAST_SCHED_TZ, L_LAST_SCHED) ,
+                LAST_CNT = L_LAST_CNT,
+                LAST_VAL = L_LAST_VAL,
+                HANDLED = 'Y'
+            WHERE PP = A_PP
+              AND VERSION = A_PP_VERSION
+              AND PP_KEY1 = A_PP_KEY1
+              AND PP_KEY2 = A_PP_KEY2
+              AND PP_KEY3 = A_PP_KEY3
+              AND PP_KEY4 = A_PP_KEY4
+              AND PP_KEY5 = A_PP_KEY5
+              AND PR = L_PPPR_REC.PR
+              AND SEQ = L_PPPR_REC.SEQ; 
+            
+         ELSIF L_PPPR_REC.ST_BASED_FREQ = '1' THEN
+            
+            
+            
+            INSERT INTO UTSTPRFREQBUFFER(ST, VERSION, PP, PP_VERSION, 
+                                   PP_KEY1, PP_KEY2, PP_KEY3, PP_KEY4, PP_KEY5,
+                                   PR, PR_VERSION, FREQ_TP, FREQ_VAL, FREQ_UNIT,
+                                   INVERT_FREQ, LAST_SCHED, LAST_SCHED_TZ, LAST_CNT, LAST_VAL, HANDLED)
+            VALUES(A_ST, A_ST_VERSION, A_PP, A_PP_VERSION, 
+                   L_PPPR_REC.PP_KEY1, L_PPPR_REC.PP_KEY2, L_PPPR_REC.PP_KEY3, L_PPPR_REC.PP_KEY4, L_PPPR_REC.PP_KEY5,
+                   L_PPPR_REC.PR, L_PPPR_REC.PR_VERSION, L_FREQ_TP, L_FREQ_VAL,
+                   L_FREQ_UNIT, L_INVERT_FREQ, L_LAST_SCHED, L_LAST_SCHED, L_LAST_CNT,
+                   L_LAST_VAL, 'Y');
+
+            UPDATE UTPPPRBUFFER
+            SET LAST_SCHED = L_LAST_SCHED,
+                LAST_SCHED_TZ =  DECODE(L_LAST_SCHED, LAST_SCHED_TZ, LAST_SCHED_TZ, L_LAST_SCHED),
+                LAST_CNT = L_LAST_CNT,
+                LAST_VAL = L_LAST_VAL,
+                HANDLED = 'Y'
+            WHERE PP = A_PP
+              AND VERSION = A_PP_VERSION
+              AND PP_KEY1 = A_PP_KEY1
+              AND PP_KEY2 = A_PP_KEY2
+              AND PP_KEY3 = A_PP_KEY3
+              AND PP_KEY4 = A_PP_KEY4
+              AND PP_KEY5 = A_PP_KEY5
+              AND PR = L_PPPR_REC.PR
+              AND SEQ = L_PPPR_REC.SEQ; 
+              
+         ELSIF L_PPPR_REC.INHERITED = '0' THEN
+            UPDATE UTPPPRBUFFER
+            SET LAST_SCHED = L_LAST_SCHED,
+                LAST_SCHED_TZ =  DECODE(L_LAST_SCHED, LAST_SCHED_TZ, LAST_SCHED_TZ, L_LAST_SCHED),
+                LAST_CNT = L_LAST_CNT,
+                LAST_VAL = L_LAST_VAL,
+                HANDLED = 'Y'
+            WHERE PP = A_PP
+              AND VERSION = A_PP_VERSION
+              AND PP_KEY1 = A_PP_KEY1
+              AND PP_KEY2 = A_PP_KEY2
+              AND PP_KEY3 = A_PP_KEY3
+              AND PP_KEY4 = A_PP_KEY4
+              AND PP_KEY5 = A_PP_KEY5
+              AND PR = L_PPPR_REC.PR
+              AND SEQ = L_PPPR_REC.SEQ; 
+         END IF;
+      END IF;
+
+      IF L_ASSIGN THEN
+
+         
+         
+         
+         
+         CLEARLOCAL;
+
+         
+         
+         
+         L_NR_OF_ROWS := 0;
+         L_RET_CODE := UNAPIPA.INITSCPARAMETER(L_PPPR_REC.PR, 
+                                 UNAPIGEN.VALIDATEVERSION('pr', L_PPPR_REC.PR, L_PPPR_REC.PR_VERSION), 
+                                 L_PPPR_REC.SEQ,
+                                 A_SC, A_PP, 0,  A_PP_VERSION, 
+                                 A_PP_KEY1, A_PP_KEY2, A_PP_KEY3, A_PP_KEY4, A_PP_KEY5,
+                                 L_PR_VERSION, L_DESCRIPTION, L_VALUE_F,
+                                 L_VALUE_S, L_UNIT, L_EXEC_START_DATE,
+                                 L_EXEC_END_DATE, L_EXECUTOR, L_PLANNED_EXECUTOR,
+                                 L_MANUALLY_ENTERED, L_ASSIGN_DATE,
+                                 L_ASSIGNED_BY, L_MANUALLY_ADDED, L_FORMAT,
+                                 L_TD_INFO,
+                                 L_TD_INFO_UNIT, L_CONFIRM_UID, L_ALLOW_ANY_ME,
+                                 L_DELAY, L_DELAY_UNIT, L_MIN_NR_RESULTS,
+                                 L_CALC_METHOD, L_CALC_CF, L_ALARM_ORDER,
+                                 L_VALID_SPECSA, L_VALID_SPECSB,
+                                 L_VALID_SPECSC, L_VALID_LIMITSA,
+                                 L_VALID_LIMITSB, L_VALID_LIMITSC,
+                                 L_VALID_TARGETA, L_VALID_TARGETB,
+                                 L_VALID_TARGETC, L_MT, 
+                                 L_MT_VERSION, 
+                                 L_MT_NR_MEASUR, 
+                                 L_LOG_EXCEPTIONS, L_REANALYSIS,
+                                 L_PA_CLASS, L_LOG_HS, L_LOG_HS_DETAILS,
+                                 L_LC, L_LC_VERSION, L_NR_OF_ROWS);
+
+         IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+            UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+            RAISE STPERROR;
+         END IF;
+
+         
+         
+         
+         ASSIGN(L_PPPR_REC.PR);
+
+      END IF;
+   END LOOP;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   
+   
+   
+   IF L_TOT_NR_ROWS > A_NR_OF_ROWS THEN
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME, ERROR_MSG)
+      VALUES(UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+             'InitScPgDetails','a_nr_of_rows ('||A_NR_OF_ROWS||
+             ') too small for required Parameter initialisation');
+   END IF;
+
+   A_NR_OF_ROWS := L_TOT_NR_ROWS;
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('InitScPgDetails', SQLERRM);
+   END IF;
+   IF L_IIVALUE_CURSOR%ISOPEN THEN
+      CLOSE L_IIVALUE_CURSOR;
+   END IF;
+
+
+
+
+
+
+   IF DBMS_SQL.IS_OPEN(L_DYN_CURSOR) THEN
+      DBMS_SQL.CLOSE_CURSOR(L_DYN_CURSOR);
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR, 'InitScPgDetails'));
+END INITSCPGDETAILS;
+
+FUNCTION SAVESCPARAMETERGROUP
+(A_SC                     IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PG                     IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PGNODE                 IN OUT  UNAPIGEN.LONG_TABLE_TYPE,  
+ A_PP_VERSION             IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY1                IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY2                IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY3                IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY4                IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY5                IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_DESCRIPTION            IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_VALUE_F                IN      UNAPIGEN.FLOAT_TABLE_TYPE, 
+ A_VALUE_S                IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_UNIT                   IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_EXEC_START_DATE        IN      UNAPIGEN.DATE_TABLE_TYPE,  
+ A_EXEC_END_DATE          IN OUT  UNAPIGEN.DATE_TABLE_TYPE,  
+ A_EXECUTOR               IN OUT  UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PLANNED_EXECUTOR       IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_MANUALLY_ENTERED       IN      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_ASSIGN_DATE            IN      UNAPIGEN.DATE_TABLE_TYPE,  
+ A_ASSIGNED_BY            IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_MANUALLY_ADDED         IN      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_FORMAT                 IN      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_CONFIRM_ASSIGN         IN      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_ALLOW_ANY_PR           IN      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_NEVER_CREATE_METHODS   IN      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_DELAY                  IN      UNAPIGEN.NUM_TABLE_TYPE,   
+ A_DELAY_UNIT             IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PG_CLASS               IN      UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LOG_HS                 IN      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LOG_HS_DETAILS         IN      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_LC                     IN      UNAPIGEN.VC2_TABLE_TYPE,   
+ A_LC_VERSION             IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_MODIFY_FLAG            IN OUT  UNAPIGEN.NUM_TABLE_TYPE,   
+ A_NR_OF_ROWS             IN      NUMBER,                    
+ A_MODIFY_REASON          IN      VARCHAR2)                  
+RETURN NUMBER IS
+
+L_LC                     VARCHAR2(2);
+L_LC_VERSION             VARCHAR2(20);
+L_SS                     VARCHAR2(2);
+L_SS_TO                  VARCHAR2(2);
+L_LOG_HS                 CHAR(1);
+L_LOG_HS_DETAILS         CHAR(1);
+L_ALLOW_MODIFY           CHAR(1);
+L_ACTIVE                 CHAR(1);
+L_INSERT                 BOOLEAN;
+L_PG_RECORD_OK           BOOLEAN;
+L_PG_HANDLED             BOOLEAN;
+CURR_ITEM                INTEGER;
+NEXT_ITEM                INTEGER;
+PREV_NODE                NUMBER(9);
+NEXT_NODE                NUMBER(9);
+NODE_STEP                NUMBER(9);
+L_SEQ_NO                 INTEGER;
+NBR_OF_NODES_TO_CREATE   INTEGER;
+L_COMPLETELY_SAVED       BOOLEAN;
+L_DELETED_NODE           NUMBER(9);
+L_DELAYED_TILL           TIMESTAMP WITH TIME ZONE;
+L_OLD_DELAY              INTEGER;
+L_OLD_DELAY_UNIT         VARCHAR2(20);
+L_DELETE_CURSOR          INTEGER;
+L_CURRENT_TIMESTAMP                TIMESTAMP WITH TIME ZONE;
+L_REF_DATE               TIMESTAMP WITH TIME ZONE;
+L_ST                     VARCHAR2(20);
+L_ST_VERSION             VARCHAR2(20);
+L_PP_VERSION             VARCHAR2(20);
+L_HS_DETAILS_SEQ_NR      INTEGER;
+L_NEXT_PGNODE            NUMBER(9);
+
+CURSOR L_SCMEGK_CURSOR(A_SC IN VARCHAR2, A_PG IN VARCHAR2, A_PGNODE IN NUMBER) IS
+   SELECT DISTINCT GK
+   FROM UTSCMEGK
+   WHERE SC = A_SC
+   AND PG = A_PG
+   AND PGNODE = A_PGNODE;
+
+CURSOR L_SC_CURSOR(A_SC VARCHAR2) IS
+   SELECT ST, ST_VERSION, SAMPLING_DATE
+   FROM UTSC 
+   WHERE SC = A_SC;   
+
+CURSOR L_SCPGOLD_CURSOR(A_SC IN VARCHAR2, 
+                        A_PG IN VARCHAR2, A_PGNODE IN NUMBER) IS
+   SELECT A.*
+   FROM UDSCPG A
+   WHERE A.SC = A_SC
+     AND A.PG = A_PG
+     AND A.PGNODE = A_PGNODE;
+L_SCPGOLD_REC UDSCPG%ROWTYPE;
+L_SCPGNEW_REC UDSCPG%ROWTYPE;
+
+BEGIN
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <>
+      UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   L_CURRENT_TIMESTAMP := CURRENT_TIMESTAMP;
+   
+   
+   
+   CURR_ITEM := 1;
+   WHILE CURR_ITEM <= A_NR_OF_ROWS LOOP
+      IF A_MODIFY_FLAG(CURR_ITEM) IN (UNAPIGEN.MOD_FLAG_INSERT,
+                                      UNAPIGEN.MOD_FLAG_INSERT_AND_CRAU,
+                                      UNAPIGEN.MOD_FLAG_CREATE) THEN
+         IF NVL(A_PGNODE(CURR_ITEM), 0) <> 0 THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NEWNODENOTZERO;
+            RAISE STPERROR;
+         END IF;
+
+         
+         
+         
+         NEXT_ITEM := CURR_ITEM;
+         NBR_OF_NODES_TO_CREATE := 0;
+         WHILE (A_MODIFY_FLAG(NEXT_ITEM) IN (UNAPIGEN.MOD_FLAG_INSERT,
+                                             UNAPIGEN.MOD_FLAG_INSERT_AND_CRAU,
+                                             UNAPIGEN.MOD_FLAG_CREATE) AND
+                NVL(A_SC(NEXT_ITEM), ' ') = NVL(A_SC(CURR_ITEM),' ')) LOOP
+            NBR_OF_NODES_TO_CREATE := NBR_OF_NODES_TO_CREATE + 1;
+            IF NEXT_ITEM < A_NR_OF_ROWS THEN
+               NEXT_ITEM := NEXT_ITEM + 1;
+            ELSE
+               EXIT;
+            END IF;
+         END LOOP;
+
+         
+         
+         
+         
+         IF A_MODIFY_FLAG(NEXT_ITEM) NOT IN (UNAPIGEN.MOD_FLAG_INSERT,
+                                             UNAPIGEN.MOD_FLAG_INSERT_AND_CRAU,         
+                                             UNAPIGEN.MOD_FLAG_CREATE) AND
+            A_SC(NEXT_ITEM) = A_SC(CURR_ITEM) THEN
+            NEXT_NODE := A_PGNODE(NEXT_ITEM);
+            SELECT NVL(MAX(PGNODE), 0)
+            INTO PREV_NODE
+            FROM UTSCPG
+            WHERE PGNODE < NEXT_NODE
+              AND SC = A_SC(CURR_ITEM);
+            NODE_STEP :=
+               TRUNC(ABS((NEXT_NODE - PREV_NODE)) / (NBR_OF_NODES_TO_CREATE + 1));
+
+            IF NODE_STEP < 1 THEN
+               UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NODELIMITOVERF;
+               RAISE STPERROR;
+            END IF;
+         ELSE
+            
+            SELECT NVL(MAX(PGNODE), 0)
+            INTO PREV_NODE
+            FROM UTSCPG
+            WHERE SC = A_SC(CURR_ITEM);
+            NODE_STEP := UNAPIGEN.DEFAULT_NODE_INTERVAL;
+         END IF;
+
+         
+         
+         
+         FOR I IN 1..NBR_OF_NODES_TO_CREATE LOOP
+            A_PGNODE(CURR_ITEM + I - 1) := PREV_NODE + (NODE_STEP * I);
+         END LOOP;
+
+         CURR_ITEM := CURR_ITEM + NBR_OF_NODES_TO_CREATE;
+      ELSE
+         CURR_ITEM := CURR_ITEM + 1;
+      END IF;
+   END LOOP;
+
+   
+   
+   
+   L_COMPLETELY_SAVED := TRUE;
+
+   
+   
+   
+   L_HS_DETAILS_SEQ_NR := 0;
+   FOR L_SEQ_NO IN 1..A_NR_OF_ROWS LOOP
+      L_PG_RECORD_OK := TRUE;          
+      L_PG_HANDLED   := TRUE;
+      L_SS_TO := NULL;
+
+      
+      
+      
+      IF A_MODIFY_FLAG(L_SEQ_NO) IN (UNAPIGEN.MOD_FLAG_INSERT,
+                                     UNAPIGEN.MOD_FLAG_INSERT_AND_CRAU,
+                                     UNAPIGEN.MOD_FLAG_INSERT_WITH_NODES,
+                                     UNAPIGEN.MOD_FLAG_INSERT_NODES_AND_CRAU,
+                                     UNAPIGEN.MOD_FLAG_CREATE) THEN
+         IF NVL(A_PP_VERSION(L_SEQ_NO), ' ') = ' ' THEN
+            RETURN(UNAPIGEN.DBERR_PPVERSION);
+         END IF;
+      END IF;
+
+      IF NVL(A_SC(L_SEQ_NO), ' ') = ' ' OR
+         NVL(A_PG(L_SEQ_NO), ' ') = ' ' THEN
+
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+         RAISE STPERROR;
+         
+         
+         
+      ELSIF A_MODIFY_FLAG(L_SEQ_NO) IN (UNAPIGEN.MOD_FLAG_INSERT,
+                                        UNAPIGEN.MOD_FLAG_INSERT_AND_CRAU,      
+                                        UNAPIGEN.MOD_FLAG_INSERT_WITH_NODES,      
+                                        UNAPIGEN.MOD_FLAG_INSERT_NODES_AND_CRAU,      
+                                        UNAPIGEN.MOD_FLAG_CREATE,
+                                        UNAPIGEN.MOD_FLAG_UPDATE,
+                                        UNAPIGEN.MOD_FLAG_DELETE) THEN
+         L_PP_VERSION := A_PP_VERSION(L_SEQ_NO);
+         L_RET_CODE := UNAPIAUT.GETSCPGAUTHORISATION(A_SC(L_SEQ_NO), A_PG(L_SEQ_NO), A_PGNODE(L_SEQ_NO), 
+                                                     L_PP_VERSION, L_LC, L_LC_VERSION, L_SS, 
+                                                     L_ALLOW_MODIFY, L_ACTIVE, L_LOG_HS, 
+                                                     L_LOG_HS_DETAILS);
+         IF L_RET_CODE = UNAPIGEN.DBERR_NOOBJECT THEN
+            L_INSERT := TRUE;
+         ELSIF L_RET_CODE = UNAPIGEN.DBERR_SUCCESS THEN
+            L_INSERT := FALSE;
+         ELSE
+            A_MODIFY_FLAG(L_SEQ_NO) := L_RET_CODE;
+            L_PG_RECORD_OK := FALSE;
+         END IF;
+      ELSIF A_MODIFY_FLAG(L_SEQ_NO) = UNAPIGEN.DBERR_SUCCESS THEN
+         
+         
+         
+         L_PG_RECORD_OK := FALSE; 
+         L_PG_HANDLED   := FALSE; 
+      ELSE
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_INVALMODFLAG;
+         RAISE STPERROR;   
+      END IF;
+
+      
+      
+      
+      IF L_PG_RECORD_OK AND
+         A_MODIFY_FLAG(L_SEQ_NO) IN (UNAPIGEN.MOD_FLAG_INSERT,
+                                     UNAPIGEN.MOD_FLAG_INSERT_AND_CRAU,
+                                     UNAPIGEN.MOD_FLAG_INSERT_WITH_NODES,         
+                                     UNAPIGEN.MOD_FLAG_INSERT_NODES_AND_CRAU,
+                                     UNAPIGEN.MOD_FLAG_CREATE,
+                                     UNAPIGEN.MOD_FLAG_UPDATE) AND
+         NVL(A_LOG_HS(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_LOGHS;
+         RAISE STPERROR;
+      END IF;
+
+      
+      
+      
+      IF L_PG_RECORD_OK AND
+         A_MODIFY_FLAG(L_SEQ_NO) IN (UNAPIGEN.MOD_FLAG_INSERT,
+                                     UNAPIGEN.MOD_FLAG_INSERT_AND_CRAU,
+                                     UNAPIGEN.MOD_FLAG_INSERT_WITH_NODES,         
+                                     UNAPIGEN.MOD_FLAG_INSERT_NODES_AND_CRAU,
+                                     UNAPIGEN.MOD_FLAG_CREATE,
+                                     UNAPIGEN.MOD_FLAG_UPDATE) AND
+         NVL(A_DELAY(L_SEQ_NO),0) <> 0 THEN
+
+         BEGIN 
+            SELECT DELAYED_FROM
+            INTO L_REF_DATE
+            FROM UTDELAY
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO)
+              AND OBJECT_TP = 'pg';
+         EXCEPTION
+         WHEN NO_DATA_FOUND THEN
+            SELECT SAMPLING_DATE
+            INTO L_REF_DATE
+            FROM UTSC
+            WHERE SC = A_SC(L_SEQ_NO);      
+            IF L_REF_DATE IS NULL THEN
+               L_REF_DATE := L_CURRENT_TIMESTAMP;
+            END IF;
+         END;
+
+         L_RET_CODE := UNAPIAUT.CALCULATEDELAY(A_DELAY(L_SEQ_NO),
+                                               A_DELAY_UNIT(L_SEQ_NO),
+                                               L_REF_DATE, L_DELAYED_TILL);
+         IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+            UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+            RAISE STPERROR;
+         END IF;
+      END IF;
+
+      
+      
+      
+
+      
+      
+      
+      IF L_PG_RECORD_OK AND
+         A_MODIFY_FLAG(L_SEQ_NO) = UNAPIGEN.MOD_FLAG_UPDATE THEN
+
+         
+         
+         
+         IF L_INSERT THEN
+            
+            
+            
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJECT;
+            RAISE STPERROR;
+         ELSIF NVL(A_MANUALLY_ENTERED(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_MANUALLY_ENTERED;
+            RAISE STPERROR;
+         ELSIF NVL(A_CONFIRM_ASSIGN(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_CONFIRMASSIGN;
+            RAISE STPERROR;
+         ELSIF NVL(A_ALLOW_ANY_PR(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_ALLOWANYPR;
+            RAISE STPERROR;
+         ELSIF NVL(A_NEVER_CREATE_METHODS(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NEVERCREATEMETHODS;
+            RAISE STPERROR;
+         ELSIF NVL(A_MANUALLY_ADDED(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_MANUALLYADDED;
+            RAISE STPERROR;
+         ELSE
+            
+            
+            
+            SELECT DELAY, DELAY_UNIT
+            INTO   L_OLD_DELAY, L_OLD_DELAY_UNIT
+            FROM   UTSCPG
+            WHERE  SC=A_SC(L_SEQ_NO)
+              AND  PG=A_PG(L_SEQ_NO)
+              AND  PGNODE=A_PGNODE(L_SEQ_NO);
+            
+            
+            
+            IF NVL(L_OLD_DELAY, 0) <> NVL(A_DELAY(L_SEQ_NO), 0) OR
+               NVL(L_OLD_DELAY_UNIT, ' ') <> NVL(A_DELAY_UNIT(L_SEQ_NO), ' ') THEN
+               IF NVL(L_OLD_DELAY, 0) = 0 THEN
+                  
+                  
+                  
+                  IF NVL(A_DELAY(L_SEQ_NO), 0) <> 0 THEN
+                     
+                     
+                     
+                     
+                     
+                     L_SS_TO := '@D';
+                     INSERT INTO UTDELAY(SC, PG, PGNODE, OBJECT_TP,
+                                         DELAY, DELAY_UNIT, DELAYED_FROM, DELAYED_FROM_TZ,
+                                         DELAYED_TILL, DELAYED_TILL_TZ)
+                     VALUES(A_SC(L_SEQ_NO), A_PG(L_SEQ_NO), A_PGNODE(L_SEQ_NO),
+                            'pg', A_DELAY(L_SEQ_NO), A_DELAY_UNIT(L_SEQ_NO),
+                            L_REF_DATE, L_REF_DATE, L_DELAYED_TILL, L_DELAYED_TILL);
+
+                     L_EV_SEQ_NR := -1;
+                     L_TIMED_EVENT_TP := 'PgActivate';
+                     L_EV_DETAILS := 'sc=' || A_SC(L_SEQ_NO) || 
+                                     '#pgnode=' || TO_CHAR(A_PGNODE(L_SEQ_NO)) ||
+                                     '#pp_version=' || L_PP_VERSION;
+                     L_RESULT := 
+                        UNAPIEV.INSERTTIMEDEVENT('SaveScParameterGroup', UNAPIGEN.P_EVMGR_NAME,
+                                                 'pg', A_PG(L_SEQ_NO), L_LC, L_LC_VERSION, L_SS,
+                                                 L_TIMED_EVENT_TP, L_EV_DETAILS,
+                                                 L_EV_SEQ_NR, L_DELAYED_TILL);
+                     IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+                        UNAPIGEN.P_TXN_ERROR := L_RESULT;
+                        RAISE STPERROR;
+                     END IF;
+
+                     
+                     
+                     
+                     DELETE FROM UTDELAY
+                     WHERE SC = A_SC(L_SEQ_NO)
+                       AND PG = A_PG(L_SEQ_NO)
+                       AND PGNODE = A_PGNODE(L_SEQ_NO)
+                       AND OBJECT_TP = 'pa';
+
+                     DELETE FROM UTEVTIMED
+                     WHERE OBJECT_TP = 'pa'
+                       AND INSTR(EV_DETAILS, 'sc=' || A_SC(L_SEQ_NO)) <> 0
+                       AND INSTR(EV_DETAILS, 'pg=' || A_PG(L_SEQ_NO)) <> 0
+                       AND INSTR(EV_DETAILS, 'pgnode=' ||
+                                 TO_CHAR(A_PGNODE(L_SEQ_NO))) <> 0
+                       AND EV_TP = 'PaActivate';
+
+                     DELETE FROM UTDELAY
+                     WHERE SC = A_SC(L_SEQ_NO)
+                       AND PG = A_PG(L_SEQ_NO)
+                       AND PGNODE = A_PGNODE(L_SEQ_NO)
+                       AND OBJECT_TP = 'me';
+
+                     DELETE FROM UTEVTIMED
+                     WHERE OBJECT_TP = 'me'
+                       AND INSTR(EV_DETAILS, 'sc=' || A_SC(L_SEQ_NO)) <> 0
+                       AND INSTR(EV_DETAILS, 'pg=' || A_PG(L_SEQ_NO)) <> 0
+                       AND INSTR(EV_DETAILS, 'pgnode=' ||
+                                 TO_CHAR(A_PGNODE(L_SEQ_NO))) <> 0
+                       AND EV_TP = 'MeActivate';
+
+                  END IF;
+               ELSE
+                  
+                  
+                  
+                  IF NVL(A_DELAY(L_SEQ_NO), 0) = 0 THEN
+                     
+                     
+                     
+                     
+                     
+                     
+                     
+                     
+                     DELETE FROM UTDELAY
+                     WHERE SC = A_SC(L_SEQ_NO)
+                     AND PG = A_PG(L_SEQ_NO)
+                     AND PGNODE = A_PGNODE(L_SEQ_NO)
+                     AND OBJECT_TP = 'pg';
+
+                     DELETE FROM UTEVTIMED
+                     WHERE OBJECT_TP = 'pg'
+                       AND OBJECT_ID = A_PG(L_SEQ_NO)
+                       AND INSTR(EV_DETAILS, 'sc=' || A_SC(L_SEQ_NO)) <> 0
+                       AND INSTR(EV_DETAILS, 'pgnode=' ||
+                                 TO_CHAR(A_PGNODE(L_SEQ_NO))) <> 0
+                       AND EV_TP = 'PgActivate';
+
+                     L_EV_SEQ_NR := -1;
+                     L_TIMED_EVENT_TP := 'PgActivate';
+                     L_EV_DETAILS := 'sc=' || A_SC(L_SEQ_NO) || 
+                                     '#pgnode=' || TO_CHAR(A_PGNODE(L_SEQ_NO)) ||
+                                     '#pp_version=' || L_PP_VERSION;
+                     L_RESULT :=
+                        UNAPIEV.INSERTEVENT('SaveScParameterGroup', UNAPIGEN.P_EVMGR_NAME,
+                                            'pg', A_PG(L_SEQ_NO), L_LC, L_LC_VERSION, L_SS,
+                                            L_TIMED_EVENT_TP, L_EV_DETAILS, L_EV_SEQ_NR);
+                     IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+                        UNAPIGEN.P_TXN_ERROR := L_RESULT;
+                        RAISE STPERROR;
+                     END IF;
+                  ELSE
+                     
+                     
+                     
+                     
+                     
+                     UPDATE UTDELAY
+                     SET DELAY = A_DELAY(L_SEQ_NO),
+                         DELAY_UNIT = A_DELAY_UNIT(L_SEQ_NO),
+                         DELAYED_FROM = L_REF_DATE,
+                         DELAYED_FROM_TZ =  DECODE(L_REF_DATE, DELAYED_FROM_TZ, DELAYED_FROM_TZ, L_REF_DATE),
+                         DELAYED_TILL = L_DELAYED_TILL,
+                         DELAYED_TILL_TZ = DECODE(L_DELAYED_TILL, DELAYED_TILL_TZ, DELAYED_TILL_TZ, L_DELAYED_TILL) 
+                     WHERE SC = A_SC(L_SEQ_NO)
+                       AND PG = A_PG(L_SEQ_NO)
+                       AND PGNODE = A_PGNODE(L_SEQ_NO)
+                       AND OBJECT_TP = 'pg';
+
+                     L_EV_SEQ_NR := -1;
+                     L_TIMED_EVENT_TP := 'PgActivate';
+                     L_EV_DETAILS := 'sc=' || A_SC(L_SEQ_NO) || 
+                                     '#pgnode=' || TO_CHAR(A_PGNODE(L_SEQ_NO)) ||
+                                     '#pp_version=' || L_PP_VERSION;
+                     L_RESULT :=
+                        UNAPIEV.UPDATETIMEDEVENT('pg', A_PG(L_SEQ_NO), L_TIMED_EVENT_TP,
+                                                 L_EV_DETAILS, L_DELAYED_TILL);
+                     IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+                        UNAPIGEN.P_TXN_ERROR := L_RESULT;
+                        RAISE STPERROR;
+                     END IF;
+                  END IF;
+               END IF;
+            END IF;
+
+            
+            
+            
+            OPEN L_SCPGOLD_CURSOR(A_SC(L_SEQ_NO), A_PG(L_SEQ_NO),
+                                  A_PGNODE(L_SEQ_NO));
+            FETCH L_SCPGOLD_CURSOR
+            INTO L_SCPGOLD_REC;
+            CLOSE L_SCPGOLD_CURSOR;
+            L_SCPGNEW_REC := L_SCPGOLD_REC;
+            
+            
+            
+            
+            
+            UPDATE UTSCPG
+            SET DESCRIPTION           = A_DESCRIPTION(L_SEQ_NO),
+                VALUE_F               = A_VALUE_F(L_SEQ_NO),
+                VALUE_S               = A_VALUE_S(L_SEQ_NO),
+                UNIT                  = A_UNIT(L_SEQ_NO),
+                EXECUTOR              = A_EXECUTOR(L_SEQ_NO),
+                PLANNED_EXECUTOR      = A_PLANNED_EXECUTOR(L_SEQ_NO),
+                MANUALLY_ENTERED      = A_MANUALLY_ENTERED(L_SEQ_NO),
+                ASSIGN_DATE           = A_ASSIGN_DATE(L_SEQ_NO),
+                ASSIGN_DATE_TZ        =  DECODE(A_ASSIGN_DATE(L_SEQ_NO), ASSIGN_DATE_TZ, ASSIGN_DATE_TZ, A_ASSIGN_DATE(L_SEQ_NO)),
+                ASSIGNED_BY           = A_ASSIGNED_BY(L_SEQ_NO),
+                MANUALLY_ADDED        = A_MANUALLY_ADDED(L_SEQ_NO),
+                FORMAT                = A_FORMAT(L_SEQ_NO),
+                CONFIRM_ASSIGN        = A_CONFIRM_ASSIGN(L_SEQ_NO),
+                ALLOW_ANY_PR          = A_ALLOW_ANY_PR(L_SEQ_NO),
+                NEVER_CREATE_METHODS  = A_NEVER_CREATE_METHODS(L_SEQ_NO),
+                DELAY                 = A_DELAY(L_SEQ_NO),
+                DELAY_UNIT            = A_DELAY_UNIT(L_SEQ_NO),
+                PG_CLASS              = A_PG_CLASS(L_SEQ_NO),
+                LOG_HS                = A_LOG_HS(L_SEQ_NO),
+                LOG_HS_DETAILS        = A_LOG_HS_DETAILS(L_SEQ_NO),
+                ALLOW_MODIFY          = '#'
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO)
+            RETURNING DESCRIPTION, VALUE_F, VALUE_S, UNIT, EXECUTOR, PLANNED_EXECUTOR, 
+                      MANUALLY_ENTERED, ASSIGN_DATE, ASSIGN_DATE_TZ, ASSIGNED_BY, MANUALLY_ADDED, FORMAT, 
+                      CONFIRM_ASSIGN, ALLOW_ANY_PR, NEVER_CREATE_METHODS, DELAY, DELAY_UNIT, 
+                      PG_CLASS, LOG_HS, LOG_HS_DETAILS, ALLOW_MODIFY
+            INTO L_SCPGNEW_REC.DESCRIPTION, L_SCPGNEW_REC.VALUE_F, L_SCPGNEW_REC.VALUE_S, 
+                 L_SCPGNEW_REC.UNIT, L_SCPGNEW_REC.EXECUTOR, L_SCPGNEW_REC.PLANNED_EXECUTOR, 
+                 L_SCPGNEW_REC.MANUALLY_ENTERED, L_SCPGNEW_REC.ASSIGN_DATE, L_SCPGNEW_REC.ASSIGN_DATE_TZ,  
+                 L_SCPGNEW_REC.ASSIGNED_BY, L_SCPGNEW_REC.MANUALLY_ADDED, 
+                 L_SCPGNEW_REC.FORMAT, L_SCPGNEW_REC.CONFIRM_ASSIGN, L_SCPGNEW_REC.ALLOW_ANY_PR, 
+                 L_SCPGNEW_REC.NEVER_CREATE_METHODS, L_SCPGNEW_REC.DELAY, 
+                 L_SCPGNEW_REC.DELAY_UNIT, L_SCPGNEW_REC.PG_CLASS, 
+                 L_SCPGNEW_REC.LOG_HS, L_SCPGNEW_REC.LOG_HS_DETAILS, L_SCPGNEW_REC.ALLOW_MODIFY;
+
+              
+              
+              
+              L_EVENT_TP := 'ParameterGroupUpdated';
+         END IF;
+
+      
+      
+      
+      ELSIF L_PG_RECORD_OK AND
+            A_MODIFY_FLAG(L_SEQ_NO) IN (UNAPIGEN.MOD_FLAG_INSERT,
+                                        UNAPIGEN.MOD_FLAG_INSERT_AND_CRAU,            
+                                        UNAPIGEN.MOD_FLAG_CREATE,
+                                        UNAPIGEN.MOD_FLAG_INSERT_WITH_NODES,
+                                        UNAPIGEN.MOD_FLAG_INSERT_NODES_AND_CRAU) THEN
+
+         
+         
+         
+         IF NOT L_INSERT THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_PGALREADYEXIST;
+            RAISE STPERROR;
+         ELSIF NVL(A_MANUALLY_ENTERED(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_MANUALLY_ENTERED;
+            RAISE STPERROR;
+         ELSIF NVL(A_MANUALLY_ADDED(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_MANUALLYADDED;
+            RAISE STPERROR;
+         ELSIF NVL(A_CONFIRM_ASSIGN(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_CONFIRMASSIGN;
+            RAISE STPERROR;
+         ELSIF NVL(A_ALLOW_ANY_PR(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_ALLOWANYPR;
+            RAISE STPERROR;
+         ELSIF NVL(A_NEVER_CREATE_METHODS(L_SEQ_NO), ' ') NOT IN ('0', '1') THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NEVERCREATEMETHODS;
+            RAISE STPERROR;
+         ELSIF A_PP_KEY1(L_SEQ_NO) IS NULL OR
+               A_PP_KEY2(L_SEQ_NO) IS NULL OR
+               A_PP_KEY3(L_SEQ_NO) IS NULL OR
+               A_PP_KEY4(L_SEQ_NO) IS NULL OR
+               A_PP_KEY5(L_SEQ_NO) IS NULL THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOPPKEYID;
+            RAISE STPERROR;
+         ELSE
+            
+            
+            
+
+            IF NVL(A_DELAY(L_SEQ_NO), 0) <> 0 THEN
+               
+               
+               
+               
+               
+               L_SS_TO := '@D';
+               INSERT INTO UTDELAY
+                  (SC, PG, PGNODE, OBJECT_TP,
+                   DELAY, DELAY_UNIT, DELAYED_FROM, DELAYED_FROM_TZ, DELAYED_TILL, DELAYED_TILL_TZ)
+                  VALUES
+                  (A_SC(L_SEQ_NO), A_PG(L_SEQ_NO), A_PGNODE(L_SEQ_NO), 'pg',
+                   A_DELAY(L_SEQ_NO), A_DELAY_UNIT(L_SEQ_NO), L_REF_DATE, L_REF_DATE, L_DELAYED_TILL, L_DELAYED_TILL);
+               L_EV_SEQ_NR := -1;
+               L_TIMED_EVENT_TP := 'PgActivate';
+               L_EV_DETAILS := 'sc=' || A_SC(L_SEQ_NO) || 
+                               '#pgnode=' || TO_CHAR(A_PGNODE(L_SEQ_NO)) ||
+                               '#pp_version=' || L_PP_VERSION;
+               L_RESULT := UNAPIEV.INSERTTIMEDEVENT('SaveScParameterGroup', UNAPIGEN.P_EVMGR_NAME,
+                                                    'pg', A_PG(L_SEQ_NO), L_LC, L_LC_VERSION, L_SS,
+                                                    L_TIMED_EVENT_TP, L_EV_DETAILS, L_EV_SEQ_NR, 
+                                                    L_DELAYED_TILL);
+               IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+                  UNAPIGEN.P_TXN_ERROR := L_RESULT;
+                  RAISE STPERROR;
+               END IF;
+            END IF;
+
+            
+            
+            
+
+            
+            IF NVL(A_LC(L_SEQ_NO), ' ') <> ' ' THEN
+               L_LC := A_LC(L_SEQ_NO);
+            END IF;
+            IF NVL(A_LC_VERSION(L_SEQ_NO), ' ') <> ' ' THEN
+               L_LC_VERSION := A_LC_VERSION(L_SEQ_NO);
+            END IF;
+
+            INSERT INTO UTSCPG
+              (SC, PG, PGNODE, PP_VERSION, 
+               PP_KEY1, PP_KEY2, PP_KEY3, PP_KEY4, PP_KEY5, 
+               DESCRIPTION, VALUE_F, VALUE_S, UNIT,
+               EXECUTOR, PLANNED_EXECUTOR,
+               MANUALLY_ENTERED,  ASSIGN_DATE,  ASSIGN_DATE_TZ, ASSIGNED_BY, MANUALLY_ADDED,
+               FORMAT, CONFIRM_ASSIGN, ALLOW_ANY_PR, NEVER_CREATE_METHODS, DELAY, DELAY_UNIT, 
+               REANALYSIS, PG_CLASS, LOG_HS, LOG_HS_DETAILS, ALLOW_MODIFY, ACTIVE, LC, LC_VERSION)
+            VALUES(A_SC(L_SEQ_NO), A_PG(L_SEQ_NO), A_PGNODE(L_SEQ_NO), L_PP_VERSION,
+                   A_PP_KEY1(L_SEQ_NO), A_PP_KEY2(L_SEQ_NO), A_PP_KEY3(L_SEQ_NO), A_PP_KEY4(L_SEQ_NO), A_PP_KEY5(L_SEQ_NO), 
+                   A_DESCRIPTION(L_SEQ_NO), A_VALUE_F(L_SEQ_NO),
+                   A_VALUE_S(L_SEQ_NO), A_UNIT(L_SEQ_NO),
+                   A_EXECUTOR(L_SEQ_NO),
+                   A_PLANNED_EXECUTOR(L_SEQ_NO), A_MANUALLY_ENTERED(L_SEQ_NO),
+                   A_ASSIGN_DATE(L_SEQ_NO),A_ASSIGN_DATE(L_SEQ_NO), A_ASSIGNED_BY(L_SEQ_NO),
+                   A_MANUALLY_ADDED(L_SEQ_NO), A_FORMAT(L_SEQ_NO), 
+                   A_CONFIRM_ASSIGN(L_SEQ_NO),
+                   A_ALLOW_ANY_PR(L_SEQ_NO), A_NEVER_CREATE_METHODS(L_SEQ_NO), A_DELAY(L_SEQ_NO),
+                   A_DELAY_UNIT(L_SEQ_NO),
+                   0, A_PG_CLASS(L_SEQ_NO),
+                   A_LOG_HS(L_SEQ_NO), A_LOG_HS_DETAILS(L_SEQ_NO), '#', '0', L_LC, L_LC_VERSION);
+            
+            
+            
+            L_EVENT_TP := 'ParameterGroupCreated';
+            UNAPIAUT.UPDATELCINAUTHORISATIONBUFFER('pg', A_SC(L_SEQ_NO) || A_PG(L_SEQ_NO) || TO_CHAR(A_PGNODE(L_SEQ_NO)), '', L_LC, L_LC_VERSION);
+         END IF;
+
+      
+      
+      
+      ELSIF L_PG_RECORD_OK AND
+            A_MODIFY_FLAG(L_SEQ_NO) = UNAPIGEN.MOD_FLAG_DELETE THEN
+
+         
+         IF UNAPIGEN.ISSYSTEM21CFR11COMPLIANT = UNAPIGEN.DBERR_SUCCESS THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOTALLOWEDIN21CFR11;
+            RAISE STPERROR;
+         END IF;
+         IF L_INSERT THEN
+            
+             UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJECT;
+             RAISE STPERROR;
+         
+         
+         
+         ELSIF L_ACTIVE = '1' THEN
+            A_MODIFY_FLAG(L_SEQ_NO) := UNAPIGEN.DBERR_OPACTIVE;
+            L_PG_RECORD_OK := FALSE;
+            L_COMPLETELY_SAVED := FALSE;
+         ELSE
+
+            
+            
+            
+            
+            DELETE FROM UTSCRD
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTRSCRD
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            
+            
+            
+            
+            
+            
+            
+            L_DELETE_CURSOR := DBMS_SQL.OPEN_CURSOR;
+            FOR L_SCMEGKDEL IN L_SCMEGK_CURSOR(A_SC(L_SEQ_NO),
+                               A_PG(L_SEQ_NO), A_PGNODE(L_SEQ_NO)) LOOP
+               BEGIN
+                  L_SQL_STRING := 'DELETE FROM utscmegk' || L_SCMEGKDEL.GK ||
+                                 ' WHERE sc = ''' || REPLACE(A_SC(L_SEQ_NO), '''', '''''') || 
+                                 ''' AND pg=''' || REPLACE(A_PG(L_SEQ_NO), '''', '''''') || 
+                                 ''' AND pgnode=' || A_PGNODE(L_SEQ_NO) ;
+                  DBMS_SQL.PARSE(L_DELETE_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+                  L_RESULT := DBMS_SQL.EXECUTE(L_DELETE_CURSOR);
+               EXCEPTION
+               WHEN OTHERS THEN
+                  IF SQLCODE = -942 THEN
+                     NULL; 
+                  ELSE
+                     RAISE;
+                  END IF;
+               END;
+            END LOOP;
+            DBMS_SQL.CLOSE_CURSOR(L_DELETE_CURSOR);
+
+            DELETE FROM UTSCMEGK
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTRSCMECELLLISTOUTPUT
+            WHERE SC     = A_SC(L_SEQ_NO)
+              AND PG     = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTRSCMECELLOUTPUT
+            WHERE SC     = A_SC(L_SEQ_NO)
+              AND PG     = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTRSCMECELLINPUT
+            WHERE SC     = A_SC(L_SEQ_NO)
+              AND PG     = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTRSCMECELLLIST
+            WHERE SC     = A_SC(L_SEQ_NO)
+              AND PG     = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTRSCMECELL
+            WHERE SC     = A_SC(L_SEQ_NO)
+              AND PG     = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTRSCME
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTSCMECELLINPUT
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTSCMECELLOUTPUT
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTSCMECELLLIST
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTSCMECELLLISTOUTPUT
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTSCMECELL
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTSCMEHS
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTSCMEHSDETAILS
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTSCMEAU
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTSCME
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            
+            
+            
+            
+            
+            
+            
+            DELETE FROM UTRSCPASQC
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTRSCPASPC
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTRSCPASPB
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTRSCPASPA
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTRSCPA
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTSCPASQC
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTSCPATD
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTSCPASPC
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTSCPASPB
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG  = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTSCPASPA
+            WHERE SC  = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTSCPAHS
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTSCPAHSDETAILS
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTSCPAAU
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTSCPA
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+              
+           DELETE /*+ RULE */ FROM UTCHDP
+            WHERE (CH, DATAPOINT_LINK)
+               IN (SELECT B.CH, B.DATAPOINT_LINK
+                   FROM UTCH A, UTCHDP B
+                   WHERE B.DATAPOINT_LINK LIKE 
+                         A_SC(L_SEQ_NO) || '#' ||
+                         A_PG(L_SEQ_NO)|| '#' ||A_PGNODE(L_SEQ_NO)|| '#%'
+                     AND B.CH = A.CH
+                     AND A.ALLOW_MODIFY IN ('1', '#')
+                     AND NVL(UNAPIAUT.SQLGETCHALLOWMODIFY(B.CH),'0')='1');                                          
+            
+            
+            
+            
+            DELETE FROM UTDELAY
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTEVTIMED
+            WHERE OBJECT_TP = 'pg'
+              AND OBJECT_ID = A_PG(L_SEQ_NO)
+              AND INSTR(EV_DETAILS, 'sc=' || A_SC(L_SEQ_NO)) <> 0
+              AND INSTR(EV_DETAILS, 'pgnode=' || TO_CHAR(A_PGNODE(L_SEQ_NO))) <> 0;
+
+            DELETE FROM UTEVTIMED
+            WHERE INSTR(EV_DETAILS, 'sc=' || A_SC(L_SEQ_NO)) <> 0
+              AND INSTR(EV_DETAILS, 'pg=' || A_PG(L_SEQ_NO)) <> 0
+              AND INSTR(EV_DETAILS, 'pgnode=' || TO_CHAR(A_PGNODE(L_SEQ_NO))) <> 0;
+
+            DELETE FROM UTEVRULESDELAYED
+            WHERE OBJECT_TP = 'pg'
+              AND OBJECT_ID = A_PG(L_SEQ_NO)
+              AND INSTR(EV_DETAILS, 'sc=' || A_SC(L_SEQ_NO)) <> 0
+              AND INSTR(EV_DETAILS, 'pgnode=' || TO_CHAR(A_PGNODE(L_SEQ_NO))) <> 0;
+
+            DELETE FROM UTEVRULESDELAYED
+            WHERE INSTR(EV_DETAILS, 'sc=' || A_SC(L_SEQ_NO)) <> 0
+              AND INSTR(EV_DETAILS, 'pg=' || A_PG(L_SEQ_NO)) <> 0
+              AND INSTR(EV_DETAILS, 'pgnode=' || TO_CHAR(A_PGNODE(L_SEQ_NO))) <> 0;
+
+            
+            
+            
+            
+            DELETE FROM UTSCPGHS
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTSCPGHSDETAILS
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTSCPGAU
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTRSCPG
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            DELETE FROM UTSCPG
+            WHERE SC = A_SC(L_SEQ_NO)
+              AND PG = A_PG(L_SEQ_NO)
+              AND PGNODE = A_PGNODE(L_SEQ_NO);
+
+            L_DELETED_NODE := A_PGNODE(L_SEQ_NO);
+            A_PGNODE(L_SEQ_NO) := 0;  
+                                      
+            
+            
+            
+            L_EVENT_TP := 'ParameterGroupDeleted';
+         END IF;
+      END IF;
+
+      
+      
+      
+      IF L_PG_RECORD_OK THEN
+
+         L_EV_SEQ_NR := -1;
+         IF A_MODIFY_FLAG(L_SEQ_NO) <> UNAPIGEN.MOD_FLAG_DELETE THEN
+            L_EV_DETAILS := 'sc=' || A_SC(L_SEQ_NO) || 
+                            '#pgnode=' || TO_CHAR(A_PGNODE(L_SEQ_NO)) ||
+                            '#pp_version=' || L_PP_VERSION;
+         ELSE
+            L_EV_DETAILS := 'sc=' || A_SC(L_SEQ_NO) || 
+                            '#pgnode=' || TO_CHAR(L_DELETED_NODE) ||
+                            '#pp_version=' || L_PP_VERSION;
+         END IF;
+
+         IF NVL(L_SS_TO, ' ') <> ' ' THEN
+            L_EV_DETAILS := L_EV_DETAILS || '#ss_to=' || L_SS_TO;
+         END IF;
+
+         L_RESULT := UNAPIEV.INSERTEVENT('SaveScParameterGroup', UNAPIGEN.P_EVMGR_NAME, 'pg', 
+                                         A_PG(L_SEQ_NO), L_LC, L_LC_VERSION, L_SS, L_EVENT_TP, 
+                                         L_EV_DETAILS, L_EV_SEQ_NR);
+         IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+            UNAPIGEN.P_TXN_ERROR := L_RESULT;
+            RAISE STPERROR;
+         END IF;
+      ELSE
+         IF L_PG_HANDLED THEN
+            L_COMPLETELY_SAVED := FALSE;
+         END IF;
+      END IF;
+
+      
+      
+      
+      IF L_PG_RECORD_OK AND L_LOG_HS <> A_LOG_HS(L_SEQ_NO) AND
+         A_MODIFY_FLAG(L_SEQ_NO) <> UNAPIGEN.MOD_FLAG_DELETE THEN
+         IF A_LOG_HS(L_SEQ_NO) = '1' THEN
+            INSERT INTO UTSCPGHS(SC, PG, PGNODE, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+            VALUES(A_SC(L_SEQ_NO), A_PG(L_SEQ_NO), A_PGNODE(L_SEQ_NO), UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION,
+                   'History switched ON', 'audit trail is turned on', L_CURRENT_TIMESTAMP, L_CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+         ELSE
+            INSERT INTO UTSCPGHS(SC, PG, PGNODE, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+            VALUES(A_SC(L_SEQ_NO), A_PG(L_SEQ_NO), A_PGNODE(L_SEQ_NO), UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION,
+                   'History switched OFF', 'audit trail is turned off', L_CURRENT_TIMESTAMP, L_CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+         END IF;
+      END IF;
+
+      
+      
+      
+      IF L_PG_RECORD_OK AND L_LOG_HS_DETAILS <> A_LOG_HS_DETAILS(L_SEQ_NO) AND
+         A_MODIFY_FLAG(L_SEQ_NO) <> UNAPIGEN.MOD_FLAG_DELETE THEN
+         IF A_LOG_HS_DETAILS(L_SEQ_NO) = '1' THEN
+            L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+            INSERT INTO UTSCPGHSDETAILS(SC, PG, PGNODE, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+            VALUES(A_SC(L_SEQ_NO), A_PG(L_SEQ_NO), A_PGNODE(L_SEQ_NO), UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, 
+                   L_HS_DETAILS_SEQ_NR, 'audit trail is turned on');
+         ELSE
+            L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+            INSERT INTO UTSCPGHSDETAILS(SC, PG, PGNODE, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+            VALUES(A_SC(L_SEQ_NO), A_PG(L_SEQ_NO), A_PGNODE(L_SEQ_NO), UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, 
+                   L_HS_DETAILS_SEQ_NR, 'audit trail is turned off');
+         END IF;
+      END IF;
+
+      IF L_PG_RECORD_OK AND (L_LOG_HS = '1' OR A_LOG_HS(L_SEQ_NO)='1') THEN
+         IF A_MODIFY_FLAG(L_SEQ_NO) = UNAPIGEN.MOD_FLAG_DELETE THEN
+            
+            
+            
+            
+            
+            
+            INSERT INTO UTSCHS(SC, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+            VALUES(A_SC(L_SEQ_NO), UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+                   'parameter group "'||A_PG(L_SEQ_NO)||'" is deleted',
+                   L_CURRENT_TIMESTAMP, L_CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+         ELSIF A_MODIFY_FLAG(L_SEQ_NO) IN (UNAPIGEN.MOD_FLAG_INSERT,
+                                           UNAPIGEN.MOD_FLAG_INSERT_AND_CRAU,         
+                                           UNAPIGEN.MOD_FLAG_INSERT_WITH_NODES,
+                                           UNAPIGEN.MOD_FLAG_INSERT_NODES_AND_CRAU) THEN
+            
+            
+            
+            
+            INSERT INTO UTSCPGHS(SC, PG, PGNODE, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+            VALUES(A_SC(L_SEQ_NO), A_PG(L_SEQ_NO), A_PGNODE(L_SEQ_NO), 
+                   NVL(A_ASSIGNED_BY(L_SEQ_NO), UNAPIGEN.P_USER), 
+                   NVL(UNAPIGEN.SQLUSERDESCRIPTION(A_ASSIGNED_BY(L_SEQ_NO)), UNAPIGEN.P_USER_DESCRIPTION), 
+                   L_EVENT_TP, 'parameter group "'||A_PG(L_SEQ_NO)||'" is created', 
+                   L_CURRENT_TIMESTAMP,L_CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+         ELSE
+            
+            
+            
+            INSERT INTO UTSCPGHS(SC, PG, PGNODE, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, LOGDATE, LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+            VALUES(A_SC(L_SEQ_NO), A_PG(L_SEQ_NO), A_PGNODE(L_SEQ_NO), 
+                   UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 'parameter group "'||A_PG(L_SEQ_NO)||'" is updated',
+                   L_CURRENT_TIMESTAMP, L_CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+         END IF;
+      END IF;
+
+      IF L_PG_RECORD_OK AND (L_LOG_HS_DETAILS='1' OR A_LOG_HS_DETAILS(L_SEQ_NO)='1') THEN
+         IF A_MODIFY_FLAG(L_SEQ_NO) = UNAPIGEN.MOD_FLAG_DELETE THEN
+            
+            
+            
+            L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+            INSERT INTO UTSCHSDETAILS(SC, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+            VALUES(A_SC(L_SEQ_NO), UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR, 
+                   'parameter group "'||A_PG(L_SEQ_NO)||'" is deleted');
+         ELSIF A_MODIFY_FLAG(L_SEQ_NO) IN (UNAPIGEN.MOD_FLAG_INSERT,
+                                           UNAPIGEN.MOD_FLAG_INSERT_AND_CRAU,         
+                                           UNAPIGEN.MOD_FLAG_INSERT_WITH_NODES,
+                                           UNAPIGEN.MOD_FLAG_INSERT_NODES_AND_CRAU) THEN
+            
+            
+            
+            L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+            INSERT INTO UTSCPGHSDETAILS(SC, PG, PGNODE, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+            VALUES(A_SC(L_SEQ_NO), A_PG(L_SEQ_NO), A_PGNODE(L_SEQ_NO), 
+                   UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR,
+                   'parameter group "'||A_PG(L_SEQ_NO)||'" is created');
+         ELSE
+            
+            
+            
+            L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+            INSERT INTO UTSCPGHSDETAILS(SC, PG, PGNODE, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+            VALUES(A_SC(L_SEQ_NO), A_PG(L_SEQ_NO), A_PGNODE(L_SEQ_NO), 
+                   UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR, 
+                   'parameter group "'||A_PG(L_SEQ_NO)||'" is updated');
+            UNAPIHSDETAILS.ADDSCPGHSDETAILS(L_SCPGOLD_REC, L_SCPGNEW_REC, UNAPIGEN.P_TR_SEQ, 
+                                            L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR); 
+         END IF;
+      END IF;
+
+      
+      
+      
+      
+      
+      
+      
+      IF L_PG_RECORD_OK AND
+         A_MODIFY_FLAG(L_SEQ_NO) IN (UNAPIGEN.MOD_FLAG_CREATE,
+                                     UNAPIGEN.MOD_FLAG_INSERT_AND_CRAU,
+                                     UNAPIGEN.MOD_FLAG_INSERT_NODES_AND_CRAU)THEN
+
+         
+         
+         
+         
+         L_RET_CODE := UNAPIPGP.INITANDSAVESCPGATTRIBUTES(A_SC(L_SEQ_NO), 
+                                                          A_PG(L_SEQ_NO), A_PGNODE(L_SEQ_NO));
+         IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+            UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+            RAISE STPERROR;
+         END IF;
+         
+         IF A_MODIFY_FLAG(L_SEQ_NO) = UNAPIGEN.MOD_FLAG_CREATE THEN
+         
+            OPEN L_SC_CURSOR(A_SC(L_SEQ_NO));
+            FETCH L_SC_CURSOR
+            INTO L_ST, L_ST_VERSION, L_REF_DATE;
+            IF L_SC_CURSOR%NOTFOUND THEN
+               UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJECT;
+               RAISE STPERROR;
+            END IF;
+            CLOSE L_SC_CURSOR;
+            
+            IF L_SEQ_NO < A_NR_OF_ROWS THEN
+               L_NEXT_PGNODE := A_PGNODE(L_SEQ_NO+1);
+            ELSE
+               L_NEXT_PGNODE := NULL;
+            END IF;
+            
+            
+            
+            L_RET_CODE :=
+               UNAPIPG.CREATESCPGDETAILS2(L_ST, L_ST_VERSION, A_PG(L_SEQ_NO), L_PP_VERSION,
+                                         A_PP_KEY1(L_SEQ_NO), A_PP_KEY2(L_SEQ_NO), A_PP_KEY3(L_SEQ_NO),
+                                         A_PP_KEY4(L_SEQ_NO), A_PP_KEY5(L_SEQ_NO),L_SEQ_NO, 
+                                         A_SC(L_SEQ_NO),  A_PGNODE(L_SEQ_NO), L_NEXT_PGNODE,
+                                         '1', L_REF_DATE,'ParameterCreated');
+
+            IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+               UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+               RAISE STPERROR;
+            END IF;
+         END IF;
+      END IF;
+      
+   
+   
+   
+   END LOOP;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   
+   
+   
+   FOR L_SEQ_NO IN 1..A_NR_OF_ROWS LOOP
+      IF A_MODIFY_FLAG(L_SEQ_NO) < UNAPIGEN.DBERR_SUCCESS THEN
+         A_MODIFY_FLAG(L_SEQ_NO) := UNAPIGEN.DBERR_SUCCESS;
+      END IF;
+   END LOOP;
+
+   IF L_COMPLETELY_SAVED THEN
+      RETURN(UNAPIGEN.DBERR_SUCCESS);
+   ELSE
+      RETURN(UNAPIGEN.DBERR_PARTIALSAVE);
+   END IF;
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('SaveScParameterGroup',SQLERRM);
+   END IF;
+   IF DBMS_SQL.IS_OPEN(L_DELETE_CURSOR) THEN
+      DBMS_SQL.CLOSE_CURSOR(L_DELETE_CURSOR);
+   END IF;
+   IF L_SCPGOLD_CURSOR%ISOPEN THEN
+      CLOSE L_SCPGOLD_CURSOR;
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR, 'SaveScParameterGroup'));
+END SAVESCPARAMETERGROUP;
+
+FUNCTION REANALSCPGDETAILS
+(A_SC               IN    VARCHAR2,                 
+ A_PG               IN    VARCHAR2,                 
+ A_PGNODE           IN    NUMBER,                   
+ A_MODIFY_REASON    IN    VARCHAR2)                 
+RETURN NUMBER IS
+
+L_LC                          VARCHAR2(2);
+L_LC_VERSION                  VARCHAR2(20);
+L_OLD_SS                      VARCHAR2(2);
+L_NEW_SS                      VARCHAR2(2);
+L_TR_NO                       NUMBER(3);
+L_LOG_HS                      CHAR(1);
+L_LOG_HS_DETAILS              CHAR(1);
+L_ALLOW_MODIFY                CHAR(1);
+L_ACTIVE                      CHAR(1);
+L_PA_REANALYSIS               NUMBER(3);
+L_LC_SS_FROM                  VARCHAR2(2);
+L_PREVIOUS_ALLOW_MODIFY_CHECK CHAR(1);
+L_OBJECT_ID                   VARCHAR2(255);
+L_HS_DETAILS_SEQ_NR           INTEGER;
+L_PP_VERSION                  VARCHAR2(20);
+
+CURSOR L_SCPG_CURSOR IS
+   SELECT PP_VERSION, LC, LC_VERSION
+   FROM UTSCPG
+   WHERE SC = A_SC
+     AND PG = A_PG
+     AND PGNODE = A_PGNODE;
+
+CURSOR L_SCPA_CURSOR IS
+   SELECT PA, PANODE
+   FROM UTSCPA
+   WHERE SC = A_SC
+     AND PG = A_PG
+     AND PGNODE = A_PGNODE;
+
+CURSOR L_LC_CURSOR(A_LC VARCHAR2, A_LC_VERSION VARCHAR2) IS
+   SELECT NVL(SS_AFTER_REANALYSIS,'IE') SS_AFTER_REANALYSIS
+   FROM UTLC
+   WHERE LC = A_LC
+     AND VERSION = A_LC_VERSION;
+
+CURSOR L_SCPGOLD_CURSOR (A_SC IN VARCHAR2, A_PG IN VARCHAR2, A_PGNODE IN NUMBER) IS
+   SELECT A.*
+   FROM UDSCPG A
+   WHERE A.SC = A_SC
+     AND A.PG = A_PG
+     AND A.PGNODE = A_PGNODE;
+L_SCPGOLD_REC           UDSCPG%ROWTYPE;
+L_SCPGNEW_REC           UDSCPG%ROWTYPE;
+
+BEGIN
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_SC, ' ') = ' ' OR
+      NVL(A_PG, ' ') = ' ' OR
+      NVL(A_PGNODE, 0) = 0 THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   
+   OPEN L_SCPG_CURSOR;
+   FETCH L_SCPG_CURSOR
+   INTO L_PP_VERSION, L_LC, L_LC_VERSION;
+   IF L_SCPG_CURSOR%NOTFOUND THEN
+      CLOSE L_SCPG_CURSOR;
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJECT;
+      RAISE STPERROR;
+   END IF;
+   CLOSE L_SCPG_CURSOR;
+   
+   
+   OPEN L_LC_CURSOR(L_LC, L_LC_VERSION);
+   FETCH L_LC_CURSOR
+   INTO L_NEW_SS;
+   
+   IF L_LC_CURSOR%NOTFOUND THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOLC;
+      CLOSE L_LC_CURSOR;
+      RAISE STPERROR;
+   END IF;
+   CLOSE L_LC_CURSOR;
+   
+   L_OLD_SS := NULL; 
+   L_RET_CODE := UNAPIPGP.SCPGTRANSITIONAUTHORISED
+                    (A_SC, A_PG, A_PGNODE, 
+                     L_LC, L_LC_VERSION, L_OLD_SS, L_NEW_SS,
+                     UNAPIGEN.P_USER,
+                     L_LC_SS_FROM, L_TR_NO, 
+                     L_ALLOW_MODIFY, L_ACTIVE, L_LOG_HS, L_LOG_HS_DETAILS);
+                     
+   IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS AND
+      L_RET_CODE <> UNAPIGEN.DBERR_NOTAUTHORISED THEN
+      UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+      RAISE STPERROR;
+   END IF;
+
+   IF L_RET_CODE = UNAPIGEN.DBERR_SUCCESS THEN
+
+      
+      
+      
+      OPEN L_SCPGOLD_CURSOR(A_SC, A_PG, A_PGNODE);
+      FETCH L_SCPGOLD_CURSOR
+      INTO L_SCPGOLD_REC;
+      CLOSE L_SCPGOLD_CURSOR;
+      L_SCPGNEW_REC := L_SCPGOLD_REC;
+
+      
+      
+      
+      FOR L_SCPA_REC IN L_SCPA_CURSOR LOOP
+         
+         
+         
+         L_RESULT := UNAPIAUT.GETALLOWMODIFYCHECKMODE(L_PREVIOUS_ALLOW_MODIFY_CHECK);
+         IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+            UNAPIGEN.P_TXN_ERROR := L_RESULT;
+            RAISE STPERROR;
+         END IF;
+
+         IF L_PREVIOUS_ALLOW_MODIFY_CHECK = '0' THEN
+            L_RESULT := UNAPIAUT.DISABLEALLOWMODIFYCHECK('1');
+            IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+               UNAPIGEN.P_TXN_ERROR := L_RESULT;
+               RAISE STPERROR;
+            END IF;
+          END IF;
+
+         
+         
+               
+         L_RET_CODE := UNAPIAUT.DISABLEARCHECK('1');
+         L_RESULT := UNAPIPA.REANALSCPARAMETER(A_SC, A_PG, A_PGNODE, L_SCPA_REC.PA, L_SCPA_REC.PANODE,
+                                               L_PA_REANALYSIS, A_MODIFY_REASON);
+         IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS AND
+            L_RESULT <> UNAPIGEN.DBERR_NOTAUTHORISED THEN
+            UNAPIGEN.P_TXN_ERROR := L_RESULT;
+            RAISE STPERROR;
+         END IF;
+         L_RET_CODE := UNAPIAUT.DISABLEARCHECK('0');
+         
+         
+         
+         
+         L_RESULT := UNAPIAUT.DISABLEALLOWMODIFYCHECK(L_PREVIOUS_ALLOW_MODIFY_CHECK);
+         IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+            UNAPIGEN.P_TXN_ERROR := L_RESULT;
+            RAISE STPERROR;
+         END IF;         
+      END LOOP;
+   
+      
+      
+      
+      UPDATE UTSCPG 
+      SET SS = L_NEW_SS,
+          EXEC_END_DATE = NULL,
+          EXEC_END_DATE_TZ = NULL,
+          EXECUTOR = NULL,
+          ALLOW_MODIFY = '#'
+      WHERE SC = A_SC
+        AND PG = A_PG
+        AND PGNODE = A_PGNODE
+      RETURNING EXEC_END_DATE, EXEC_END_DATE_TZ, EXECUTOR, ALLOW_MODIFY, SS
+      INTO L_SCPGNEW_REC.EXEC_END_DATE, L_SCPGNEW_REC.EXEC_END_DATE_TZ, L_SCPGNEW_REC.EXECUTOR, L_SCPGNEW_REC.ALLOW_MODIFY, 
+           L_SCPGNEW_REC.SS;
+   
+      
+      
+      
+      
+      L_EVENT_TP := 'PgDetailsReanalysis';
+      L_EV_SEQ_NR := -1;
+      L_EV_DETAILS := 'sc=' || A_SC ||
+                      '#pgnode=' || TO_CHAR(A_PGNODE) ||
+                      '#tr_no=' || L_TR_NO ||
+                      '#ss_from=' || L_OLD_SS ||
+                      '#lc_ss_from='|| L_LC_SS_FROM ||
+                      '#pp_version=' || L_PP_VERSION;
+                         
+      L_RESULT := UNAPIEV.INSERTEVENT('ReanalScPgDetails', UNAPIGEN.P_EVMGR_NAME, 
+                                      'pg', A_PG, L_LC, L_LC_VERSION, 
+                                      L_NEW_SS, L_EVENT_TP, L_EV_DETAILS,
+                                      L_EV_SEQ_NR);
+      IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+         UNAPIGEN.P_TXN_ERROR := L_RESULT;
+         RAISE STPERROR;
+      END IF;
+
+      IF L_LOG_HS = '1' THEN
+         INSERT INTO UTSCPGHS(SC, PG, PGNODE, WHO, WHO_DESCRIPTION, WHAT, WHAT_DESCRIPTION, 
+                              LOGDATE,LOGDATE_TZ, WHY, TR_SEQ, EV_SEQ)
+         VALUES(A_SC, A_PG, A_PGNODE, UNAPIGEN.P_USER, UNAPIGEN.P_USER_DESCRIPTION, L_EVENT_TP, 
+                'parameter group "'||A_PG||'" reanalysed, status is changed from "'||UNAPIGEN.SQLSSNAME(L_OLD_SS)||'" ['||L_OLD_SS||'] to "'||UNAPIGEN.SQLSSNAME(L_NEW_SS)||'" ['||L_NEW_SS||'].', 
+                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, A_MODIFY_REASON, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR);
+      END IF;
+
+      L_HS_DETAILS_SEQ_NR := 0;
+      IF L_LOG_HS_DETAILS = '1' THEN
+         L_HS_DETAILS_SEQ_NR := L_HS_DETAILS_SEQ_NR + 1;
+         INSERT INTO UTSCPGHSDETAILS(SC, PG, PGNODE, TR_SEQ, EV_SEQ, SEQ, DETAILS)
+         VALUES(A_SC, A_PG, A_PGNODE, UNAPIGEN.P_TR_SEQ, L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR, 
+                'parameter group "'||A_PG||'" reanalysed, status is changed from "'||UNAPIGEN.SQLSSNAME(L_OLD_SS)||'" ['||L_OLD_SS||'] to "'||UNAPIGEN.SQLSSNAME(L_NEW_SS)||'" ['||L_NEW_SS||'].');
+
+         UNAPIHSDETAILS.ADDSCPGHSDETAILS(L_SCPGOLD_REC, L_SCPGNEW_REC, UNAPIGEN.P_TR_SEQ, 
+                                         L_EV_SEQ_NR, L_HS_DETAILS_SEQ_NR); 
+      END IF;
+   END IF;
+   
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   L_OBJECT_ID :=  A_SC || A_PG || TO_CHAR(A_PGNODE);
+   UNAPIAUT.UPDATEAUTHORISATIONBUFFER('pg', L_OBJECT_ID, NULL, L_NEW_SS);
+
+   RETURN(L_RET_CODE);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('ReanalScPgDetails', SQLERRM);
+   END IF;
+   IF L_SCPG_CURSOR%ISOPEN THEN
+      CLOSE L_SCPG_CURSOR;
+   END IF;
+   IF L_LC_CURSOR%ISOPEN THEN
+      CLOSE L_LC_CURSOR;
+   END IF;
+   IF L_SCPGOLD_CURSOR%ISOPEN THEN
+      CLOSE L_SCPGOLD_CURSOR;
+   END IF;
+   L_RET_CODE := UNAPIAUT.DISABLEARCHECK('0');
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR,
+                            'ReanalScPgDetails'));
+END REANALSCPGDETAILS;
+
+FUNCTION CREATEPPINPPPR
+(A_ST               IN      VARCHAR2,                  
+ A_ST_VERSION       IN      VARCHAR2,                  
+ A_PP               IN      VARCHAR2,                  
+ A_PP_VERSION       IN OUT  VARCHAR2,                  
+ A_PP_KEY1          IN      VARCHAR2,                  
+ A_PP_KEY2          IN      VARCHAR2,                  
+ A_PP_KEY3          IN      VARCHAR2,                  
+ A_PP_KEY4          IN      VARCHAR2,                  
+ A_PP_KEY5          IN      VARCHAR2,                  
+ A_SEQ              IN      NUMBER,                    
+ A_SC               IN      VARCHAR2,                  
+ A_PGNODE           IN      NUMBER,                    
+ A_NEXT_PGNODE      IN      NUMBER,                    
+ A_FILTER_FREQ      IN      CHAR,                      
+ A_REF_DATE         IN      DATE,                      
+ A_MODIFY_REASON    IN      VARCHAR2)                  
+RETURN NUMBER IS
+
+L_ERRM              VARCHAR2(255);
+L_REF_DATE          TIMESTAMP WITH TIME ZONE;
+L_FILTER_FREQ       CHAR(1);
+
+
+CURSOR L_CHILDPP_CURSOR(C_PP VARCHAR2, C_PP_VERSION VARCHAR2, C_PP_KEY1 VARCHAR2, C_PP_KEY2 VARCHAR2,
+                        C_PP_KEY3 VARCHAR2, C_PP_KEY4 VARCHAR2, C_PP_KEY5 VARCHAR2) IS
+   SELECT A.PR PP, A.PR_VERSION PP_VERSION,  A.PP PARENT_PP, A.VERSION PARENT_PP_VERSION, 
+          A.PP_KEY1 PARENT_PP_KEY1, A.PP_KEY2 PARENT_PP_KEY2, A.PP_KEY3 PARENT_PP_KEY3, 
+          A.PP_KEY4 PARENT_PP_KEY4, A.PP_KEY5 PARENT_PP_KEY5,
+          A.SEQ, A.FREQ_TP, A.FREQ_VAL, A.FREQ_UNIT, A.INVERT_FREQ,
+          A.LAST_SCHED, A.LAST_CNT, A.LAST_VAL, A.ST_BASED_FREQ
+   FROM UTPPPRBUFFER A
+   WHERE A.PP = C_PP
+   AND A.VERSION =  C_PP_VERSION
+   AND A.PP_KEY1 =  C_PP_KEY1
+   AND A.PP_KEY2 =  C_PP_KEY2
+   AND A.PP_KEY3 =  C_PP_KEY3
+   AND A.PP_KEY4 =  C_PP_KEY4
+   AND A.PP_KEY5 =  C_PP_KEY5
+   AND A.IS_PP='1'
+   ORDER BY A.SEQ;
+
+CURSOR L_CHECK4RECURSIVEDATA_CURSOR(C_PP         IN VARCHAR2,
+                                    C_PP_VERSION IN VARCHAR2,
+                                    C_PP_KEY1    IN VARCHAR2,
+                                    C_PP_KEY2    IN VARCHAR2,
+                                    C_PP_KEY3    IN VARCHAR2,
+                                    C_PP_KEY4    IN VARCHAR2,
+                                    C_PP_KEY5    IN VARCHAR2) IS
+SELECT PP, PR, LEVEL, VERSION, IS_PP, PRIOR VERSION, PRIOR IS_PP, PRIOR PR, PRIOR PR_VERSION, PRIOR PP_KEY1, PRIOR PP_KEY2, PRIOR PP_KEY3, PRIOR PP_KEY4,PRIOR PP_KEY5
+   FROM UTPPPR A 
+   WHERE IS_PP='1'  
+   START WITH PP = C_PP
+          AND VERSION = C_PP_VERSION
+          AND PP_KEY1 = C_PP_KEY1
+          AND PP_KEY2 = C_PP_KEY2
+          AND PP_KEY3 = C_PP_KEY3
+          AND PP_KEY4 = C_PP_KEY4
+          AND PP_KEY5 = C_PP_KEY5
+   CONNECT BY PRIOR PR = PP       
+          AND PRIOR PP_KEY1 = PP_KEY1
+          AND PRIOR PP_KEY2 = PP_KEY2
+          AND PRIOR PP_KEY3 = PP_KEY3
+          AND PRIOR PP_KEY4 = PP_KEY4
+          AND PRIOR PP_KEY5 = PP_KEY5
+   AND UNAPIGEN.USEPPVERSION(PRIOR PR,
+                             PRIOR PR_VERSION,
+                             PRIOR PP_KEY1,
+                             PRIOR PP_KEY2,
+                             PRIOR PP_KEY3,
+                             PRIOR PP_KEY4,
+                             PRIOR PP_KEY5) = VERSION
+   AND IS_PP = '1';
+                             
+L_CHECK4RECURSIVEDATA_REC L_CHECK4RECURSIVEDATA_CURSOR%ROWTYPE;   
+
+L_INPG_SC                   UNAPIGEN.VC20_TABLE_TYPE;
+L_INPG_PG                   UNAPIGEN.VC20_TABLE_TYPE;
+L_INPG_PGNODE               UNAPIGEN.LONG_TABLE_TYPE;
+L_INPG_PP_VERSION           UNAPIGEN.VC20_TABLE_TYPE;
+L_INPG_PP_KEY1              UNAPIGEN.VC20_TABLE_TYPE;
+L_INPG_PP_KEY2              UNAPIGEN.VC20_TABLE_TYPE;
+L_INPG_PP_KEY3              UNAPIGEN.VC20_TABLE_TYPE;
+L_INPG_PP_KEY4              UNAPIGEN.VC20_TABLE_TYPE;
+L_INPG_PP_KEY5              UNAPIGEN.VC20_TABLE_TYPE;
+L_INPG_DESCRIPTION          UNAPIGEN.VC40_TABLE_TYPE;
+L_INPG_VALUE_F              UNAPIGEN.FLOAT_TABLE_TYPE;
+L_INPG_VALUE_S              UNAPIGEN.VC40_TABLE_TYPE;
+L_INPG_UNIT                 UNAPIGEN.VC20_TABLE_TYPE;
+L_INPG_EXEC_START_DATE      UNAPIGEN.DATE_TABLE_TYPE;
+L_INPG_EXEC_END_DATE        UNAPIGEN.DATE_TABLE_TYPE;
+L_INPG_EXECUTOR             UNAPIGEN.VC20_TABLE_TYPE;
+L_INPG_PLANNED_EXECUTOR     UNAPIGEN.VC20_TABLE_TYPE;
+L_INPG_MANUALLY_ENTERED     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_INPG_ASSIGN_DATE          UNAPIGEN.DATE_TABLE_TYPE;
+L_INPG_ASSIGNED_BY          UNAPIGEN.VC20_TABLE_TYPE;
+L_INPG_MANUALLY_ADDED       UNAPIGEN.CHAR1_TABLE_TYPE;
+L_INPG_FORMAT               UNAPIGEN.VC40_TABLE_TYPE;
+L_INPG_CONFIRM_ASSIGN       UNAPIGEN.CHAR1_TABLE_TYPE;
+L_INPG_ALLOW_ANY_PR         UNAPIGEN.CHAR1_TABLE_TYPE;
+L_INPG_NEVER_CREATE_METHODS UNAPIGEN.CHAR1_TABLE_TYPE;
+L_INPG_DELAY                UNAPIGEN.NUM_TABLE_TYPE;
+L_INPG_DELAY_UNIT           UNAPIGEN.VC20_TABLE_TYPE;
+L_INPG_REANALYSIS           UNAPIGEN.NUM_TABLE_TYPE;
+L_INPG_PG_CLASS             UNAPIGEN.VC2_TABLE_TYPE;
+L_INPG_LOG_HS               UNAPIGEN.CHAR1_TABLE_TYPE;
+L_INPG_LOG_HS_DETAILS       UNAPIGEN.CHAR1_TABLE_TYPE;
+L_INPG_LC                   UNAPIGEN.VC2_TABLE_TYPE;
+L_INPG_LC_VERSION           UNAPIGEN.VC20_TABLE_TYPE;
+L_INPG_NR_OF_ROWS           NUMBER;
+
+L_PG_ASSIGN                 BOOLEAN;
+L_PG_SC                     UNAPIGEN.VC20_TABLE_TYPE;
+L_PG_PG                     UNAPIGEN.VC20_TABLE_TYPE;
+L_PG_PGNODE                 UNAPIGEN.LONG_TABLE_TYPE;
+L_PG_PP_VERSION             UNAPIGEN.VC20_TABLE_TYPE;
+L_PG_PP_KEY1                UNAPIGEN.VC20_TABLE_TYPE;
+L_PG_PP_KEY2                UNAPIGEN.VC20_TABLE_TYPE;
+L_PG_PP_KEY3                UNAPIGEN.VC20_TABLE_TYPE;
+L_PG_PP_KEY4                UNAPIGEN.VC20_TABLE_TYPE;
+L_PG_PP_KEY5                UNAPIGEN.VC20_TABLE_TYPE;
+L_PG_DESCRIPTION            UNAPIGEN.VC40_TABLE_TYPE;
+L_PG_VALUE_F                UNAPIGEN.FLOAT_TABLE_TYPE;
+L_PG_VALUE_S                UNAPIGEN.VC40_TABLE_TYPE;
+L_PG_UNIT                   UNAPIGEN.VC20_TABLE_TYPE;
+L_PG_EXEC_START_DATE        UNAPIGEN.DATE_TABLE_TYPE;
+L_PG_EXEC_END_DATE          UNAPIGEN.DATE_TABLE_TYPE;
+L_PG_EXECUTOR               UNAPIGEN.VC20_TABLE_TYPE;
+L_PG_PLANNED_EXECUTOR       UNAPIGEN.VC20_TABLE_TYPE;
+L_PG_MANUALLY_ENTERED       UNAPIGEN.CHAR1_TABLE_TYPE;
+L_PG_ASSIGN_DATE            UNAPIGEN.DATE_TABLE_TYPE;
+L_PG_ASSIGNED_BY            UNAPIGEN.VC20_TABLE_TYPE;
+L_PG_MANUALLY_ADDED         UNAPIGEN.CHAR1_TABLE_TYPE;
+L_PG_FORMAT                 UNAPIGEN.VC40_TABLE_TYPE;
+L_PG_CONFIRM_ASSIGN         UNAPIGEN.CHAR1_TABLE_TYPE;
+L_PG_ALLOW_ANY_PR           UNAPIGEN.CHAR1_TABLE_TYPE;
+L_PG_NEVER_CREATE_METHODS   UNAPIGEN.CHAR1_TABLE_TYPE;
+L_PG_DELAY                  UNAPIGEN.NUM_TABLE_TYPE;
+L_PG_DELAY_UNIT             UNAPIGEN.VC20_TABLE_TYPE;
+L_PG_REANALYSIS             UNAPIGEN.NUM_TABLE_TYPE;
+L_PG_PG_CLASS               UNAPIGEN.VC2_TABLE_TYPE;
+L_PG_LOG_HS                 UNAPIGEN.CHAR1_TABLE_TYPE;
+L_PG_LOG_HS_DETAILS         UNAPIGEN.CHAR1_TABLE_TYPE;
+L_PG_LC                     UNAPIGEN.VC2_TABLE_TYPE;
+L_PG_LC_VERSION             UNAPIGEN.VC20_TABLE_TYPE;
+L_PG_MODIFY_FLAG            UNAPIGEN.NUM_TABLE_TYPE;
+L_PG_TOT_NR_OF_ROWS         NUMBER;
+L_DYN_CURSOR                INTEGER;
+
+CURSOR L_NEXT_PG_CURSOR(A_SC IN VARCHAR2,
+                        A_PGNODE IN NUMBER) IS
+   SELECT PG, PGNODE
+   FROM UTSCPG
+   WHERE SC = A_SC
+   AND PGNODE > A_PGNODE;
+L_NEXT_PG_REC L_NEXT_PG_CURSOR%ROWTYPE;
+
+   
+   PROCEDURE ASSIGN(A_PP_TO_ASSIGN IN VARCHAR2, A_PG_TOT_NR_OF_ROWS IN OUT NUMBER) IS
+
+   L_ROW      INTEGER;
+   L_NEWROW   INTEGER;
+   BEGIN
+      IF A_PG_TOT_NR_OF_ROWS = 0 THEN
+         
+         A_PG_TOT_NR_OF_ROWS := 1;
+         L_PG_SC(A_PG_TOT_NR_OF_ROWS) := A_SC;
+         L_PG_PG(A_PG_TOT_NR_OF_ROWS) := A_PP;
+         L_PG_PGNODE(A_PG_TOT_NR_OF_ROWS) := A_PGNODE;
+         L_PG_PP_KEY1(A_PG_TOT_NR_OF_ROWS) := A_PP_KEY1;
+         L_PG_PP_KEY2(A_PG_TOT_NR_OF_ROWS) := A_PP_KEY2;
+         L_PG_PP_KEY3(A_PG_TOT_NR_OF_ROWS) := A_PP_KEY3;
+         L_PG_PP_KEY4(A_PG_TOT_NR_OF_ROWS) := A_PP_KEY4;
+         L_PG_PP_KEY5(A_PG_TOT_NR_OF_ROWS) := A_PP_KEY5;
+         L_PG_LOG_HS(A_PG_TOT_NR_OF_ROWS) := NULL;
+         L_PG_LOG_HS_DETAILS(A_PG_TOT_NR_OF_ROWS) := NULL;
+         L_PG_MODIFY_FLAG(A_PG_TOT_NR_OF_ROWS) := UNAPIGEN.DBERR_SUCCESS;
+      END IF;
+
+      FOR L_ROW IN 1..L_INPG_NR_OF_ROWS LOOP
+         L_PG_SC(A_PG_TOT_NR_OF_ROWS + L_ROW) := A_SC;
+         L_PG_PGNODE(A_PG_TOT_NR_OF_ROWS + L_ROW) := 0;
+         L_PG_MODIFY_FLAG(A_PG_TOT_NR_OF_ROWS + L_ROW) := UNAPIGEN.MOD_FLAG_CREATE;
+         L_PG_MANUALLY_ADDED(A_PG_TOT_NR_OF_ROWS + L_ROW) := '0';
+         L_PG_DELAY(A_PG_TOT_NR_OF_ROWS + L_ROW) := NVL(L_INPG_DELAY(L_ROW), 0);
+         L_PG_DELAY_UNIT(A_PG_TOT_NR_OF_ROWS + L_ROW) := NVL(L_INPG_DELAY_UNIT(L_ROW), 'DD');
+         L_PG_PP_KEY1(A_PG_TOT_NR_OF_ROWS + L_ROW) := A_PP_KEY1;
+         L_PG_PP_KEY2(A_PG_TOT_NR_OF_ROWS + L_ROW) := A_PP_KEY2;
+         L_PG_PP_KEY3(A_PG_TOT_NR_OF_ROWS + L_ROW) := A_PP_KEY3;
+         L_PG_PP_KEY4(A_PG_TOT_NR_OF_ROWS + L_ROW) := A_PP_KEY4;
+         L_PG_PP_KEY5(A_PG_TOT_NR_OF_ROWS + L_ROW) := A_PP_KEY5;
+         
+         
+         
+         
+         L_PG_ASSIGN_DATE(A_PG_TOT_NR_OF_ROWS + L_ROW) := L_REF_DATE;
+         L_PG_ASSIGNED_BY(A_PG_TOT_NR_OF_ROWS + L_ROW) := UNAPIGEN.P_USER;
+         
+         
+         
+         L_PG_PG(A_PG_TOT_NR_OF_ROWS + L_ROW) := A_PP_TO_ASSIGN;
+         L_PG_PP_VERSION(A_PG_TOT_NR_OF_ROWS + L_ROW) := L_INPG_PP_VERSION(L_ROW);
+         L_PG_DESCRIPTION(A_PG_TOT_NR_OF_ROWS + L_ROW) := L_INPG_DESCRIPTION(L_ROW);
+         L_PG_VALUE_F(A_PG_TOT_NR_OF_ROWS + L_ROW) := L_INPG_VALUE_F(L_ROW);
+         L_PG_VALUE_S(A_PG_TOT_NR_OF_ROWS + L_ROW) := L_INPG_VALUE_S(L_ROW);
+         L_PG_UNIT(A_PG_TOT_NR_OF_ROWS + L_ROW) := L_INPG_UNIT(L_ROW);
+         L_PG_EXEC_START_DATE(A_PG_TOT_NR_OF_ROWS + L_ROW) := L_INPG_EXEC_START_DATE(L_ROW);
+         L_PG_EXEC_END_DATE(A_PG_TOT_NR_OF_ROWS + L_ROW) := L_INPG_EXEC_END_DATE(L_ROW);
+         L_PG_EXECUTOR(A_PG_TOT_NR_OF_ROWS + L_ROW) := L_INPG_EXECUTOR(L_ROW);
+         L_PG_PLANNED_EXECUTOR(A_PG_TOT_NR_OF_ROWS + L_ROW) := L_INPG_PLANNED_EXECUTOR(L_ROW);
+         L_PG_MANUALLY_ENTERED(A_PG_TOT_NR_OF_ROWS + L_ROW) := L_INPG_MANUALLY_ENTERED(L_ROW);
+         L_PG_FORMAT(A_PG_TOT_NR_OF_ROWS + L_ROW) := L_INPG_FORMAT(L_ROW);
+         L_PG_CONFIRM_ASSIGN(A_PG_TOT_NR_OF_ROWS + L_ROW) := L_INPG_CONFIRM_ASSIGN(L_ROW);
+         L_PG_ALLOW_ANY_PR(A_PG_TOT_NR_OF_ROWS + L_ROW) := L_INPG_ALLOW_ANY_PR(L_ROW);
+         L_PG_NEVER_CREATE_METHODS(A_PG_TOT_NR_OF_ROWS + L_ROW) := L_INPG_NEVER_CREATE_METHODS(L_ROW);
+         L_PG_DELAY(A_PG_TOT_NR_OF_ROWS + L_ROW) := L_INPG_DELAY(L_ROW);
+         L_PG_DELAY_UNIT(A_PG_TOT_NR_OF_ROWS + L_ROW) := L_INPG_DELAY_UNIT(L_ROW);
+         L_PG_REANALYSIS(A_PG_TOT_NR_OF_ROWS + L_ROW) := L_INPG_REANALYSIS(L_ROW);
+         L_PG_PG_CLASS(A_PG_TOT_NR_OF_ROWS + L_ROW) := L_INPG_PG_CLASS(L_ROW);
+         L_PG_LOG_HS(A_PG_TOT_NR_OF_ROWS + L_ROW) := L_INPG_LOG_HS(L_ROW);
+         L_PG_LOG_HS_DETAILS(A_PG_TOT_NR_OF_ROWS + L_ROW) := L_INPG_LOG_HS_DETAILS(L_ROW);
+         L_PG_LC(A_PG_TOT_NR_OF_ROWS + L_ROW) := L_INPG_LC(L_ROW);
+         L_PG_LC_VERSION(A_PG_TOT_NR_OF_ROWS + L_ROW) := L_INPG_LC_VERSION(L_ROW);
+      END LOOP;
+      A_PG_TOT_NR_OF_ROWS := A_PG_TOT_NR_OF_ROWS + L_INPG_NR_OF_ROWS;
+   END ASSIGN;
+
+BEGIN
+
+   
+   
+   
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   
+   
+   
+   
+   
+   
+   
+   
+   IF NVL(A_SC, ' ') = ' ' OR
+      NVL(A_PP, ' ') = ' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+   
+   IF A_PP_KEY1 IS NULL OR
+      A_PP_KEY2 IS NULL OR
+      A_PP_KEY3 IS NULL OR
+      A_PP_KEY4 IS NULL OR
+      A_PP_KEY5 IS NULL THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOPPKEYID;
+      RAISE STPERROR;
+   END IF;
+   
+   A_PP_VERSION := UNAPIGEN.VALIDATEPPVERSION(A_PP, A_PP_VERSION, A_PP_KEY1, A_PP_KEY2, A_PP_KEY3, A_PP_KEY4, A_PP_KEY5);
+   
+   BEGIN 
+      FOR  L_CHECK4RECURSIVEDATA_REC IN L_CHECK4RECURSIVEDATA_CURSOR(A_PP, A_PP_VERSION, A_PP_KEY1, A_PP_KEY2, A_PP_KEY3, A_PP_KEY4, A_PP_KEY5) LOOP
+         NULL;
+      END LOOP;
+   EXCEPTION
+   WHEN OTHERS THEN
+      
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_RECURSIVEDATA;
+      RAISE STPERROR;
+   END;
+
+   L_REF_DATE := A_REF_DATE;
+   IF L_REF_DATE IS NULL THEN
+      SELECT SAMPLING_DATE
+      INTO L_REF_DATE
+      FROM UTSC
+      WHERE SC = A_SC;      
+   END IF;
+   IF L_REF_DATE IS NULL THEN
+      L_REF_DATE := CURRENT_TIMESTAMP;
+   END IF;
+
+   L_FILTER_FREQ := NVL(A_FILTER_FREQ, '1');
+   L_ERRM := NULL;
+
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+
+   
+   
+   
+   L_PG_TOT_NR_OF_ROWS := 0;
+
+   
+   
+   
+   L_DYN_CURSOR := DBMS_SQL.OPEN_CURSOR;
+
+   L_RET_CODE := UNAPIAUT.INITPPINPPBUFFER (A_PP, A_PP_VERSION, A_PP_KEY1, A_PP_KEY2, A_PP_KEY3, A_PP_KEY4, A_PP_KEY5) ;
+   
+   FOR L_CHILDPP_REC IN L_CHILDPP_CURSOR(A_PP, A_PP_VERSION, A_PP_KEY1, A_PP_KEY2, A_PP_KEY3, A_PP_KEY4, A_PP_KEY5) LOOP
+
+      L_PG_ASSIGN := FALSE;
+      IF L_FILTER_FREQ = '0' THEN
+         L_PG_ASSIGN := TRUE;
+      ELSIF L_FILTER_FREQ = '1' THEN
+         L_PG_ASSIGN := TRUE;
+
+         IF L_CHILDPP_REC.ST_BASED_FREQ = '1' THEN
+            BEGIN
+               L_RET_CODE := UNAPIAUT.INITSTPRPPINPPFREQBUFFER (A_ST, A_ST_VERSION, 
+                        L_CHILDPP_REC.PARENT_PP, L_CHILDPP_REC.PARENT_PP_VERSION, 
+                        L_CHILDPP_REC.PARENT_PP_KEY1, L_CHILDPP_REC.PARENT_PP_KEY2, L_CHILDPP_REC.PARENT_PP_KEY3, 
+                        L_CHILDPP_REC.PARENT_PP_KEY4, L_CHILDPP_REC.PARENT_PP_KEY5, 
+                        L_CHILDPP_REC.PP, L_CHILDPP_REC.PP_VERSION) ;
+
+               SELECT FREQ_TP, FREQ_VAL, FREQ_UNIT, INVERT_FREQ,
+                      LAST_SCHED, LAST_CNT, LAST_VAL
+               INTO L_CHILDPP_REC.FREQ_TP, L_CHILDPP_REC.FREQ_VAL, L_CHILDPP_REC.FREQ_UNIT, L_CHILDPP_REC.INVERT_FREQ,
+                    L_CHILDPP_REC.LAST_SCHED, L_CHILDPP_REC.LAST_CNT, L_CHILDPP_REC.LAST_VAL
+               FROM UTSTPRFREQBUFFER 
+               WHERE ST = A_ST
+                 AND VERSION = A_ST_VERSION
+                 AND PP = L_CHILDPP_REC.PARENT_PP
+                 AND PP_VERSION = L_CHILDPP_REC.PARENT_PP_VERSION
+                 AND PP_KEY1 = L_CHILDPP_REC.PARENT_PP_KEY1
+                 AND PP_KEY2 = L_CHILDPP_REC.PARENT_PP_KEY2
+                 AND PP_KEY3 = L_CHILDPP_REC.PARENT_PP_KEY3
+                 AND PP_KEY4 = L_CHILDPP_REC.PARENT_PP_KEY4
+                 AND PP_KEY5 = L_CHILDPP_REC.PARENT_PP_KEY5
+                 AND PR = L_CHILDPP_REC.PP
+                 AND PR_VERSION = L_CHILDPP_REC.PP_VERSION;
+            EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+               
+               L_CHILDPP_REC.LAST_SCHED := NULL;
+               L_CHILDPP_REC.LAST_CNT := 0;
+               L_CHILDPP_REC.LAST_VAL := NULL;
+            END;
+         END IF;
+         IF L_CHILDPP_REC.FREQ_TP = 'C' THEN
+            
+            
+            
+            
+            L_SQL_STRING := 'BEGIN :l_ret_code := UNFREQ.'|| L_CHILDPP_REC.FREQ_UNIT ||
+                '(:a_sc, :a_st, :a_st_version, :a_pp, :a_pp_version, :a_freq_val, :a_invert_freq,:a_ref_date, ' ||
+                ':a_last_sched, :a_last_cnt, :a_last_val); END;';
+
+            DBMS_SQL.PARSE(L_DYN_CURSOR, L_SQL_STRING, DBMS_SQL.V7); 
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':l_ret_code', L_RET_CODE);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_sc', A_SC, 20);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_st', A_ST, 20);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_st_version', A_ST_VERSION, 20);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_pp', L_CHILDPP_REC.PP, 20);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_pp_version', L_CHILDPP_REC.PP_VERSION, 20);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_freq_val', L_CHILDPP_REC.FREQ_VAL);
+            DBMS_SQL.BIND_VARIABLE_CHAR(L_DYN_CURSOR, ':a_invert_freq', L_CHILDPP_REC.INVERT_FREQ, 1);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_ref_date', L_REF_DATE);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_last_sched', L_CHILDPP_REC.LAST_SCHED);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_last_cnt', L_CHILDPP_REC.LAST_CNT);
+            DBMS_SQL.BIND_VARIABLE(L_DYN_CURSOR, ':a_last_val', L_CHILDPP_REC.LAST_VAL, 40);
+
+            L_RESULT := DBMS_SQL.EXECUTE(L_DYN_CURSOR);
+            DBMS_SQL.VARIABLE_VALUE(L_DYN_CURSOR, ':l_ret_code', L_RET_CODE);
+            DBMS_SQL.VARIABLE_VALUE(L_DYN_CURSOR, ':a_last_sched', L_CHILDPP_REC.LAST_SCHED);
+            DBMS_SQL.VARIABLE_VALUE(L_DYN_CURSOR, ':a_last_cnt', L_CHILDPP_REC.LAST_CNT);
+            DBMS_SQL.VARIABLE_VALUE(L_DYN_CURSOR, ':a_last_val', L_CHILDPP_REC.LAST_VAL);
+               
+            IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+               L_PG_ASSIGN := FALSE;
+            END IF;
+         ELSE
+            IF NOT UNAPIAUT.EVALASSIGNMENTFREQ('sc', A_SC, '', 'pg', L_CHILDPP_REC.PP,
+                                                                      L_CHILDPP_REC.PP_VERSION,            
+                                               L_CHILDPP_REC.FREQ_TP,
+                                               L_CHILDPP_REC.FREQ_VAL,
+                                               L_CHILDPP_REC.FREQ_UNIT,
+                                               L_CHILDPP_REC.INVERT_FREQ,
+                                               L_REF_DATE,
+                                               L_CHILDPP_REC.LAST_SCHED,
+                                               L_CHILDPP_REC.LAST_CNT,
+                                               L_CHILDPP_REC.LAST_VAL) THEN
+               L_PG_ASSIGN := FALSE;
+            END IF;
+         END IF;
+
+         
+         
+         
+         IF L_CHILDPP_REC.ST_BASED_FREQ = '1' THEN
+            
+            UPDATE UTSTPRFREQBUFFER
+            SET LAST_SCHED = L_CHILDPP_REC.LAST_SCHED,
+                LAST_SCHED_TZ = DECODE(L_CHILDPP_REC.LAST_SCHED, LAST_SCHED_TZ, LAST_SCHED_TZ, L_CHILDPP_REC.LAST_SCHED) ,
+                LAST_CNT = L_CHILDPP_REC.LAST_CNT,
+                LAST_VAL = L_CHILDPP_REC.LAST_VAL,
+                HANDLED = 'Y'
+            WHERE ST = A_ST
+              AND VERSION = A_ST_VERSION
+              AND PP = L_CHILDPP_REC.PARENT_PP
+              AND PP_VERSION = L_CHILDPP_REC.PARENT_PP_VERSION
+              AND PP_KEY1 = L_CHILDPP_REC.PARENT_PP_KEY1
+              AND PP_KEY2 = L_CHILDPP_REC.PARENT_PP_KEY2
+              AND PP_KEY3 = L_CHILDPP_REC.PARENT_PP_KEY3
+              AND PP_KEY4 = L_CHILDPP_REC.PARENT_PP_KEY4
+              AND PP_KEY5 = L_CHILDPP_REC.PARENT_PP_KEY5
+              AND PR = L_CHILDPP_REC.PP
+              AND PR_VERSION = L_CHILDPP_REC.PP_VERSION;
+            
+            IF SQL%ROWCOUNT = 0 THEN
+               INSERT INTO UTSTPRFREQBUFFER(ST, VERSION, PP, PP_VERSION, 
+                                      PP_KEY1, PP_KEY2, PP_KEY3, PP_KEY4, PP_KEY5, 
+                                      PR, PR_VERSION, FREQ_TP, FREQ_VAL, FREQ_UNIT,
+                                      INVERT_FREQ, LAST_SCHED, LAST_SCHED_TZ , LAST_CNT, LAST_VAL, HANDLED)
+               VALUES(A_ST, A_ST_VERSION, L_CHILDPP_REC.PARENT_PP, L_CHILDPP_REC.PARENT_PP_VERSION,
+                     L_CHILDPP_REC.PARENT_PP_KEY1, L_CHILDPP_REC.PARENT_PP_KEY2,
+                     L_CHILDPP_REC.PARENT_PP_KEY3, L_CHILDPP_REC.PARENT_PP_KEY4, 
+                     L_CHILDPP_REC.PARENT_PP_KEY5,                     
+                     L_CHILDPP_REC.PP, L_CHILDPP_REC.PP_VERSION, L_CHILDPP_REC.FREQ_TP, L_CHILDPP_REC.FREQ_VAL,
+                     L_CHILDPP_REC.FREQ_UNIT, L_CHILDPP_REC.INVERT_FREQ, L_CHILDPP_REC.LAST_SCHED, L_CHILDPP_REC.LAST_SCHED, 
+           L_CHILDPP_REC.LAST_CNT, L_CHILDPP_REC.LAST_VAL, 'Y');
+            END IF;
+
+            UPDATE UTPPPRBUFFER
+            SET LAST_SCHED = L_CHILDPP_REC.LAST_SCHED,
+                LAST_SCHED_TZ =  DECODE(L_CHILDPP_REC.LAST_SCHED, LAST_SCHED_TZ, LAST_SCHED_TZ, L_CHILDPP_REC.LAST_SCHED),
+                LAST_CNT = L_CHILDPP_REC.LAST_CNT,
+                LAST_VAL = L_CHILDPP_REC.LAST_VAL,
+                HANDLED = 'Y'
+            WHERE PP = L_CHILDPP_REC.PARENT_PP
+              AND VERSION = L_CHILDPP_REC.PARENT_PP_VERSION
+              AND PP_KEY1 = L_CHILDPP_REC.PARENT_PP_KEY1
+              AND PP_KEY2 = L_CHILDPP_REC.PARENT_PP_KEY2
+              AND PP_KEY3 = L_CHILDPP_REC.PARENT_PP_KEY3
+              AND PP_KEY4 = L_CHILDPP_REC.PARENT_PP_KEY4
+              AND PP_KEY5 = L_CHILDPP_REC.PARENT_PP_KEY5
+              AND PR = L_CHILDPP_REC.PP
+              AND PR_VERSION = L_CHILDPP_REC.PP_VERSION
+              AND SEQ = L_CHILDPP_REC.SEQ;
+
+         ELSE
+            UPDATE UTPPPRBUFFER
+            SET LAST_SCHED = L_CHILDPP_REC.LAST_SCHED,
+                LAST_SCHED_TZ = DECODE(L_CHILDPP_REC.LAST_SCHED, LAST_SCHED_TZ, LAST_SCHED_TZ, L_CHILDPP_REC.LAST_SCHED) ,
+                LAST_CNT = L_CHILDPP_REC.LAST_CNT,
+                LAST_VAL = L_CHILDPP_REC.LAST_VAL,
+                HANDLED = 'Y'
+            WHERE PP = L_CHILDPP_REC.PARENT_PP
+              AND VERSION = L_CHILDPP_REC.PARENT_PP_VERSION
+              AND PP_KEY1 = L_CHILDPP_REC.PARENT_PP_KEY1
+              AND PP_KEY2 = L_CHILDPP_REC.PARENT_PP_KEY2
+              AND PP_KEY3 = L_CHILDPP_REC.PARENT_PP_KEY3
+              AND PP_KEY4 = L_CHILDPP_REC.PARENT_PP_KEY4
+              AND PP_KEY5 = L_CHILDPP_REC.PARENT_PP_KEY5
+              AND PR = L_CHILDPP_REC.PP
+              AND PR_VERSION = L_CHILDPP_REC.PP_VERSION
+              AND SEQ = L_CHILDPP_REC.SEQ;
+         END IF;
+
+      END IF;
+
+      IF L_PG_ASSIGN THEN
+         
+         
+         
+         L_INPG_NR_OF_ROWS := 0;
+         L_RET_CODE := UNAPIPG.INITSCPARAMETERGROUP(L_CHILDPP_REC.PP, L_CHILDPP_REC.PP_VERSION,
+                                         L_CHILDPP_REC.PARENT_PP_KEY1,
+                                         L_CHILDPP_REC.PARENT_PP_KEY2,
+                                         L_CHILDPP_REC.PARENT_PP_KEY3,
+                                         L_CHILDPP_REC.PARENT_PP_KEY4,
+                                         L_CHILDPP_REC.PARENT_PP_KEY5, 
+                                         L_CHILDPP_REC.SEQ, A_SC, L_INPG_PP_VERSION, 
+                                         L_INPG_DESCRIPTION, L_INPG_VALUE_F, L_INPG_VALUE_S, 
+                                         L_INPG_UNIT, L_INPG_EXEC_START_DATE, L_INPG_EXEC_END_DATE,
+                                         L_INPG_EXECUTOR, L_INPG_PLANNED_EXECUTOR,
+                                         L_INPG_MANUALLY_ENTERED, L_INPG_ASSIGN_DATE, 
+                                         L_INPG_ASSIGNED_BY, L_INPG_MANUALLY_ADDED, L_INPG_FORMAT,
+                                         L_INPG_CONFIRM_ASSIGN, L_INPG_ALLOW_ANY_PR,
+                                         L_INPG_NEVER_CREATE_METHODS,
+                                         L_INPG_DELAY, L_INPG_DELAY_UNIT, L_INPG_REANALYSIS, 
+                                         L_INPG_PG_CLASS, L_INPG_LOG_HS, L_INPG_LOG_HS_DETAILS, 
+                                         L_INPG_LC, L_INPG_LC_VERSION, L_INPG_NR_OF_ROWS);
+         IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+            UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+            RAISE STPERROR;
+         END IF;
+
+         
+         
+         
+         IF L_INPG_NR_OF_ROWS > 0 THEN
+            ASSIGN(L_CHILDPP_REC.PP, L_PG_TOT_NR_OF_ROWS);
+         END IF;
+         
+      END IF;
+   END LOOP;
+   DBMS_SQL.CLOSE_CURSOR(L_DYN_CURSOR);
+   
+   IF L_PG_TOT_NR_OF_ROWS > 0 THEN
+
+      
+      
+      
+      
+      
+      
+      
+      L_NEXT_PG_REC.PG := NULL;
+      L_NEXT_PG_REC.PGNODE := NULL;
+      
+      IF A_NEXT_PGNODE IS NULL THEN
+         
+         OPEN L_NEXT_PG_CURSOR(A_SC, A_PGNODE);
+         FETCH L_NEXT_PG_CURSOR
+         INTO L_NEXT_PG_REC;
+         CLOSE L_NEXT_PG_CURSOR;
+
+         IF L_NEXT_PG_REC.PG IS NOT NULL THEN
+            L_PG_TOT_NR_OF_ROWS := L_PG_TOT_NR_OF_ROWS+1;
+            L_PG_SC(L_PG_TOT_NR_OF_ROWS) := A_SC;
+            L_PG_PG(L_PG_TOT_NR_OF_ROWS) := L_NEXT_PG_REC.PG;
+            L_PG_PGNODE(L_PG_TOT_NR_OF_ROWS) := L_NEXT_PG_REC.PGNODE;
+            L_PG_LOG_HS(L_PG_TOT_NR_OF_ROWS) := NULL;
+            L_PG_LOG_HS_DETAILS(L_PG_TOT_NR_OF_ROWS) := NULL;
+            L_PG_MODIFY_FLAG(L_PG_TOT_NR_OF_ROWS) := UNAPIGEN.DBERR_SUCCESS;
+         END IF;
+      ELSE
+         
+         L_PG_TOT_NR_OF_ROWS := L_PG_TOT_NR_OF_ROWS+1;
+         L_PG_SC(L_PG_TOT_NR_OF_ROWS) := A_SC;
+         L_PG_PG(L_PG_TOT_NR_OF_ROWS) := 'virtual';
+         L_PG_PGNODE(L_PG_TOT_NR_OF_ROWS) := A_NEXT_PGNODE;
+         L_PG_LOG_HS(L_PG_TOT_NR_OF_ROWS) := NULL;
+         L_PG_LOG_HS_DETAILS(L_PG_TOT_NR_OF_ROWS) := NULL;
+         L_PG_MODIFY_FLAG(L_PG_TOT_NR_OF_ROWS) := UNAPIGEN.DBERR_SUCCESS;
+      END IF;                     
+      L_RET_CODE := UNAPIPG.SAVESCPARAMETERGROUP(L_PG_SC, L_PG_PG, L_PG_PGNODE, L_PG_PP_VERSION,
+                                      L_PG_PP_KEY1, L_PG_PP_KEY2, L_PG_PP_KEY3, L_PG_PP_KEY4, L_PG_PP_KEY5,
+                                      L_PG_DESCRIPTION, L_PG_VALUE_F, L_PG_VALUE_S, L_PG_UNIT,
+                                      L_PG_EXEC_START_DATE, L_PG_EXEC_END_DATE, L_PG_EXECUTOR, 
+                                      L_PG_PLANNED_EXECUTOR, L_PG_MANUALLY_ENTERED, 
+                                      L_PG_ASSIGN_DATE, L_PG_ASSIGNED_BY, L_PG_MANUALLY_ADDED,
+                                      L_PG_FORMAT, L_PG_CONFIRM_ASSIGN, L_PG_ALLOW_ANY_PR,
+                                      L_PG_NEVER_CREATE_METHODS,
+                                      L_PG_DELAY, L_PG_DELAY_UNIT, L_PG_PG_CLASS, L_PG_LOG_HS, 
+                                      L_PG_LOG_HS_DETAILS, L_PG_LC, L_PG_LC_VERSION, 
+                                      L_PG_MODIFY_FLAG, L_PG_TOT_NR_OF_ROWS, A_MODIFY_REASON);
+      IF L_RET_CODE = UNAPIGEN.DBERR_PARTIALSAVE THEN
+         
+         
+         
+         FOR L_ROW IN 1..L_PG_TOT_NR_OF_ROWS LOOP
+            IF L_PG_MODIFY_FLAG(L_ROW) > UNAPIGEN.DBERR_SUCCESS THEN
+               UNAPIGEN.P_TXN_ERROR := L_PG_MODIFY_FLAG(L_ROW);
+               L_ERRM  := 'sc=' || A_SC || '#pg=' || L_PG_PG(L_ROW) ||
+                          '#pgnode=' || TO_CHAR(L_PG_PGNODE(L_ROW))||
+                          '#SaveScParameterGroup#ErrorCode=' || TO_CHAR(L_RET_CODE);
+               RAISE STPERROR;
+            END IF;
+         END LOOP;
+      ELSIF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         L_ERRM  := 'sc=' || A_SC || '#pg=' || L_PG_PG(1) ||
+                    '#pgnode=' || TO_CHAR(L_PG_PGNODE(1))||
+                    '#SaveScParameterGroup#ErrorCode=' || TO_CHAR(L_RET_CODE);
+         UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+         RAISE STPERROR;
+      END IF;
+   END IF;
+      
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('CreatePpInPpPr', SQLERRM);
+   ELSIF L_ERRM IS NOT NULL THEN
+      UNAPIGEN.LOGERROR('CreatePpInPpPr', L_ERRM);
+   END IF;
+   IF L_NEXT_PG_CURSOR%ISOPEN THEN
+      CLOSE L_NEXT_PG_CURSOR;
+   END IF;
+   IF DBMS_SQL.IS_OPEN(L_DYN_CURSOR) THEN
+      DBMS_SQL.CLOSE_CURSOR(L_DYN_CURSOR);
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR, 'CreatePpInPpPr'));
+END CREATEPPINPPPR;
+
+FUNCTION CREATESCPGDETAILS
+(A_ST               IN      VARCHAR2,                  
+ A_ST_VERSION       IN OUT  VARCHAR2,                  
+ A_PP               IN      VARCHAR2,                  
+ A_PP_VERSION       IN OUT  VARCHAR2,                  
+ A_PP_KEY1          IN      VARCHAR2,                  
+ A_PP_KEY2          IN      VARCHAR2,                  
+ A_PP_KEY3          IN      VARCHAR2,                  
+ A_PP_KEY4          IN      VARCHAR2,                  
+ A_PP_KEY5          IN      VARCHAR2,                  
+ A_SEQ              IN      NUMBER,                    
+ A_SC               IN      VARCHAR2,                  
+ A_PGNODE           IN      NUMBER,                    
+ A_FILTER_FREQ      IN      CHAR,                      
+ A_REF_DATE         IN      DATE,                      
+ A_MODIFY_REASON    IN      VARCHAR2)                  
+RETURN NUMBER IS
+
+L_NEXT_PGNODE NUMBER(9);
+
+BEGIN
+   L_NEXT_PGNODE := NULL;
+   RETURN(UNAPIPG.CREATESCPGDETAILS2(A_ST, A_ST_VERSION, A_PP, A_PP_VERSION,
+               A_PP_KEY1, A_PP_KEY2, A_PP_KEY3, A_PP_KEY4, A_PP_KEY5, A_SEQ,
+               A_SC, A_PGNODE, L_NEXT_PGNODE, A_FILTER_FREQ, A_REF_DATE, A_MODIFY_REASON));
+END CREATESCPGDETAILS;
+
+FUNCTION CREATESCPGDETAILS2
+(A_ST               IN      VARCHAR2,                  
+ A_ST_VERSION       IN OUT  VARCHAR2,                  
+ A_PP               IN      VARCHAR2,                  
+ A_PP_VERSION       IN OUT  VARCHAR2,                  
+ A_PP_KEY1          IN      VARCHAR2,                  
+ A_PP_KEY2          IN      VARCHAR2,                  
+ A_PP_KEY3          IN      VARCHAR2,                  
+ A_PP_KEY4          IN      VARCHAR2,                  
+ A_PP_KEY5          IN      VARCHAR2,                  
+ A_SEQ              IN      NUMBER,                    
+ A_SC               IN      VARCHAR2,                  
+ A_PGNODE           IN      NUMBER,                    
+ A_NEXT_PGNODE      IN      NUMBER,                     
+ A_FILTER_FREQ      IN      CHAR,                      
+ A_REF_DATE         IN      DATE,                      
+ A_MODIFY_REASON    IN      VARCHAR2)                  
+RETURN NUMBER IS
+
+L_SC                UNAPIGEN.VC20_TABLE_TYPE;
+L_PG                UNAPIGEN.VC20_TABLE_TYPE;
+L_PGNODE            UNAPIGEN.LONG_TABLE_TYPE;
+L_PA                UNAPIGEN.VC20_TABLE_TYPE;
+L_PANODE            UNAPIGEN.LONG_TABLE_TYPE;
+L_PR_VERSION        UNAPIGEN.VC20_TABLE_TYPE;
+L_DESCRIPTION       UNAPIGEN.VC40_TABLE_TYPE;
+L_VALUE_F           UNAPIGEN.FLOAT_TABLE_TYPE;
+L_VALUE_S           UNAPIGEN.VC40_TABLE_TYPE;
+L_UNIT              UNAPIGEN.VC20_TABLE_TYPE;
+L_EXEC_START_DATE   UNAPIGEN.DATE_TABLE_TYPE;
+L_EXEC_END_DATE     UNAPIGEN.DATE_TABLE_TYPE;
+L_EXECUTOR          UNAPIGEN.VC20_TABLE_TYPE;
+L_PLANNED_EXECUTOR  UNAPIGEN.VC20_TABLE_TYPE;
+L_MANUALLY_ENTERED  UNAPIGEN.CHAR1_TABLE_TYPE;
+L_ASSIGN_DATE       UNAPIGEN.DATE_TABLE_TYPE;
+L_ASSIGNED_BY       UNAPIGEN.VC20_TABLE_TYPE;
+L_MANUALLY_ADDED    UNAPIGEN.CHAR1_TABLE_TYPE;
+L_FORMAT            UNAPIGEN.VC40_TABLE_TYPE;
+L_TD_INFO           UNAPIGEN.NUM_TABLE_TYPE;
+L_TD_INFO_UNIT      UNAPIGEN.VC20_TABLE_TYPE;
+L_CONFIRM_UID       UNAPIGEN.CHAR1_TABLE_TYPE;
+L_ALLOW_ANY_ME      UNAPIGEN.CHAR1_TABLE_TYPE;
+L_DELAY             UNAPIGEN.NUM_TABLE_TYPE;
+L_DELAY_UNIT        UNAPIGEN.VC20_TABLE_TYPE;
+L_MIN_NR_RESULTS    UNAPIGEN.NUM_TABLE_TYPE;
+L_CALC_METHOD       UNAPIGEN.CHAR1_TABLE_TYPE;
+L_CALC_CF           UNAPIGEN.VC20_TABLE_TYPE;
+L_ALARM_ORDER       UNAPIGEN.VC3_TABLE_TYPE;
+L_VALID_SPECSA      UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_SPECSB      UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_SPECSC      UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_LIMITSA     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_LIMITSB     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_LIMITSC     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_TARGETA     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_TARGETB     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_TARGETC     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_MT                UNAPIGEN.VC20_TABLE_TYPE;
+L_MT_VERSION        UNAPIGEN.VC20_TABLE_TYPE;
+L_MT_NR_MEASUR      UNAPIGEN.NUM_TABLE_TYPE;
+L_LOG_EXCEPTIONS    UNAPIGEN.CHAR1_TABLE_TYPE;
+L_REANALYSIS        UNAPIGEN.NUM_TABLE_TYPE;
+L_PA_CLASS          UNAPIGEN.VC2_TABLE_TYPE;
+L_LOG_HS            UNAPIGEN.CHAR1_TABLE_TYPE;
+L_LOG_HS_DETAILS    UNAPIGEN.CHAR1_TABLE_TYPE;
+L_LC                UNAPIGEN.VC2_TABLE_TYPE;
+L_LC_VERSION        UNAPIGEN.VC20_TABLE_TYPE;
+L_MODIFY_FLAG       UNAPIGEN.NUM_TABLE_TYPE;
+L_NR_OF_ROWS        NUMBER;
+L_ERRM              VARCHAR2(255);
+L_REF_DATE          TIMESTAMP WITH TIME ZONE;
+L_ALARMS_HANDLED    CHAR(1);
+L_SEQ               NUMBER(5);
+L_FILTER_FREQ       CHAR(1);
+
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   
+   
+   
+   
+   
+   
+   
+   
+   IF NVL(A_SC, ' ') = ' ' OR
+      NVL(A_PP, ' ') = ' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   L_REF_DATE := A_REF_DATE;
+   IF L_REF_DATE IS NULL THEN
+      SELECT SAMPLING_DATE
+      INTO L_REF_DATE
+      FROM UTSC
+      WHERE SC = A_SC;      
+   END IF;
+   IF L_REF_DATE IS NULL THEN
+      L_REF_DATE := CURRENT_TIMESTAMP;
+   END IF;
+
+   L_FILTER_FREQ := NVL(A_FILTER_FREQ, '1');
+   L_ERRM := NULL;
+   L_NR_OF_ROWS := UNAPIGEN.P_MAX_CHUNK_SIZE;
+
+   A_ST_VERSION := UNAPIGEN.VALIDATEVERSION('st', A_ST, A_ST_VERSION);
+   A_PP_VERSION := UNAPIGEN.VALIDATEPPVERSION(A_PP, A_PP_VERSION, A_PP_KEY1, A_PP_KEY2, A_PP_KEY3, A_PP_KEY4, A_PP_KEY5);
+   
+   
+   
+   L_RET_CODE := UNAPIPG.INITSCPGDETAILS(A_ST, A_ST_VERSION, A_PP, A_PP_VERSION,
+                                         A_PP_KEY1, A_PP_KEY2, A_PP_KEY3, A_PP_KEY4, A_PP_KEY5,
+                                         A_SC, L_FILTER_FREQ,
+                                         L_REF_DATE, L_PA, L_PR_VERSION,
+                                         L_DESCRIPTION, L_VALUE_F, L_VALUE_S,
+                                         L_UNIT, L_EXEC_START_DATE,
+                                         L_EXEC_END_DATE, L_EXECUTOR,
+                                         L_PLANNED_EXECUTOR, L_MANUALLY_ENTERED,
+                                         L_ASSIGN_DATE, L_ASSIGNED_BY,
+                                         L_MANUALLY_ADDED,
+                                         L_FORMAT, L_TD_INFO, L_TD_INFO_UNIT,
+                                         L_CONFIRM_UID, L_ALLOW_ANY_ME, L_DELAY,
+                                         L_DELAY_UNIT, L_MIN_NR_RESULTS,
+                                         L_CALC_METHOD, L_CALC_CF, L_ALARM_ORDER,
+                                         L_VALID_SPECSA, L_VALID_SPECSB,
+                                         L_VALID_SPECSC, L_VALID_LIMITSA,
+                                         L_VALID_LIMITSB, L_VALID_LIMITSC,
+                                         L_VALID_TARGETA, L_VALID_TARGETB,
+                                         L_VALID_TARGETC, L_MT, L_MT_VERSION, L_MT_NR_MEASUR, L_LOG_EXCEPTIONS,
+                                         L_REANALYSIS, L_PA_CLASS, 
+                                         L_LOG_HS, L_LOG_HS_DETAILS,
+                                         L_LC, L_LC_VERSION, L_NR_OF_ROWS);
+   IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+      UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+      L_ERRM  := 'st=' || A_ST || '#pp=' || A_PP ||
+                 '#sc=' || A_SC || '#filter_freq=' || L_FILTER_FREQ ||
+                 '#ref_date=' || L_REF_DATE || '#nr_of_rows=' || L_NR_OF_ROWS ||
+                 '#InitScPgDetails#ErrorCode=' || TO_CHAR(L_RET_CODE);
+      RAISE STPERROR;
+   END IF;
+
+   
+   
+   
+   FOR L_ROW IN 1..L_NR_OF_ROWS LOOP
+      L_SC(L_ROW) := A_SC;
+      L_PG(L_ROW) := A_PP;
+      L_PGNODE(L_ROW) := A_PGNODE;
+      L_MODIFY_FLAG(L_ROW) := UNAPIGEN.MOD_FLAG_INSERT;
+      L_PANODE(L_ROW) := 0;
+      L_MANUALLY_ADDED(L_ROW) := '0';
+      
+      
+      
+      L_DELAY(L_ROW) := NVL(L_DELAY(L_ROW), 0);
+      L_DELAY_UNIT(L_ROW) := NVL(L_DELAY_UNIT(L_ROW), 'DD');
+   END LOOP;
+
+   IF L_NR_OF_ROWS > 0 THEN
+      
+      
+      
+      L_RET_CODE := UNAPIPA.SAVESCPARAMETER(UNAPIGEN.ALARMS_NOT_HANDLED, L_SC,
+                                            L_PG, L_PGNODE,
+                                            L_PA, L_PANODE, L_PR_VERSION, L_DESCRIPTION,
+                                            L_VALUE_F, L_VALUE_S, L_UNIT,
+                                            L_EXEC_START_DATE, L_EXEC_END_DATE,
+                                            L_EXECUTOR, L_PLANNED_EXECUTOR,
+                                            L_MANUALLY_ENTERED, L_ASSIGN_DATE,
+                                            L_ASSIGNED_BY, L_MANUALLY_ADDED,
+                                            L_FORMAT, L_TD_INFO,
+                                            L_TD_INFO_UNIT, L_CONFIRM_UID,
+                                            L_ALLOW_ANY_ME, L_DELAY, L_DELAY_UNIT,
+                                            L_MIN_NR_RESULTS, L_CALC_METHOD,
+                                            L_CALC_CF, L_ALARM_ORDER,
+                                            L_VALID_SPECSA,
+                                            L_VALID_SPECSB, L_VALID_SPECSC,
+                                            L_VALID_LIMITSA, L_VALID_LIMITSB,
+                                            L_VALID_LIMITSC, L_VALID_TARGETA,
+                                            L_VALID_TARGETB, L_VALID_TARGETC,
+                                            L_MT, L_MT_VERSION, L_MT_NR_MEASUR,
+                                            L_LOG_EXCEPTIONS, L_PA_CLASS,
+                                            L_LOG_HS, L_LOG_HS_DETAILS, L_LC, L_LC_VERSION, 
+                                            L_MODIFY_FLAG,
+                                            L_NR_OF_ROWS, A_MODIFY_REASON);
+      
+      
+      
+      IF L_RET_CODE = UNAPIGEN.DBERR_PARTIALSAVE THEN
+         FOR L_ROW IN 1..L_NR_OF_ROWS LOOP
+            IF L_MODIFY_FLAG(L_ROW) > UNAPIGEN.DBERR_SUCCESS THEN
+               UNAPIGEN.P_TXN_ERROR := L_MODIFY_FLAG(L_ROW);
+               L_ERRM  := 'sc=' || L_SC(L_ROW) || '#pg=' || L_PG(L_ROW) ||
+                          '#pgnode=' || TO_CHAR(L_PGNODE(L_ROW)) ||
+                          '#pa='||L_PA(L_ROW)||
+                          '#panode=' || TO_CHAR(L_PANODE(L_ROW)) ||
+                          '#SaveScParameter#ErrorCode=' || TO_CHAR(L_RET_CODE);
+               RAISE STPERROR;
+            END IF;
+         END LOOP;
+      ELSIF L_RET_CODE = UNAPIGEN.DBERR_PARTIALCHARTSAVE THEN
+         UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+         L_ERRM  := 'SaveScParameter#ErrorCode=' || TO_CHAR(L_RET_CODE);
+         RAISE STPERROR;
+      ELSIF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+         RAISE STPERROR;
+      END IF;
+   END IF;
+
+   
+   
+   
+   FOR L_ROW IN 1..L_NR_OF_ROWS LOOP
+
+      L_RET_CODE := UNAPIPAP.INITANDSAVESCPAATTRIBUTES(A_SC, L_PG(L_ROW), L_PGNODE(L_ROW), L_PA(L_ROW), L_PANODE(L_ROW));
+      IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+         L_ERRM  := 'sc=' || A_SC || '#pg=' || L_PG(L_ROW) ||
+                    '#pgnode=' || TO_CHAR(L_PGNODE(L_ROW)) ||
+                    '#pa=' || L_PA(L_ROW) ||
+                    '#panode=' || TO_CHAR(L_PANODE(L_ROW)) || 
+                    '#InitAndSaveScPaAttributes#ErrorCode=' || TO_CHAR(L_RET_CODE);
+         RAISE STPERROR;
+      END IF;
+
+      
+      
+      
+      L_RET_CODE := UNAPIPA.CREATESCPADETAILS(A_ST, A_ST_VERSION, 
+                                              A_PP, A_PP_VERSION, 
+                                              A_PP_KEY1, A_PP_KEY2, A_PP_KEY3, A_PP_KEY4, A_PP_KEY5, 
+                                              L_PA(L_ROW), L_PR_VERSION(L_ROW),
+                                              L_SEQ, A_SC, L_PG(L_ROW),
+                                              L_PGNODE(L_ROW), L_PANODE(L_ROW),
+                                              L_FILTER_FREQ,
+                                              L_REF_DATE, 
+                                              L_MT(L_ROW), L_MT_VERSION(L_ROW),
+                                              L_MT_NR_MEASUR(L_ROW), A_MODIFY_REASON);
+
+      
+      
+      
+      IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         L_ERRM  := 'sc=' || A_SC || '#pg=' || L_PG(L_ROW) ||
+                    '#pgnode=' || TO_CHAR(L_PGNODE(L_ROW)) || '#pa=' ||
+                    L_PA(L_ROW)|| '#panode=' || TO_CHAR(L_PANODE(L_ROW)) ||
+                    '#CreateScPaDetails#ErrorCode=' || TO_CHAR(L_RET_CODE);
+         UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+         RAISE STPERROR;
+      END IF;
+
+      
+      
+      
+      IF L_MIN_NR_RESULTS(L_ROW) = -1 THEN
+         UPDATE UTSCPA
+         SET MIN_NR_RESULTS = (SELECT COUNT(*)
+                              FROM UTSCME
+                              WHERE SC = L_SC(L_ROW)
+                                AND PG = L_PG(L_ROW)
+                                AND PGNODE = L_PGNODE(L_ROW)
+                                AND PA = L_PA(L_ROW)
+                                AND PANODE = L_PANODE(L_ROW))
+         WHERE SC = L_SC(L_ROW)
+           AND PG = L_PG(L_ROW)
+           AND PGNODE = L_PGNODE(L_ROW)
+           AND PA = L_PA(L_ROW)
+           AND PANODE = L_PANODE(L_ROW);
+      END IF;      
+   END LOOP;
+
+   L_RET_CODE := CREATEPPINPPPR(A_ST, A_ST_VERSION, A_PP, A_PP_VERSION, 
+                                A_PP_KEY1, A_PP_KEY2, A_PP_KEY3, A_PP_KEY4, A_PP_KEY5,
+                                A_SEQ, A_SC, A_PGNODE, A_NEXT_PGNODE, A_FILTER_FREQ, A_REF_DATE, A_MODIFY_REASON);
+   IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+      L_ERRM  := 'sc=' || A_SC || '#pp=' || A_PP ||
+                 '#pgnode=' || TO_CHAR(A_PGNODE)||
+                 '#pp_key1=' || A_PP_KEY1 || '#pp_key2=' || A_PP_KEY2 ||
+                 '#pp_key3=' || A_PP_KEY3 || '#pp_key4=' || A_PP_KEY4 ||
+                 '#pp_key5=' || A_PP_KEY5 ||
+                 '#CreatePpInPpPr#ErrorCode=' || TO_CHAR(L_RET_CODE);
+      UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+      RAISE STPERROR;
+   END IF;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('CreateScPgDetails', SQLERRM);
+   ELSIF L_ERRM IS NOT NULL THEN
+      UNAPIGEN.LOGERROR('CreateScPgDetails', L_ERRM);
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR, 'CreateScPgDetails'));
+END CREATESCPGDETAILS2;
+
+FUNCTION ADDSCPGDETAILS
+(A_SC               IN      VARCHAR2,                  
+ A_ST               IN      VARCHAR2,                  
+ A_ST_VERSION       IN      VARCHAR2,                  
+ A_PG               IN      VARCHAR2,                  
+ A_PGNODE           IN      NUMBER,                    
+ A_PR               IN      VARCHAR2,                  
+ A_PR_VERSION       IN      VARCHAR2,                  
+ A_SEQ              IN      NUMBER,                    
+ A_MODIFY_REASON    IN      VARCHAR2)                  
+RETURN NUMBER IS
+
+L_SC                UNAPIGEN.VC20_TABLE_TYPE;
+L_PG                UNAPIGEN.VC20_TABLE_TYPE;
+L_PGNODE            UNAPIGEN.LONG_TABLE_TYPE;
+L_PA                UNAPIGEN.VC20_TABLE_TYPE;
+L_PANODE            UNAPIGEN.LONG_TABLE_TYPE;
+L_PR_VERSION        UNAPIGEN.VC20_TABLE_TYPE;
+L_DESCRIPTION       UNAPIGEN.VC40_TABLE_TYPE;
+L_VALUE_F           UNAPIGEN.FLOAT_TABLE_TYPE;
+L_VALUE_S           UNAPIGEN.VC40_TABLE_TYPE;
+L_UNIT              UNAPIGEN.VC20_TABLE_TYPE;
+L_EXEC_START_DATE   UNAPIGEN.DATE_TABLE_TYPE;
+L_EXEC_END_DATE     UNAPIGEN.DATE_TABLE_TYPE;
+L_EXECUTOR          UNAPIGEN.VC20_TABLE_TYPE;
+L_PLANNED_EXECUTOR  UNAPIGEN.VC20_TABLE_TYPE;
+L_MANUALLY_ENTERED  UNAPIGEN.CHAR1_TABLE_TYPE;
+L_ASSIGN_DATE       UNAPIGEN.DATE_TABLE_TYPE;
+L_ASSIGNED_BY       UNAPIGEN.VC20_TABLE_TYPE;
+L_MANUALLY_ADDED    UNAPIGEN.CHAR1_TABLE_TYPE;
+L_FORMAT            UNAPIGEN.VC40_TABLE_TYPE;
+L_TD_INFO           UNAPIGEN.NUM_TABLE_TYPE;
+L_TD_INFO_UNIT      UNAPIGEN.VC20_TABLE_TYPE;
+L_CONFIRM_UID       UNAPIGEN.CHAR1_TABLE_TYPE;
+L_ALLOW_ANY_ME      UNAPIGEN.CHAR1_TABLE_TYPE;
+L_DELAY             UNAPIGEN.NUM_TABLE_TYPE;
+L_DELAY_UNIT        UNAPIGEN.VC20_TABLE_TYPE;
+L_MIN_NR_RESULTS    UNAPIGEN.NUM_TABLE_TYPE;
+L_CALC_METHOD       UNAPIGEN.CHAR1_TABLE_TYPE;
+L_CALC_CF           UNAPIGEN.VC20_TABLE_TYPE;
+L_ALARM_ORDER       UNAPIGEN.VC3_TABLE_TYPE;
+L_VALID_SPECSA      UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_SPECSB      UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_SPECSC      UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_LIMITSA     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_LIMITSB     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_LIMITSC     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_TARGETA     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_TARGETB     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_TARGETC     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_LOG_EXCEPTIONS    UNAPIGEN.CHAR1_TABLE_TYPE;
+L_MT                UNAPIGEN.VC20_TABLE_TYPE;
+L_MT_VERSION        UNAPIGEN.VC20_TABLE_TYPE;
+L_MT_NR_MEASUR      UNAPIGEN.NUM_TABLE_TYPE;
+L_REANALYSIS        UNAPIGEN.NUM_TABLE_TYPE;
+L_PA_CLASS          UNAPIGEN.VC2_TABLE_TYPE;
+L_LOG_HS            UNAPIGEN.CHAR1_TABLE_TYPE;
+L_LOG_HS_DETAILS    UNAPIGEN.CHAR1_TABLE_TYPE;
+L_LC                UNAPIGEN.VC2_TABLE_TYPE;
+L_LC_VERSION        UNAPIGEN.VC20_TABLE_TYPE;
+L_MODIFY_FLAG       UNAPIGEN.NUM_TABLE_TYPE;
+L_NR_OF_ROWS        NUMBER;
+L_ERRM              VARCHAR2(255);
+L_REF_DATE          TIMESTAMP WITH TIME ZONE;
+L_ALARMS_HANDLED    CHAR(1);
+L_SEQ               NUMBER(5);
+L_FILTER_FREQ       CHAR(1);
+L_PP_VERSION        VARCHAR2(20);
+L_ST_VERSION        VARCHAR2(20);
+L_PG_PP_KEY1        VARCHAR2(20);
+L_PG_PP_KEY2        VARCHAR2(20);
+L_PG_PP_KEY3        VARCHAR2(20);
+L_PG_PP_KEY4        VARCHAR2(20);
+L_PG_PP_KEY5        VARCHAR2(20);
+
+CURSOR L_UTSCPG_CURSOR IS
+   SELECT PP_VERSION, PP_KEY1, PP_KEY2, PP_KEY3, PP_KEY4, PP_KEY5
+   FROM UTSCPG
+   WHERE SC = A_SC
+     AND PG = A_PG
+     AND PGNODE = A_PGNODE;
+
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   
+   
+   
+   
+   
+   
+   
+   
+   IF NVL(A_SC, ' ') = ' ' OR
+      NVL(A_PR, ' ') = ' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   
+   
+   
+   L_FILTER_FREQ := '0';
+   L_REF_DATE := NULL; 
+   L_ERRM := NULL;
+ 
+   
+   
+   
+   L_NR_OF_ROWS := 0;
+   OPEN L_UTSCPG_CURSOR;
+   FETCH L_UTSCPG_CURSOR
+   INTO L_PP_VERSION, L_PG_PP_KEY1, L_PG_PP_KEY2, L_PG_PP_KEY3, L_PG_PP_KEY4, L_PG_PP_KEY5;
+   IF L_UTSCPG_CURSOR%NOTFOUND THEN
+      CLOSE L_UTSCPG_CURSOR;
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_PRVERSION;
+      RAISE STPERROR;
+   END IF;
+   CLOSE L_UTSCPG_CURSOR;
+   L_RET_CODE := UNAPIPA.INITSCPARAMETER(A_PR, A_PR_VERSION, A_SEQ, A_SC, A_PG, A_PGNODE, 
+                                         L_PP_VERSION, L_PG_PP_KEY1, L_PG_PP_KEY2, L_PG_PP_KEY3, L_PG_PP_KEY4, L_PG_PP_KEY5,
+                                         L_PR_VERSION, L_DESCRIPTION, L_VALUE_F, 
+                                         L_VALUE_S, L_UNIT, L_EXEC_START_DATE, L_EXEC_END_DATE,
+                                         L_EXECUTOR, L_PLANNED_EXECUTOR, L_MANUALLY_ENTERED,
+                                         L_ASSIGN_DATE, L_ASSIGNED_BY, L_MANUALLY_ADDED,
+                                         L_FORMAT, L_TD_INFO, L_TD_INFO_UNIT, L_CONFIRM_UID,
+                                         L_ALLOW_ANY_ME, L_DELAY, L_DELAY_UNIT, L_MIN_NR_RESULTS,
+                                         L_CALC_METHOD, L_CALC_CF, L_ALARM_ORDER, L_VALID_SPECSA,
+                                         L_VALID_SPECSB, L_VALID_SPECSC, L_VALID_LIMITSA, 
+                                         L_VALID_LIMITSB, L_VALID_LIMITSC, L_VALID_TARGETA,
+                                         L_VALID_TARGETB, L_VALID_TARGETC, L_MT, L_MT_VERSION, 
+                                         L_MT_NR_MEASUR, L_LOG_EXCEPTIONS, L_REANALYSIS, 
+                                         L_PA_CLASS, L_LOG_HS, L_LOG_HS_DETAILS, L_LC, 
+                                         L_LC_VERSION, L_NR_OF_ROWS);                    
+   IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+      UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+      L_ERRM  := 'pr=' || A_PR || '#seq=' || A_SEQ ||
+                 '#sc=' || A_SC || '#pg=' || A_PG || 
+                 '#pgnode=' || TO_CHAR(A_PGNODE) ||
+                 '#nr_of_rows=' || TO_CHAR(L_NR_OF_ROWS) ||
+                 '#InitScParameter#ErrorCode=' || TO_CHAR(L_RET_CODE);
+      RAISE STPERROR;
+   END IF;
+
+   
+   
+   
+   FOR L_ROW IN 1..L_NR_OF_ROWS LOOP
+      L_SC(L_ROW) := A_SC;
+      L_PG(L_ROW) := A_PG;
+      L_PGNODE(L_ROW) := A_PGNODE;
+      L_PA(L_ROW) := A_PR;
+      L_PANODE(L_ROW) := 0;
+      L_MODIFY_FLAG(L_ROW) := UNAPIGEN.MOD_FLAG_INSERT;
+      L_MANUALLY_ADDED(L_ROW) := '1';
+      
+      
+      
+      L_DELAY(L_ROW) := NVL(L_DELAY(L_ROW), 0);
+      L_DELAY_UNIT(L_ROW) := NVL(L_DELAY_UNIT(L_ROW), 'DD');
+   END LOOP;
+
+   
+   
+   
+   IF L_NR_OF_ROWS > 0 THEN   
+      L_RET_CODE := UNAPIPA.SAVESCPARAMETER(UNAPIGEN.ALARMS_NOT_HANDLED, L_SC,
+                                            L_PG, L_PGNODE,
+                                            L_PA, L_PANODE, L_PR_VERSION, L_DESCRIPTION,
+                                            L_VALUE_F, L_VALUE_S, L_UNIT,
+                                            L_EXEC_START_DATE, L_EXEC_END_DATE,
+                                            L_EXECUTOR, L_PLANNED_EXECUTOR,
+                                            L_MANUALLY_ENTERED, L_ASSIGN_DATE,
+                                            L_ASSIGNED_BY, L_MANUALLY_ADDED,
+                                            L_FORMAT, L_TD_INFO,
+                                            L_TD_INFO_UNIT, L_CONFIRM_UID,
+                                            L_ALLOW_ANY_ME, L_DELAY, L_DELAY_UNIT,
+                                            L_MIN_NR_RESULTS, L_CALC_METHOD,
+                                            L_CALC_CF, L_ALARM_ORDER,
+                                            L_VALID_SPECSA,
+                                            L_VALID_SPECSB, L_VALID_SPECSC,
+                                            L_VALID_LIMITSA, L_VALID_LIMITSB,
+                                            L_VALID_LIMITSC, L_VALID_TARGETA,
+                                            L_VALID_TARGETB, L_VALID_TARGETC,
+                                            L_MT, L_MT_VERSION, L_MT_NR_MEASUR,
+                                            L_LOG_EXCEPTIONS, L_PA_CLASS,
+                                            L_LOG_HS, L_LOG_HS_DETAILS, L_LC, L_LC_VERSION, L_MODIFY_FLAG,
+                                            L_NR_OF_ROWS, A_MODIFY_REASON);
+      
+      
+      
+      IF L_RET_CODE = UNAPIGEN.DBERR_PARTIALSAVE THEN
+         FOR L_ROW IN 1..L_NR_OF_ROWS LOOP
+            IF L_MODIFY_FLAG(L_ROW) > UNAPIGEN.DBERR_SUCCESS THEN
+               UNAPIGEN.P_TXN_ERROR := L_MODIFY_FLAG(L_ROW);
+               L_ERRM  := 'sc=' || L_SC(L_ROW) || '#pg=' || L_PG(L_ROW) ||
+                          '#pgnode=' || TO_CHAR(L_PGNODE(L_ROW)) ||
+                          '#pa='||L_PA(L_ROW)||
+                          '#panode=' || TO_CHAR(L_PANODE(L_ROW)) ||
+                          '#SaveScParameter#ErrorCode=' || TO_CHAR(L_RET_CODE);
+               RAISE STPERROR;
+            END IF;
+         END LOOP;
+      ELSIF L_RET_CODE = UNAPIGEN.DBERR_PARTIALCHARTSAVE THEN
+         UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+         L_ERRM  := 'SaveScParameter#ErrorCode=' || TO_CHAR(L_RET_CODE);
+         RAISE STPERROR;
+      ELSIF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+         RAISE STPERROR;
+      END IF;
+   END IF;
+
+   
+   
+   
+   FOR L_ROW IN 1..L_NR_OF_ROWS LOOP
+      L_RET_CODE := UNAPIPAP.INITANDSAVESCPAATTRIBUTES(A_SC, L_PG(L_ROW), L_PGNODE(L_ROW), L_PA(L_ROW), L_PANODE(L_ROW));
+      IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+         L_ERRM  := 'sc=' || A_SC || '#pg=' || L_PG(L_ROW) ||
+                    '#pgnode=' || TO_CHAR(L_PGNODE(L_ROW)) ||
+                    '#pa=' || L_PA(L_ROW) ||
+                    '#panode=' || TO_CHAR(L_PANODE(L_ROW)) || 
+                    '#InitAndSaveScPaAttributes#ErrorCode=' || TO_CHAR(L_RET_CODE);
+         RAISE STPERROR;
+      END IF;
+
+      
+      
+      
+      L_ST_VERSION := A_ST_VERSION;
+      L_RET_CODE := UNAPIPA.CREATESCPADETAILS(A_ST, L_ST_VERSION, A_PG, L_PP_VERSION, 
+                                              L_PG_PP_KEY1, L_PG_PP_KEY2, L_PG_PP_KEY3, L_PG_PP_KEY4, L_PG_PP_KEY5,
+                                              L_PA(L_ROW),
+                                              L_PR_VERSION(L_ROW), L_SEQ, A_SC, L_PG(L_ROW),
+                                              L_PGNODE(L_ROW), L_PANODE(L_ROW), '1', L_REF_DATE,
+                                              L_MT(L_ROW), L_MT_VERSION(L_ROW), 
+                                              L_MT_NR_MEASUR(L_ROW), A_MODIFY_REASON);
+      
+      
+      
+      IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         L_ERRM  := 'sc=' || A_SC || '#pg=' || L_PG(L_ROW) ||
+                    '#pgnode=' || TO_CHAR(L_PGNODE(L_ROW)) || '#pa=' ||
+                    L_PA(L_ROW)|| '#panode=' || TO_CHAR(L_PANODE(L_ROW)) ||
+                    '#CreateScPaDetails#ErrorCode=' || TO_CHAR(L_RET_CODE);
+         UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+         RAISE STPERROR;
+      END IF;
+   END LOOP;
+
+   
+   
+   
+   L_EV_SEQ_NR := -1;
+   L_EVENT_TP := 'ScAnalysesCreated';
+   L_EV_DETAILS :=  'st=' || A_ST || 
+                    '#pg=' ||A_PG ||
+                    '#pgnode=' || A_PGNODE || 
+                    '#pa=' ||A_PR ||
+                    '#st_version=' || A_ST_VERSION;
+
+   L_RESULT := UNAPIEV.INSERTEVENT('AddScPgDetails', UNAPIGEN.P_EVMGR_NAME, 'sc', A_SC, '', '', '', 
+                                   L_EVENT_TP, L_EV_DETAILS, L_EV_SEQ_NR);
+   IF L_RESULT <> UNAPIGEN.DBERR_SUCCESS THEN
+      UNAPIGEN.P_TXN_ERROR := L_RESULT;
+      RAISE STPERROR;
+   END IF;
+   
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('AddScPgDetails', SQLERRM);
+   ELSIF L_ERRM IS NOT NULL THEN
+      UNAPIGEN.LOGERROR('AddScPgDetails', L_ERRM);
+   END IF;
+   IF L_UTSCPG_CURSOR%ISOPEN THEN
+      CLOSE L_UTSCPG_CURSOR;
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR, 'AddScPgDetails'));
+END ADDSCPGDETAILS;
+
+FUNCTION COPYSCPGDETAILS
+(A_SC_FROM        IN        VARCHAR2,                 
+ A_PG_FROM        IN        VARCHAR2,                 
+ A_PGNODE_FROM    IN        NUMBER,                   
+ A_ST_TO          IN        VARCHAR2,                 
+ A_ST_TO_VERSION  IN        VARCHAR2,                 
+ A_SC_TO          IN        VARCHAR2,                 
+ A_PG_TO          IN        VARCHAR2,                 
+ A_PGNODE_TO      IN        NUMBER,                   
+ A_COPY_METHODS   IN        CHAR,                     
+ A_MODIFY_REASON  IN        VARCHAR2)                 
+RETURN NUMBER IS
+
+L_SC                UNAPIGEN.VC20_TABLE_TYPE;
+L_PG                UNAPIGEN.VC20_TABLE_TYPE;
+L_PGNODE            UNAPIGEN.LONG_TABLE_TYPE;
+L_PA                UNAPIGEN.VC20_TABLE_TYPE;
+L_PANODE            UNAPIGEN.LONG_TABLE_TYPE;
+L_PR_VERSION        UNAPIGEN.VC20_TABLE_TYPE;
+L_DESCRIPTION       UNAPIGEN.VC40_TABLE_TYPE;
+L_VALUE_F           UNAPIGEN.FLOAT_TABLE_TYPE;
+L_VALUE_S           UNAPIGEN.VC40_TABLE_TYPE;
+L_UNIT              UNAPIGEN.VC20_TABLE_TYPE;
+L_EXEC_START_DATE   UNAPIGEN.DATE_TABLE_TYPE;
+L_EXEC_END_DATE     UNAPIGEN.DATE_TABLE_TYPE;
+L_EXECUTOR          UNAPIGEN.VC20_TABLE_TYPE;
+L_PLANNED_EXECUTOR  UNAPIGEN.VC20_TABLE_TYPE;
+L_MANUALLY_ENTERED  UNAPIGEN.CHAR1_TABLE_TYPE;
+L_ASSIGN_DATE       UNAPIGEN.DATE_TABLE_TYPE;
+L_ASSIGNED_BY       UNAPIGEN.VC20_TABLE_TYPE;
+L_MANUALLY_ADDED    UNAPIGEN.CHAR1_TABLE_TYPE;
+L_FORMAT            UNAPIGEN.VC40_TABLE_TYPE;
+L_TD_INFO           UNAPIGEN.NUM_TABLE_TYPE;
+L_TD_INFO_UNIT      UNAPIGEN.VC20_TABLE_TYPE;
+L_CONFIRM_UID       UNAPIGEN.CHAR1_TABLE_TYPE;
+L_ALLOW_ANY_ME      UNAPIGEN.CHAR1_TABLE_TYPE;
+L_DELAY             UNAPIGEN.NUM_TABLE_TYPE;
+L_DELAY_UNIT        UNAPIGEN.VC20_TABLE_TYPE;
+L_MIN_NR_RESULTS    UNAPIGEN.NUM_TABLE_TYPE;
+L_CALC_METHOD       UNAPIGEN.CHAR1_TABLE_TYPE;
+L_CALC_CF           UNAPIGEN.VC20_TABLE_TYPE;
+L_ALARM_ORDER       UNAPIGEN.VC3_TABLE_TYPE;
+L_VALID_SPECSA      UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_SPECSB      UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_SPECSC      UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_LIMITSA     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_LIMITSB     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_LIMITSC     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_TARGETA     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_TARGETB     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_VALID_TARGETC     UNAPIGEN.CHAR1_TABLE_TYPE;
+L_MT                UNAPIGEN.VC20_TABLE_TYPE;
+L_MT_VERSION        UNAPIGEN.VC20_TABLE_TYPE;
+L_MT_NR_MEASUR      UNAPIGEN.NUM_TABLE_TYPE;
+L_LOG_EXCEPTIONS    UNAPIGEN.CHAR1_TABLE_TYPE;
+L_REANALYSIS        UNAPIGEN.NUM_TABLE_TYPE;
+L_PA_CLASS          UNAPIGEN.VC2_TABLE_TYPE;
+L_LOG_HS            UNAPIGEN.CHAR1_TABLE_TYPE;
+L_LOG_HS_DETAILS    UNAPIGEN.CHAR1_TABLE_TYPE;
+L_LC                UNAPIGEN.VC2_TABLE_TYPE;
+L_LC_VERSION        UNAPIGEN.VC20_TABLE_TYPE;
+L_MODIFY_FLAG       UNAPIGEN.NUM_TABLE_TYPE;
+L_NR_OF_ROWS        NUMBER;
+L_ERRM              VARCHAR2(255);
+L_ALARMS_HANDLED    CHAR(1);
+L_SEQ               NUMBER(5);
+
+CURSOR L_SCPA_CURSOR(A_SC VARCHAR2, A_PG VARCHAR2, A_PGNODE NUMBER) IS
+   SELECT *
+   FROM UTSCPA
+   WHERE SC=A_SC
+   AND PG=A_PG
+   AND PGNODE=A_PGNODE
+   ORDER BY PANODE;
+   
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   
+   
+   
+   IF NVL(A_SC_FROM, ' ') = ' ' OR
+      NVL(A_PG_FROM, ' ') = ' ' OR
+      NVL(A_PGNODE_FROM, 0) = 0 OR
+      NVL(A_ST_TO, ' ') = ' ' OR
+      NVL(A_SC_TO, ' ') = ' ' OR
+      NVL(A_PG_TO, ' ') = ' ' OR
+      NVL(A_PGNODE_TO, 0) = 0 THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   L_ERRM := NULL;
+
+   
+   
+   
+   L_NR_OF_ROWS := 0;
+   FOR L_SCPA_REC IN L_SCPA_CURSOR(A_SC_FROM, A_PG_FROM, A_PGNODE_FROM) LOOP
+      L_NR_OF_ROWS := L_NR_OF_ROWS + 1;
+      L_SC(L_NR_OF_ROWS) := A_SC_TO;
+      L_PG(L_NR_OF_ROWS) := A_PG_TO;
+      L_PGNODE(L_NR_OF_ROWS) := A_PGNODE_TO;
+      L_PA(L_NR_OF_ROWS) := L_SCPA_REC.PA;
+      L_PANODE(L_NR_OF_ROWS) := L_SCPA_REC.PANODE;
+      L_PR_VERSION(L_NR_OF_ROWS) := L_SCPA_REC.PR_VERSION;
+      L_DESCRIPTION(L_NR_OF_ROWS) := L_SCPA_REC.DESCRIPTION;      
+      L_UNIT(L_NR_OF_ROWS) := L_SCPA_REC.UNIT;
+      L_PLANNED_EXECUTOR(L_NR_OF_ROWS) := L_SCPA_REC.PLANNED_EXECUTOR;
+      L_FORMAT(L_NR_OF_ROWS) := L_SCPA_REC.FORMAT;
+      L_TD_INFO(L_NR_OF_ROWS) := L_SCPA_REC.TD_INFO;
+      L_TD_INFO_UNIT(L_NR_OF_ROWS) := L_SCPA_REC.TD_INFO_UNIT;
+      L_CONFIRM_UID(L_NR_OF_ROWS) := L_SCPA_REC.CONFIRM_UID;
+      L_ALLOW_ANY_ME(L_NR_OF_ROWS) := L_SCPA_REC.ALLOW_ANY_ME;
+      
+      
+      L_DELAY(L_NR_OF_ROWS) := L_SCPA_REC.DELAY;
+      L_DELAY_UNIT(L_NR_OF_ROWS) := L_SCPA_REC.DELAY_UNIT;
+      L_MIN_NR_RESULTS(L_NR_OF_ROWS) := L_SCPA_REC.MIN_NR_RESULTS;
+      L_CALC_METHOD(L_NR_OF_ROWS) := L_SCPA_REC.CALC_METHOD;
+      L_CALC_CF(L_NR_OF_ROWS) := L_SCPA_REC.CALC_CF;
+      L_ALARM_ORDER(L_NR_OF_ROWS) := L_SCPA_REC.ALARM_ORDER;
+      L_LOG_EXCEPTIONS(L_NR_OF_ROWS) := L_SCPA_REC.LOG_EXCEPTIONS;
+      L_PA_CLASS(L_NR_OF_ROWS) := L_SCPA_REC.PA_CLASS;
+      L_LOG_HS(L_NR_OF_ROWS) := L_SCPA_REC.LOG_HS;
+      L_LOG_HS_DETAILS(L_NR_OF_ROWS) := L_SCPA_REC.LOG_HS_DETAILS;
+      L_LC(L_NR_OF_ROWS) := L_SCPA_REC.LC;
+      L_LC_VERSION(L_NR_OF_ROWS) := L_SCPA_REC.LC_VERSION;
+
+      L_VALUE_F(L_NR_OF_ROWS) := NULL;
+      L_VALUE_S(L_NR_OF_ROWS) := NULL;
+      L_EXEC_START_DATE(L_NR_OF_ROWS) := NULL;
+      L_EXEC_END_DATE(L_NR_OF_ROWS) := NULL;
+      L_EXECUTOR(L_NR_OF_ROWS) := UNAPIGEN.P_USER;
+      L_MANUALLY_ENTERED(L_NR_OF_ROWS) := '0';
+      L_MANUALLY_ADDED(L_NR_OF_ROWS) := '0';
+      L_ASSIGN_DATE(L_NR_OF_ROWS) := CURRENT_TIMESTAMP;
+      L_ASSIGNED_BY(L_NR_OF_ROWS) := UNAPIGEN.P_USER;
+      L_VALID_SPECSA(L_NR_OF_ROWS) := NULL;
+      L_VALID_SPECSB(L_NR_OF_ROWS) := NULL;
+      L_VALID_SPECSC(L_NR_OF_ROWS) := NULL;
+      L_VALID_LIMITSA(L_NR_OF_ROWS) := NULL;
+      L_VALID_LIMITSB(L_NR_OF_ROWS) := NULL;
+      L_VALID_LIMITSC(L_NR_OF_ROWS) := NULL;
+      L_VALID_TARGETA(L_NR_OF_ROWS) := NULL;
+      L_VALID_TARGETB(L_NR_OF_ROWS) := NULL;
+      L_VALID_TARGETC(L_NR_OF_ROWS) := NULL;
+      L_MT(L_NR_OF_ROWS) := NULL;
+      L_MT_VERSION(L_NR_OF_ROWS) := NULL;
+      L_MT_NR_MEASUR(L_NR_OF_ROWS) := NULL;      
+      L_MODIFY_FLAG(L_NR_OF_ROWS) := UNAPIGEN.MOD_FLAG_INSERT_WITH_NODES;
+   END LOOP;
+
+      
+      
+      
+   IF L_NR_OF_ROWS > 0 THEN
+      L_RET_CODE := UNAPIPA.SAVESCPARAMETER(UNAPIGEN.ALARMS_NOT_HANDLED, L_SC, L_PG, L_PGNODE, L_PA, 
+                                            L_PANODE, L_PR_VERSION, L_DESCRIPTION, L_VALUE_F, L_VALUE_S, 
+                                            L_UNIT, L_EXEC_START_DATE, L_EXEC_END_DATE, L_EXECUTOR, 
+                                            L_PLANNED_EXECUTOR, L_MANUALLY_ENTERED, L_ASSIGN_DATE,
+                                            L_ASSIGNED_BY, L_MANUALLY_ADDED, L_FORMAT, L_TD_INFO,
+                                            L_TD_INFO_UNIT, L_CONFIRM_UID, L_ALLOW_ANY_ME, L_DELAY, 
+                                            L_DELAY_UNIT, L_MIN_NR_RESULTS, L_CALC_METHOD, L_CALC_CF, 
+                                            L_ALARM_ORDER, L_VALID_SPECSA, L_VALID_SPECSB, 
+                                            L_VALID_SPECSC, L_VALID_LIMITSA, L_VALID_LIMITSB,
+                                            L_VALID_LIMITSC, L_VALID_TARGETA, L_VALID_TARGETB, 
+                                            L_VALID_TARGETC, L_MT, L_MT_VERSION, L_MT_NR_MEASUR,
+                                            L_LOG_EXCEPTIONS, L_PA_CLASS, L_LOG_HS, L_LOG_HS_DETAILS, 
+                                            L_LC, L_LC_VERSION, L_MODIFY_FLAG, L_NR_OF_ROWS, 
+                                            A_MODIFY_REASON);
+      
+      
+      
+      IF L_RET_CODE = UNAPIGEN.DBERR_PARTIALSAVE THEN
+         FOR L_ROW IN 1..L_NR_OF_ROWS LOOP
+            IF L_MODIFY_FLAG(L_ROW) > UNAPIGEN.DBERR_SUCCESS THEN
+               UNAPIGEN.P_TXN_ERROR := L_MODIFY_FLAG(L_ROW);
+               L_ERRM  := 'sc=' || L_SC(L_ROW) || '#pg=' || L_PG(L_ROW) ||
+                          '#pgnode=' || TO_CHAR(L_PGNODE(L_ROW)) ||
+                          '#pa='||L_PA(L_ROW)||
+                          '#panode=' || TO_CHAR(L_PANODE(L_ROW)) ||
+                          '#SaveScParameter#ErrorCode=' || TO_CHAR(L_RET_CODE);
+               RAISE STPERROR;
+            END IF;
+         END LOOP;
+      ELSIF L_RET_CODE = UNAPIGEN.DBERR_PARTIALCHARTSAVE THEN
+         UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+         L_ERRM  := 'SaveScParameter#ErrorCode=' || TO_CHAR(L_RET_CODE);
+         RAISE STPERROR;
+      ELSIF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+         RAISE STPERROR;
+      END IF;
+   END IF;
+
+   
+   
+   
+   INSERT INTO UTSCPAAU (SC, PG, PGNODE, PA, PANODE, AU, AUSEQ, VALUE)
+   SELECT A_SC_TO, A_PG_TO, A_PGNODE_TO, PA, PANODE, AU, AUSEQ, VALUE
+   FROM UTSCPAAU
+   WHERE SC = A_SC_FROM
+   AND PG = A_PG_FROM
+   AND PGNODE = A_PGNODE_FROM;
+
+   
+   
+   
+   
+   
+   
+   DELETE FROM UTSCPASPA
+   WHERE SC = A_SC_TO
+   AND PG = A_PG_TO
+   AND PGNODE = A_PGNODE_TO;
+
+   DELETE FROM UTSCPASPB
+   WHERE SC = A_SC_TO
+   AND PG = A_PG_TO
+   AND PGNODE = A_PGNODE_TO;
+
+   DELETE FROM UTSCPASPC
+   WHERE SC = A_SC_TO
+   AND PG = A_PG_TO
+   AND PGNODE = A_PGNODE_TO;
+
+   DELETE FROM UTSCPASQC
+   WHERE SC = A_SC_TO
+   AND PG = A_PG_TO
+   AND PGNODE = A_PGNODE_TO;
+   
+   INSERT INTO UTSCPASPA
+      (SC, PG, PGNODE, PA, PANODE, LOW_LIMIT, HIGH_LIMIT, LOW_SPEC, HIGH_SPEC, LOW_DEV,
+       REL_LOW_DEV, TARGET, HIGH_DEV, REL_HIGH_DEV)
+   SELECT A_SC_TO, A_PG_TO, A_PGNODE_TO, PA, PANODE, LOW_LIMIT, HIGH_LIMIT, LOW_SPEC, HIGH_SPEC, LOW_DEV,
+       REL_LOW_DEV, TARGET, HIGH_DEV, REL_HIGH_DEV
+   FROM UTSCPASPA
+   WHERE SC = A_SC_FROM
+   AND PG = A_PG_FROM
+   AND PGNODE = A_PGNODE_FROM;
+
+   INSERT INTO UTSCPASPB
+      (SC, PG, PGNODE, PA, PANODE, LOW_LIMIT, HIGH_LIMIT, LOW_SPEC, HIGH_SPEC, LOW_DEV,
+       REL_LOW_DEV, TARGET, HIGH_DEV, REL_HIGH_DEV)
+   SELECT A_SC_TO, A_PG_TO, A_PGNODE_TO, PA, PANODE, LOW_LIMIT, HIGH_LIMIT, LOW_SPEC, HIGH_SPEC, LOW_DEV,
+       REL_LOW_DEV, TARGET, HIGH_DEV, REL_HIGH_DEV
+   FROM UTSCPASPB
+   WHERE SC = A_SC_FROM
+   AND PG = A_PG_FROM
+   AND PGNODE = A_PGNODE_FROM;
+
+   INSERT INTO UTSCPASPC
+      (SC, PG, PGNODE, PA, PANODE, LOW_LIMIT, HIGH_LIMIT, LOW_SPEC, HIGH_SPEC, LOW_DEV,
+       REL_LOW_DEV, TARGET, HIGH_DEV, REL_HIGH_DEV)
+   SELECT A_SC_TO, A_PG_TO, A_PGNODE_TO, PA, PANODE, LOW_LIMIT, HIGH_LIMIT, LOW_SPEC, HIGH_SPEC, LOW_DEV,
+       REL_LOW_DEV, TARGET, HIGH_DEV, REL_HIGH_DEV
+   FROM UTSCPASPC
+   WHERE SC = A_SC_FROM
+   AND PG = A_PG_FROM
+   AND PGNODE = A_PGNODE_FROM;
+   
+   
+   INSERT INTO UTSCPASQC
+      (SC, PG, PGNODE, PA, PANODE, SQC_AVG, SQC_SIGMA, SQC_AVGR, SQC_UCLR, VALID_SQC)
+   SELECT A_SC_TO, A_PG_TO, A_PGNODE_TO, PA, PANODE, SQC_AVG, SQC_SIGMA, SQC_AVGR, SQC_UCLR, ' '
+   FROM UTSCPASQC
+   WHERE SC = A_SC_FROM
+   AND PG = A_PG_FROM
+   AND PGNODE = A_PGNODE_FROM;
+
+   IF NVL(A_COPY_METHODS, '0') = '1' THEN
+      FOR L_ROW IN 1..L_NR_OF_ROWS LOOP
+         
+         
+         
+         L_RET_CODE := 0;
+         L_RET_CODE := UNAPIPA.COPYSCPADETAILS(A_SC_FROM, A_PG_FROM, A_PGNODE_FROM, L_PA(L_ROW), 
+                                               L_PANODE(L_ROW), A_ST_TO, A_ST_TO_VERSION, A_SC_TO, 
+                                               A_PG_TO, A_PGNODE_TO, L_PA(L_ROW), L_PANODE(L_ROW),
+                                               A_MODIFY_REASON);
+         
+         
+         
+         IF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+            L_ERRM  := 'sc_from=' || A_SC_FROM ||
+                       '#pg_from=' || A_PG_FROM || '#pgnode_from=' || TO_CHAR(A_PGNODE_FROM) ||
+                       '#pa_from=pa_to=' || L_PA(L_ROW)|| '#panode_from=panode_to=' || TO_CHAR(L_PANODE(L_ROW)) ||
+                       '#pg_to=' || A_PG_TO || '#pgnode_to=' || TO_CHAR(A_PGNODE_TO) ||                       
+                       '#CopyScPaDetails#ErrorCode=' || TO_CHAR(L_RET_CODE);
+            UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+            RAISE STPERROR;
+         END IF;
+
+         
+         
+      END LOOP;
+   END IF;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('CopyScPgDetails', SQLERRM);
+   ELSIF L_ERRM IS NOT NULL THEN
+      UNAPIGEN.LOGERROR('CopyScPgDetails', L_ERRM);
+   END IF;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR, 'CopyScPgDetails'));
+END COPYSCPGDETAILS;
+
+FUNCTION COPYSCPGPARESULTS
+(A_SC_FROM        IN        VARCHAR2,                 
+ A_PG_FROM        IN        VARCHAR2,                 
+ A_PGNODE_FROM    IN        NUMBER,                   
+ A_ST_TO          IN        VARCHAR2,                 
+ A_ST_TO_VERSION  IN        VARCHAR2,                 
+ A_SC_TO          IN        VARCHAR2,                 
+ A_PG_TO          IN        VARCHAR2,                 
+ A_PGNODE_TO      IN        NUMBER,                   
+ A_MODIFY_REASON  IN        VARCHAR2)                 
+RETURN NUMBER IS
+
+L_SQLERRM2               VARCHAR2(255);
+
+
+L_SVPAV_SEQ              INTEGER;
+L_SVPAV_ALARMS_HANDLED   CHAR(1);
+L_SVPAV_SC               UNAPIGEN.VC20_TABLE_TYPE;
+L_SVPAV_PG               UNAPIGEN.VC20_TABLE_TYPE;
+L_SVPAV_PGNODE           UNAPIGEN.LONG_TABLE_TYPE;
+L_SVPAV_PA               UNAPIGEN.VC20_TABLE_TYPE;
+L_SVPAV_PANODE           UNAPIGEN.LONG_TABLE_TYPE;
+L_SVPAV_VALUE_F          UNAPIGEN.FLOAT_TABLE_TYPE;
+L_SVPAV_VALUE_S          UNAPIGEN.VC40_TABLE_TYPE;
+L_SVPAV_UNIT             UNAPIGEN.VC20_TABLE_TYPE;
+L_SVPAV_FORMAT           UNAPIGEN.VC40_TABLE_TYPE;
+L_SVPAV_EXEC_END_DATE    UNAPIGEN.DATE_TABLE_TYPE;
+L_SVPAV_EXECUTOR         UNAPIGEN.VC20_TABLE_TYPE;
+L_SVPAV_MANUALLY_ENTERED UNAPIGEN.CHAR1_TABLE_TYPE;
+L_SVPAV_REANALYSIS       UNAPIGEN.NUM_TABLE_TYPE;
+L_SVPAV_MODIFY_FLAG      UNAPIGEN.NUM_TABLE_TYPE;
+L_SVPAV_NR_OF_ROWS       NUMBER;
+L_SVPAV_MODIFY_REASON    VARCHAR2(255);                  
+
+CURSOR L_ALLSCPA_CURSOR(A_SC VARCHAR2, A_PG VARCHAR2, A_PGNODE NUMBER) IS
+   SELECT PA, PANODE, VALUE_F, VALUE_S
+   FROM UTSCPA
+   WHERE SC = A_SC
+   AND PG = A_PG
+   AND PGNODE = A_PGNODE
+   ORDER BY PANODE;
+
+
+
+
+
+
+
+
+CURSOR L_SCPA_POS_CURSOR (A_SC_FROM VARCHAR2, A_PG_FROM VARCHAR2, A_PGNODE_FROM NUMBER,
+                          A_SC_TO   VARCHAR2, A_PG_TO   VARCHAR2, A_PGNODE_TO   NUMBER, 
+                          A_PA VARCHAR2) IS
+SELECT A.PA_TO, A.PANODE_TO, B.PA_FROM, B.PANODE_FROM, B.VALUE_F, B.VALUE_S, B.UNIT, B.FORMAT 
+FROM (SELECT PA PA_TO, PANODE PANODE_TO, ROWNUM POSITION
+      FROM (SELECT PA,PANODE FROM UTSCPA
+           WHERE SC=A_SC_TO 
+           AND PG=A_PG_TO
+           AND PGNODE=A_PGNODE_TO
+           AND PA=A_PA         
+           GROUP BY PA,PANODE)) A,
+     (SELECT PA PA_FROM, PANODE PANODE_FROM, ROWNUM POSITION, VALUE_F, VALUE_S, UNIT, FORMAT
+      FROM (SELECT PA,PANODE, VALUE_F, VALUE_S, UNIT, FORMAT FROM UTSCPA
+           WHERE SC=A_SC_FROM 
+           AND PG=A_PG_FROM
+           AND PGNODE=A_PGNODE_FROM
+           AND PA=A_PA         
+           GROUP BY PA,PANODE, VALUE_F, VALUE_S, UNIT, FORMAT)) B
+WHERE A.POSITION = B.POSITION(+);
+L_SCPA_POS_REC     L_SCPA_POS_CURSOR%ROWTYPE;    
+L_SCPA_POS_FOUND   BOOLEAN;    
+
+BEGIN
+
+   
+   
+   
+
+   L_SQLERRM := NULL;
+   L_SQLERRM2 := NULL;
+   L_SVPAV_SEQ := 0;
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+   
+   
+   FOR L_ALLSCPA_REC IN L_ALLSCPA_CURSOR(A_SC_TO, A_PG_TO, A_PGNODE_TO) LOOP
+      
+      
+
+      L_SCPA_POS_FOUND := FALSE;
+      OPEN L_SCPA_POS_CURSOR(A_SC_FROM, A_PG_FROM, A_PGNODE_FROM, A_SC_TO, A_PG_TO, A_PGNODE_TO, 
+                             L_ALLSCPA_REC.PA);
+      LOOP
+         FETCH L_SCPA_POS_CURSOR
+         INTO L_SCPA_POS_REC;
+         IF L_SCPA_POS_REC.PA_TO = L_ALLSCPA_REC.PA AND
+            L_SCPA_POS_REC.PANODE_TO = L_ALLSCPA_REC.PANODE THEN
+            L_SCPA_POS_FOUND := TRUE;
+            EXIT;
+         END IF;
+         EXIT WHEN L_SCPA_POS_CURSOR%NOTFOUND;
+      END LOOP;
+      CLOSE L_SCPA_POS_CURSOR;
+
+      IF L_SCPA_POS_FOUND AND 
+         L_SCPA_POS_REC.PA_FROM IS NOT NULL AND
+         (NVL(L_SCPA_POS_REC.VALUE_F,0)<>NVL(L_ALLSCPA_REC.VALUE_F,0) OR 
+          NVL(L_SCPA_POS_REC.VALUE_S,' ')<>NVL(L_ALLSCPA_REC.VALUE_S,' '))THEN
+         
+         
+         L_SVPAV_SEQ := L_SVPAV_SEQ + 1;
+         L_SVPAV_SC(L_SVPAV_SEQ) := A_SC_TO;
+         L_SVPAV_PG(L_SVPAV_SEQ) := A_PG_TO;
+         L_SVPAV_PGNODE(L_SVPAV_SEQ) := A_PGNODE_TO;
+         L_SVPAV_PA(L_SVPAV_SEQ) := L_SCPA_POS_REC.PA_TO;
+         L_SVPAV_PANODE(L_SVPAV_SEQ) := L_SCPA_POS_REC.PANODE_TO;
+         L_SVPAV_VALUE_F(L_SVPAV_SEQ) := L_SCPA_POS_REC.VALUE_F;
+         L_SVPAV_VALUE_S(L_SVPAV_SEQ) := L_SCPA_POS_REC.VALUE_S;
+         L_SVPAV_UNIT(L_SVPAV_SEQ) := L_SCPA_POS_REC.UNIT;
+         L_SVPAV_FORMAT(L_SVPAV_SEQ) := L_SCPA_POS_REC.FORMAT;
+         
+         L_SVPAV_EXECUTOR(L_SVPAV_SEQ) := UNAPIGEN.P_USER;
+         L_SVPAV_EXEC_END_DATE(L_SVPAV_SEQ) := NULL;
+         L_SVPAV_MANUALLY_ENTERED(L_SVPAV_SEQ) := '0';
+         L_SVPAV_MODIFY_FLAG(L_SVPAV_SEQ) := UNAPIGEN.MOD_FLAG_UPDATE;
+      END IF;
+   END LOOP;         
+   
+   
+   L_SVPAV_ALARMS_HANDLED   :='0';   
+   IF L_SVPAV_SEQ <> 0 THEN
+      L_RET_CODE := UNAPIPA.SAVESCPARESULT(L_SVPAV_ALARMS_HANDLED,
+                                           L_SVPAV_SC,
+                                           L_SVPAV_PG,
+                                           L_SVPAV_PGNODE,
+                                           L_SVPAV_PA,
+                                           L_SVPAV_PANODE,
+                                           L_SVPAV_VALUE_F,
+                                           L_SVPAV_VALUE_S,
+                                           L_SVPAV_UNIT,
+                                           L_SVPAV_FORMAT,
+                                           L_SVPAV_EXEC_END_DATE,
+                                           L_SVPAV_EXECUTOR,
+                                           L_SVPAV_MANUALLY_ENTERED,
+                                           L_SVPAV_REANALYSIS,
+                                           L_SVPAV_MODIFY_FLAG,
+                                           L_SVPAV_SEQ,
+                                           L_SVPAV_MODIFY_REASON);
+
+      IF L_RET_CODE = UNAPIGEN.DBERR_PARTIALSAVE THEN
+         
+         
+         
+         FOR L_ROW IN 1..L_SVPAV_SEQ LOOP
+            IF L_SVPAV_MODIFY_FLAG(L_ROW) > UNAPIGEN.DBERR_SUCCESS THEN
+               UNAPIGEN.P_TXN_ERROR := L_SVPAV_MODIFY_FLAG(L_ROW);
+               L_SQLERRM := 'sc=' || L_SVPAV_SC(L_ROW) || 
+                            '#pg=' || L_SVPAV_PG(L_ROW) ||
+                            '#pgnode=' || TO_CHAR(L_SVPAV_PGNODE(L_ROW)) ||
+                            '#pa=' || L_SVPAV_PA(L_ROW)||
+                            '#panode=' || TO_CHAR(L_SVPAV_PANODE(L_ROW)) ||
+                            '#SaveScPaResult#ErrorCode=' || TO_CHAR(L_RET_CODE);
+               IF UNAPIAUT.P_NOT_AUTHORISED IS NOT NULL THEN
+                  L_SQLERRM2 := UNAPIAUT.P_NOT_AUTHORISED;
+               END IF;
+               RAISE STPERROR;
+            END IF;
+         END LOOP;
+      ELSIF L_RET_CODE = UNAPIGEN.DBERR_PARTIALCHARTSAVE THEN
+         
+         
+         
+         UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+         L_SQLERRM := 'SaveScPaResult#ErrorCode=' || TO_CHAR(L_RET_CODE);
+         IF UNAPIAUT.P_NOT_AUTHORISED IS NOT NULL THEN
+            L_SQLERRM2 := UNAPIAUT.P_NOT_AUTHORISED;
+         END IF;
+         RAISE STPERROR;
+      ELSIF L_RET_CODE <> UNAPIGEN.DBERR_SUCCESS THEN
+         UNAPIGEN.P_TXN_ERROR := L_RET_CODE;
+         L_SQLERRM := 'sc(1)=' || L_SVPAV_SC(1) || 
+                      '#pg(1)=' || L_SVPAV_PG(1) ||
+                      '#pgnode(1)=' || TO_CHAR(L_SVPAV_PGNODE(1)) ||
+                      '#pa(1)=' || L_SVPAV_PA(1)||
+                      '#panode(1)=' || TO_CHAR(L_SVPAV_PANODE(1)) ||
+                      '#nr_of_rows=' || TO_CHAR(L_SVPAV_SEQ) ||
+                      '#SaveScPaValue#ErrorCode=' || TO_CHAR(L_RET_CODE);
+         RAISE STPERROR;
+      END IF;                           
+   END IF;
+
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('CopyScPgPaResults',SQLERRM);
+   ELSIF L_SQLERRM IS NOT NULL THEN
+      UNAPIGEN.LOGERROR('CopyScPgPaResults',L_SQLERRM);
+      IF L_SQLERRM2 IS NOT NULL THEN
+         UNAPIGEN.LOGERROR('CopyScPgPaResults',L_SQLERRM2);
+      END IF;      
+   END IF;
+   IF L_SCPA_POS_CURSOR%ISOPEN THEN
+      CLOSE L_SCPA_POS_CURSOR;
+   END IF;   
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR, 'CopyScPgPaValues'));
+END COPYSCPGPARESULTS;
+
+FUNCTION GETFULLTESTPLAN
+(A_OBJECT_TP             IN      VARCHAR2,                  
+ A_OBJECT_ID             IN      VARCHAR2,                  
+ A_OBJECT_VERSION        IN      VARCHAR2,                  
+ A_TST_TP                OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_TST_ID                OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_TST_ID_VERSION        OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_SEQ                OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_PR_SEQ                OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_MT_SEQ                OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_PP_KEY1               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY2               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY3               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY4               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY5               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_TST_DESCRIPTION       OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_TST_NR_MEASUR         OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_TST_ALREADY_ASSIGNED  OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_NR_OF_ROWS            IN OUT  NUMBER,                    
+ A_NEXT_ROWS             IN      NUMBER)                    
+RETURN NUMBER IS
+BEGIN
+   RETURN(UNAPIPG2.GETFULLTESTPLAN(A_OBJECT_TP, A_OBJECT_ID, A_OBJECT_VERSION, 
+                                   A_TST_TP, A_TST_ID, A_TST_ID_VERSION,
+                                   A_PP_SEQ, A_PR_SEQ, A_MT_SEQ,
+                                   A_PP_KEY1, A_PP_KEY2, A_PP_KEY3, A_PP_KEY4, A_PP_KEY5, 
+                                   A_TST_DESCRIPTION, A_TST_NR_MEASUR, A_TST_ALREADY_ASSIGNED,
+                                   A_NR_OF_ROWS, A_NEXT_ROWS));
+END GETFULLTESTPLAN;
+
+
+FUNCTION SAVEFULLTESTPLAN
+(A_SC                    IN      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_SC_NR_OF_ROWS         IN      NUMBER,                    
+ A_TST_TP                IN OUT  UNAPIGEN.VC20_TABLE_TYPE,  
+ A_TST_ID                IN OUT  UNAPIGEN.VC20_TABLE_TYPE,  
+ A_TST_ID_VERSION        IN OUT  UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_SEQ                IN OUT  UNAPIGEN.NUM_TABLE_TYPE,   
+ A_PR_SEQ                IN OUT  UNAPIGEN.NUM_TABLE_TYPE,   
+ A_MT_SEQ                IN OUT  UNAPIGEN.NUM_TABLE_TYPE,   
+ A_PP_KEY1               IN OUT  UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY2               IN OUT  UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY3               IN OUT  UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY4               IN OUT  UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY5               IN OUT  UNAPIGEN.VC20_TABLE_TYPE,  
+ A_TST_NR_MEASUR         IN OUT  UNAPIGEN.NUM_TABLE_TYPE,   
+ A_MODIFY_FLAG           IN OUT  UNAPIGEN.NUM_TABLE_TYPE,   
+ A_NR_OF_ROWS            IN OUT  NUMBER,                    
+ A_NEXT_ROWS             IN      NUMBER)                    
+RETURN NUMBER IS
+
+BEGIN
+   RETURN(UNAPIPG2.SAVEFULLTESTPLAN(A_SC, A_SC_NR_OF_ROWS, 
+                                    A_TST_TP, A_TST_ID, A_TST_ID_VERSION,
+                                    A_PP_SEQ, A_PR_SEQ, A_MT_SEQ,
+                                    A_PP_KEY1, A_PP_KEY2, A_PP_KEY3, A_PP_KEY4, A_PP_KEY5,
+                                    A_TST_NR_MEASUR, 
+                                    A_MODIFY_FLAG, A_NR_OF_ROWS, A_NEXT_ROWS));
+END SAVEFULLTESTPLAN;
+
+FUNCTION GETTESTPLANATTRIBUTES
+(A_OBJECT_TP            IN      VARCHAR2,                  
+ A_OBJECT_ID            IN      VARCHAR2,                  
+ A_OBJECT_VERSION       IN      VARCHAR2,                  
+ A_TST_TP               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_TST_ID               OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_TST_ID_VERSION       OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_SEQ               OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_PR_SEQ               OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_MT_SEQ               OUT     UNAPIGEN.NUM_TABLE_TYPE,   
+ A_PP_KEY1              OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY2              OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY3              OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY4              OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_PP_KEY5              OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_AU                   OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_AU_VERSION           OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_VALUE                OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_DESCRIPTION          OUT     UNAPIGEN.VC40_TABLE_TYPE,  
+ A_IS_PROTECTED         OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_SINGLE_VALUED        OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_NEW_VAL_ALLOWED      OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_STORE_DB             OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_VALUE_LIST_TP        OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_RUN_MODE             OUT     UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_SERVICE              OUT     UNAPIGEN.VC255_TABLE_TYPE, 
+ A_CF_VALUE             OUT     UNAPIGEN.VC20_TABLE_TYPE,  
+ A_NR_OF_ROWS           IN OUT  NUMBER,                    
+ A_NEXT_ROWS            IN      NUMBER)                    
+RETURN NUMBER IS
+BEGIN
+   RETURN(UNAPIPG3.GETTESTPLANATTRIBUTES(A_OBJECT_TP, A_OBJECT_ID,A_OBJECT_VERSION,
+                                         A_TST_TP, A_TST_ID,A_TST_ID_VERSION, 
+                                         A_PP_SEQ, A_PR_SEQ, A_MT_SEQ,
+                                         A_PP_KEY1, A_PP_KEY2, A_PP_KEY3, A_PP_KEY4, A_PP_KEY5,
+                                         A_AU, A_AU_VERSION, A_VALUE, A_DESCRIPTION, 
+                                         A_IS_PROTECTED, A_SINGLE_VALUED, A_NEW_VAL_ALLOWED, 
+                                         A_STORE_DB, A_VALUE_LIST_TP,A_RUN_MODE,A_SERVICE,
+                                         A_CF_VALUE,A_NR_OF_ROWS,A_NEXT_ROWS));
+END GETTESTPLANATTRIBUTES;
+
+FUNCTION GETSUPPLIERANDCUSTOMER
+(A_PP_KEY1              IN      VARCHAR2,                  
+ A_PP_KEY2              IN      VARCHAR2,                  
+ A_PP_KEY3              IN      VARCHAR2,                  
+ A_PP_KEY4              IN      VARCHAR2,                  
+ A_PP_KEY5              IN      VARCHAR2,                  
+ A_SUPPLIER             OUT     VARCHAR2,                  
+ A_CUSTOMER             OUT     VARCHAR2)                  
+RETURN NUMBER IS
+
+L_CUSTOMER_PP_KEY       VARCHAR2(20);
+L_SUPPLIER_PP_KEY       VARCHAR2(20);
+
+BEGIN
+
+   IF UNAPIGEN.P_PP_KEY4PRODUCT IS NULL THEN
+      UNAPIGEN.SETPPKEYSCONTEXT;
+   END IF;
+   L_CUSTOMER_PP_KEY := ' ';
+   L_SUPPLIER_PP_KEY := ' ';
+   
+   IF UNAPIGEN.P_PP_KEY4CUSTOMER > 0 OR UNAPIGEN.P_PP_KEY4SUPPLIER > 0 THEN
+      FOR L_PP_KEY_INDEX IN 1..UNAPIGEN.P_PP_KEY_NR_OF_ROWS LOOP
+         IF L_PP_KEY_INDEX = 1 THEN
+            IF UNAPIGEN.P_PP_KEY4CUSTOMER = 1 THEN
+               L_CUSTOMER_PP_KEY := A_PP_KEY1;
+            ELSIF UNAPIGEN.P_PP_KEY4SUPPLIER = 1 THEN
+               L_SUPPLIER_PP_KEY := A_PP_KEY1;
+            END IF;
+         END IF;
+
+         IF L_PP_KEY_INDEX = 2 THEN
+            IF UNAPIGEN.P_PP_KEY4CUSTOMER = 2 THEN
+               L_CUSTOMER_PP_KEY := A_PP_KEY2;
+            ELSIF UNAPIGEN.P_PP_KEY4SUPPLIER = 2 THEN
+               L_SUPPLIER_PP_KEY := A_PP_KEY2;
+            END IF;
+         END IF;
+
+         IF L_PP_KEY_INDEX = 3 THEN
+            IF UNAPIGEN.P_PP_KEY4CUSTOMER = 3 THEN
+               L_CUSTOMER_PP_KEY := A_PP_KEY3;
+            ELSIF UNAPIGEN.P_PP_KEY4SUPPLIER = 3 THEN
+               L_SUPPLIER_PP_KEY := A_PP_KEY3;
+            END IF;
+         END IF;
+
+         IF L_PP_KEY_INDEX = 4 THEN
+            IF UNAPIGEN.P_PP_KEY4CUSTOMER = 4 THEN
+               L_CUSTOMER_PP_KEY := A_PP_KEY4;
+            ELSIF UNAPIGEN.P_PP_KEY4SUPPLIER = 4 THEN
+               L_SUPPLIER_PP_KEY := A_PP_KEY4;
+            END IF;
+         END IF;
+
+         IF L_PP_KEY_INDEX = 5 THEN
+            IF UNAPIGEN.P_PP_KEY4CUSTOMER = 5 THEN
+               L_CUSTOMER_PP_KEY := A_PP_KEY5;
+            ELSIF UNAPIGEN.P_PP_KEY4SUPPLIER = 5 THEN
+               L_SUPPLIER_PP_KEY := A_PP_KEY5;
+            END IF;
+         END IF;
+      END LOOP;
+   END IF;
+   A_SUPPLIER := L_SUPPLIER_PP_KEY;
+   A_CUSTOMER := L_CUSTOMER_PP_KEY;
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+END GETSUPPLIERANDCUSTOMER;
+
+FUNCTION SQLISSUPPLIERORCUSTOMERPP                         
+(A_PP_KEY1              IN      VARCHAR2,                  
+ A_PP_KEY2              IN      VARCHAR2,                  
+ A_PP_KEY3              IN      VARCHAR2,                  
+ A_PP_KEY4              IN      VARCHAR2,                  
+ A_PP_KEY5              IN      VARCHAR2)                  
+RETURN VARCHAR2 IS
+
+L_CUSTOMER      VARCHAR2(20);
+L_SUPPLIER      VARCHAR2(20);
+
+BEGIN
+   L_RET_CODE := UNAPIPG.GETSUPPLIERANDCUSTOMER(A_PP_KEY1,
+                                                A_PP_KEY2,
+                                                A_PP_KEY3,
+                                                A_PP_KEY4, 
+                                                A_PP_KEY5, 
+                                                L_SUPPLIER,
+                                                L_CUSTOMER);
+   IF L_SUPPLIER = ' ' AND 
+      L_CUSTOMER = ' ' THEN
+      RETURN('0');
+   ELSE
+      RETURN('1');
+   END IF;      
+END SQLISSUPPLIERORCUSTOMERPP;
+
+END UNAPIPG;

@@ -1,0 +1,563 @@
+PACKAGE BODY unapilu AS
+
+L_SQLERRM         VARCHAR2(255);
+L_SQL_STRING      VARCHAR2(2000);
+L_WHERE_CLAUSE    VARCHAR2(1000);
+L_RET_CODE        NUMBER;
+L_RESULT          NUMBER;
+L_FETCHED_ROWS    NUMBER;
+
+
+P_LU_CURSOR      INTEGER;
+
+P_SAVELU_CALLS   INTEGER;
+P_SAVELU_TR_SEQ  INTEGER;
+
+STPERROR          EXCEPTION;
+
+FUNCTION GETVERSION
+   RETURN VARCHAR2
+IS
+BEGIN
+   RETURN('06.07.00.00_00.13');
+EXCEPTION
+   WHEN OTHERS THEN
+      RETURN (NULL);
+END GETVERSION;
+
+FUNCTION GETLOOKUP
+(A_LU                  OUT      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_STRING_VAL          OUT      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_NUM_VAL             OUT      UNAPIGEN.FLOAT_TABLE_TYPE, 
+ A_SHORTCUT            OUT      UNAPIGEN.RAW8_TABLE_TYPE,  
+ A_NR_OF_ROWS          IN OUT   NUMBER,                    
+ A_WHERE_CLAUSE        IN       VARCHAR2,                  
+ A_NEXT_ROWS           IN       NUMBER)                    
+RETURN NUMBER IS
+
+L_SHORTCUT            RAW(8);
+L_KEY_TYPE            VARCHAR2(2);
+L_LU                  VARCHAR2(20);
+L_STRING_VAL          VARCHAR2(40);
+L_NUM_VAL             NUMBER;
+
+BEGIN
+
+   IF NVL(A_NR_OF_ROWS, 0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN (UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+
+   IF NVL(A_NEXT_ROWS, 0) NOT IN (-1, 0, 1) THEN
+      RETURN(UNAPIGEN.DBERR_NEXTROWS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = -1 THEN
+      IF P_LU_CURSOR IS NOT NULL THEN
+         DBMS_SQL.CLOSE_CURSOR(P_LU_CURSOR);
+         P_LU_CURSOR := NULL;
+      END IF;
+      RETURN (UNAPIGEN.DBERR_SUCCESS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = 1 THEN
+      IF P_LU_CURSOR IS NULL THEN
+         RETURN(UNAPIGEN.DBERR_NOCURSOR);
+      END IF;
+   END IF;
+
+   
+   IF NVL(A_NEXT_ROWS,0) = 0 THEN
+      IF P_LU_CURSOR IS NULL THEN
+         P_LU_CURSOR := DBMS_SQL.OPEN_CURSOR;
+      END IF;
+
+      IF NVL(A_WHERE_CLAUSE, ' ') = ' ' THEN
+         L_WHERE_CLAUSE := 'ORDER BY lu, seq, string_val'; 
+      ELSIF UPPER(SUBSTR(A_WHERE_CLAUSE,1,6)) <> 'WHERE ' THEN
+         L_WHERE_CLAUSE := 'WHERE lu = ''' || REPLACE(A_WHERE_CLAUSE, '''', '''''') || 
+                           ''' ORDER BY seq, string_val';
+      ELSE
+         L_WHERE_CLAUSE := A_WHERE_CLAUSE; 
+      END IF;
+
+      L_SQL_STRING := 'SELECT lu, string_val, num_val, shortcut' ||
+                      ' FROM dd' || UNAPIGEN.P_DD || '.uvlu ' || L_WHERE_CLAUSE;
+
+      DBMS_SQL.PARSE(P_LU_CURSOR,L_SQL_STRING,DBMS_SQL.V7); 
+
+      DBMS_SQL.DEFINE_COLUMN     (P_LU_CURSOR, 1, L_LU        , 20);
+      DBMS_SQL.DEFINE_COLUMN     (P_LU_CURSOR, 2, L_STRING_VAL, 40);
+      DBMS_SQL.DEFINE_COLUMN     (P_LU_CURSOR, 3, L_NUM_VAL       );
+      DBMS_SQL.DEFINE_COLUMN_RAW (P_LU_CURSOR, 4, L_SHORTCUT  ,  8);
+      L_RESULT := DBMS_SQL.EXECUTE (P_LU_CURSOR);
+   END IF;
+
+   L_RESULT := DBMS_SQL.FETCH_ROWS(P_LU_CURSOR);
+   L_FETCHED_ROWS := 0;
+
+   LOOP
+      EXIT WHEN L_RESULT = 0 OR L_FETCHED_ROWS >= A_NR_OF_ROWS;
+
+      DBMS_SQL.COLUMN_VALUE     (P_LU_CURSOR, 1, L_LU        );
+      DBMS_SQL.COLUMN_VALUE     (P_LU_CURSOR, 2, L_STRING_VAL);
+      DBMS_SQL.COLUMN_VALUE     (P_LU_CURSOR, 3, L_NUM_VAL   );
+      DBMS_SQL.COLUMN_VALUE_RAW (P_LU_CURSOR, 4, L_SHORTCUT  );
+
+      L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+      A_LU         (L_FETCHED_ROWS) := L_LU         ;
+      A_STRING_VAL (L_FETCHED_ROWS) := L_STRING_VAL ;
+      A_NUM_VAL    (L_FETCHED_ROWS) := L_NUM_VAL    ;
+      A_SHORTCUT   (L_FETCHED_ROWS) := L_SHORTCUT   ;
+
+      IF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+         L_RESULT := DBMS_SQL.FETCH_ROWS(P_LU_CURSOR);
+      END IF;
+   END LOOP;
+
+   
+   IF (L_FETCHED_ROWS = 0) THEN
+       DBMS_SQL.CLOSE_CURSOR(P_LU_CURSOR);
+       P_LU_CURSOR := NULL;
+       RETURN(UNAPIGEN.DBERR_NORECORDS);
+   ELSIF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+      DBMS_SQL.CLOSE_CURSOR(P_LU_CURSOR);
+      P_LU_CURSOR := NULL;
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME,
+                          ERROR_MSG)
+      VALUES (UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+              'GetLookUp', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      IF DBMS_SQL.IS_OPEN (P_LU_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR (P_LU_CURSOR);
+      END IF;
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END GETLOOKUP;
+
+
+FUNCTION GETLOOKUP
+(A_LU                  OUT      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_STRING_VAL          OUT      UNAPIGEN.VC40_TABLE_TYPE,  
+ A_NUM_VAL             OUT      UNAPIGEN.FLOAT_TABLE_TYPE, 
+ A_ALT                 OUT      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_CTRL                OUT      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_SHIFT               OUT      UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_KEY_NAME            OUT      UNAPIGEN.VC20_TABLE_TYPE,  
+ A_NR_OF_ROWS          IN OUT   NUMBER,                    
+ A_WHERE_CLAUSE        IN       VARCHAR2,                  
+ A_NEXT_ROWS           IN       NUMBER)                    
+RETURN NUMBER IS
+
+L_SHORTCUT            RAW(8);
+L_KEY_TYPE            VARCHAR2(2);
+L_LU                  VARCHAR2(20);
+L_STRING_VAL          VARCHAR2(40);
+L_NUM_VAL             NUMBER;
+
+L_VC8_SHORTCUT        VARCHAR2(8);
+L_CHAR1_ALT           CHAR(1);
+L_CHAR1_CTRL          CHAR(1);
+L_CHAR1_SHIFT         CHAR(1);
+L_VC20_KEY_NAME       VARCHAR2(20);
+
+BEGIN
+
+   IF NVL(A_NR_OF_ROWS, 0) = 0 THEN
+      A_NR_OF_ROWS := UNAPIGEN.P_DEFAULT_CHUNK_SIZE;
+   ELSIF A_NR_OF_ROWS < 0 OR A_NR_OF_ROWS > UNAPIGEN.P_MAX_CHUNK_SIZE THEN
+      RETURN (UNAPIGEN.DBERR_NROFROWS);
+   END IF;
+
+   IF NVL(A_NEXT_ROWS, 0) NOT IN (-1, 0, 1) THEN
+      RETURN(UNAPIGEN.DBERR_NEXTROWS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = -1 THEN
+      IF P_LU_CURSOR IS NOT NULL THEN
+         DBMS_SQL.CLOSE_CURSOR(P_LU_CURSOR);
+         P_LU_CURSOR := NULL;
+      END IF;
+      RETURN (UNAPIGEN.DBERR_SUCCESS);
+   END IF;
+
+   
+   IF A_NEXT_ROWS = 1 THEN
+      IF P_LU_CURSOR IS NULL THEN
+         RETURN(UNAPIGEN.DBERR_NOCURSOR);
+      END IF;
+   END IF;
+
+   
+   IF NVL(A_NEXT_ROWS,0) = 0 THEN
+      IF P_LU_CURSOR IS NULL THEN
+         P_LU_CURSOR := DBMS_SQL.OPEN_CURSOR;
+      END IF;
+
+      IF NVL(A_WHERE_CLAUSE, ' ') = ' ' THEN
+         L_WHERE_CLAUSE := 'ORDER BY lu, seq, string_val'; 
+      ELSIF UPPER(SUBSTR(A_WHERE_CLAUSE,1,6)) <> 'WHERE ' THEN
+         L_WHERE_CLAUSE := 'WHERE lu = ''' || REPLACE(A_WHERE_CLAUSE, '''', '''''') || 
+                           ''' ORDER BY seq, string_val';
+      ELSE
+         L_WHERE_CLAUSE := A_WHERE_CLAUSE; 
+      END IF;
+
+      L_SQL_STRING := 'SELECT lu, string_val, num_val, shortcut' ||
+                      ' FROM dd' || UNAPIGEN.P_DD || '.uvlu ' || L_WHERE_CLAUSE;
+
+      DBMS_SQL.PARSE(P_LU_CURSOR,L_SQL_STRING,DBMS_SQL.V7); 
+
+      DBMS_SQL.DEFINE_COLUMN     (P_LU_CURSOR, 1, L_LU        , 20);
+      DBMS_SQL.DEFINE_COLUMN     (P_LU_CURSOR, 2, L_STRING_VAL, 40);
+      DBMS_SQL.DEFINE_COLUMN     (P_LU_CURSOR, 3, L_NUM_VAL       );
+      DBMS_SQL.DEFINE_COLUMN_RAW (P_LU_CURSOR, 4, L_SHORTCUT  ,  8);
+      L_RESULT := DBMS_SQL.EXECUTE (P_LU_CURSOR);
+   END IF;
+
+   L_RESULT := DBMS_SQL.FETCH_ROWS(P_LU_CURSOR);
+   L_FETCHED_ROWS := 0;
+
+   LOOP
+      EXIT WHEN L_RESULT = 0 OR L_FETCHED_ROWS >= A_NR_OF_ROWS;
+
+      DBMS_SQL.COLUMN_VALUE     (P_LU_CURSOR, 1, L_LU        );
+      DBMS_SQL.COLUMN_VALUE     (P_LU_CURSOR, 2, L_STRING_VAL);
+      DBMS_SQL.COLUMN_VALUE     (P_LU_CURSOR, 3, L_NUM_VAL   );
+      DBMS_SQL.COLUMN_VALUE_RAW (P_LU_CURSOR, 4, L_SHORTCUT  );
+
+      L_FETCHED_ROWS := L_FETCHED_ROWS + 1;
+      A_LU         (L_FETCHED_ROWS) := L_LU         ;
+      A_STRING_VAL (L_FETCHED_ROWS) := L_STRING_VAL ;
+      A_NUM_VAL    (L_FETCHED_ROWS) := L_NUM_VAL    ;
+
+      
+      IF L_SHORTCUT = HEXTORAW('0000000000000000') THEN
+         L_VC8_SHORTCUT := NULL;
+      ELSE
+         L_VC8_SHORTCUT := UTL_RAW.CAST_TO_VARCHAR2(L_SHORTCUT);
+      END IF;
+      IF NVL(L_VC8_SHORTCUT, ' ') = ' ' THEN
+         L_VC8_SHORTCUT := '000Undef';
+      END IF;
+      L_CHAR1_ALT     := SUBSTR(L_VC8_SHORTCUT, 1, 1);
+      L_CHAR1_CTRL    := SUBSTR(L_VC8_SHORTCUT, 2, 1);
+      L_CHAR1_SHIFT   := SUBSTR(L_VC8_SHORTCUT, 3, 1);
+      L_VC20_KEY_NAME := SUBSTR(L_VC8_SHORTCUT, 4);
+      IF L_VC20_KEY_NAME = 'Undef' THEN
+         L_VC20_KEY_NAME := '';
+      END IF;
+      A_ALT(L_FETCHED_ROWS)      := L_CHAR1_ALT;
+      A_CTRL(L_FETCHED_ROWS)     := L_CHAR1_CTRL;
+      A_SHIFT(L_FETCHED_ROWS)    := L_CHAR1_SHIFT;
+      A_KEY_NAME(L_FETCHED_ROWS) := RTRIM(L_VC20_KEY_NAME);
+
+      IF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+         L_RESULT := DBMS_SQL.FETCH_ROWS(P_LU_CURSOR);
+      END IF;
+   END LOOP;
+
+   
+   IF (L_FETCHED_ROWS = 0) THEN
+       DBMS_SQL.CLOSE_CURSOR(P_LU_CURSOR);
+       P_LU_CURSOR := NULL;
+       RETURN(UNAPIGEN.DBERR_NORECORDS);
+   ELSIF L_FETCHED_ROWS < A_NR_OF_ROWS THEN
+      DBMS_SQL.CLOSE_CURSOR(P_LU_CURSOR);
+      P_LU_CURSOR := NULL;
+      A_NR_OF_ROWS := L_FETCHED_ROWS;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+
+EXCEPTION
+   WHEN OTHERS THEN
+      L_SQLERRM := SQLERRM;
+      UNAPIGEN.U4ROLLBACK;
+      INSERT INTO UTERROR(CLIENT_ID, APPLIC, WHO, LOGDATE, LOGDATE_TZ, API_NAME,
+                          ERROR_MSG)
+      VALUES (UNAPIGEN.P_CLIENT_ID, UNAPIGEN.P_APPLIC_NAME, UNAPIGEN.P_USER, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+              'GetLookUp', L_SQLERRM);
+      UNAPIGEN.U4COMMIT;
+      IF DBMS_SQL.IS_OPEN (P_LU_CURSOR) THEN
+         DBMS_SQL.CLOSE_CURSOR (P_LU_CURSOR);
+      END IF;
+      RETURN(UNAPIGEN.DBERR_GENFAIL);
+END GETLOOKUP;
+
+FUNCTION SAVELOOKUP
+(A_LU                  IN       VARCHAR2,                  
+ A_STRING_VAL          IN       UNAPIGEN.VC40_TABLE_TYPE,  
+ A_NUM_VAL             IN       UNAPIGEN.FLOAT_TABLE_TYPE, 
+ A_SHORTCUT            IN       UNAPIGEN.RAW8_TABLE_TYPE,  
+ A_NR_OF_ROWS          IN       NUMBER,                    
+ A_NEXT_ROWS           IN       NUMBER)                    
+ RETURN NUMBER IS
+
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <>
+      UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_LU, ' ') = ' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_NEXT_ROWS, 0) = 0 THEN
+      IF NVL(P_SAVELU_CALLS, 0) <> 0 THEN
+         L_SQLERRM := 'SaveLookUp termination call never called for previous lookup definition ! (a_next_rows=-1) a_next_rows='||
+                      TO_CHAR(A_NEXT_ROWS);
+         RAISE STPERROR;
+      END IF;
+      P_SAVELU_CALLS := 1;
+   ELSIF NVL(A_NEXT_ROWS, 0) = -1 THEN
+      P_SAVELU_CALLS := NVL(P_SAVELU_CALLS, 0) + 1;      
+   ELSIF NVL(A_NEXT_ROWS, 0) = 1 THEN
+      IF NVL(P_SAVELU_CALLS, 0) = 0 THEN   
+         L_SQLERRM := 'SaveLookUp startup call never called ! (a_next_rows=0)';
+         RAISE STPERROR;   
+      END IF;
+      IF NVL(UNAPIGEN.P_TXN_LEVEL, 0) <= 1 THEN   
+         L_SQLERRM := 'SaveLookUp called with a_next_rows=1 in a non MST transaction !';
+         RAISE STPERROR;   
+      END IF;
+      P_SAVELU_CALLS := NVL(P_SAVELU_CALLS, 0) + 1;      
+   ELSE
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NEXTROWS;
+      RAISE STPERROR;
+   END IF;         
+   IF P_SAVELU_CALLS = 1 THEN
+      P_SAVELU_TR_SEQ := UNAPIGEN.P_TR_SEQ;
+   ELSE
+      IF UNAPIGEN.P_TR_SEQ <> P_SAVELU_TR_SEQ THEN
+         L_SQLERRM := 'Successive calls of SaveLookUp not in the same transaction !';
+         RAISE STPERROR;   
+      END IF;
+   END IF;
+   
+   
+   IF NVL(P_SAVELU_CALLS, 0) = 1 THEN
+
+      DELETE
+      FROM UTLU
+      WHERE LU = A_LU;
+
+      DELETE
+      FROM UTSHORTCUT
+      WHERE SERVICE = A_LU
+        AND KEY_TP  = 'lu';
+
+   END IF;
+
+   FOR L_SEQ_NO IN 1..A_NR_OF_ROWS LOOP
+      IF NVL(A_STRING_VAL(L_SEQ_NO), ' ') = ' ' THEN
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+         RAISE STPERROR;
+      END IF;
+
+      INSERT INTO UTLU (LU, SEQ, STRING_VAL, NUM_VAL, SHORTCUT)
+      SELECT A_LU,
+             NVL (MAX (SEQ), 0) + 1,
+             A_STRING_VAL (L_SEQ_NO),
+             A_NUM_VAL    (L_SEQ_NO),
+             A_SHORTCUT   (L_SEQ_NO)
+      FROM UTLU
+      WHERE LU = A_LU ;
+   
+      
+      IF (RAWTOHEX(A_SHORTCUT(L_SEQ_NO)) <>  '0000000000000000') THEN
+         BEGIN
+            INSERT INTO UTSHORTCUT (SHORTCUT, KEY_TP, VALUE_S, VALUE_F, SERVICE)
+            VALUES (A_SHORTCUT   (L_SEQ_NO),
+                    'lu',
+                    A_STRING_VAL (L_SEQ_NO),
+                    A_NUM_VAL    (L_SEQ_NO),
+                    A_LU);
+         EXCEPTION
+         WHEN DUP_VAL_ON_INDEX THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_UQSHORTCUTKEY;
+            RAISE STPERROR;
+         END;
+      END IF;
+   END LOOP;
+
+   
+   IF NVL(A_NEXT_ROWS, 0) = -1 THEN
+      
+      P_SAVELU_CALLS := 0;
+   END IF;
+   
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('SaveLookUp',SQLERRM);
+   ELSIF L_SQLERRM IS NOT NULL THEN
+      UNAPIGEN.LOGERROR('SaveLookUp',L_SQLERRM);
+   END IF;
+   
+   P_SAVELU_CALLS := 0;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR,'SaveLookUp'));
+END SAVELOOKUP;
+
+
+FUNCTION SAVELOOKUP
+(A_LU                  IN       VARCHAR2,                  
+ A_STRING_VAL          IN       UNAPIGEN.VC40_TABLE_TYPE,  
+ A_NUM_VAL             IN       UNAPIGEN.FLOAT_TABLE_TYPE, 
+ A_ALT                 IN       UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_CTRL                IN       UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_SHIFT               IN       UNAPIGEN.CHAR1_TABLE_TYPE, 
+ A_KEY_NAME            IN       UNAPIGEN.VC20_TABLE_TYPE,  
+ A_NR_OF_ROWS          IN       NUMBER,                    
+ A_NEXT_ROWS           IN       NUMBER)                    
+ RETURN NUMBER IS
+
+L_SHORTCUT      UNAPIGEN.RAW8_TABLE_TYPE;
+
+L_VC8_SHORTCUT  VARCHAR2(8);
+
+BEGIN
+
+   IF UNAPIGEN.BEGINTXN(UNAPIGEN.P_SINGLE_API_TXN) <>
+      UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   IF NVL(A_LU, ' ') = ' ' THEN
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+      RAISE STPERROR;
+   END IF;
+
+   FOR I IN 1..A_NR_OF_ROWS LOOP
+      
+      IF NVL(A_KEY_NAME(I), ' ') = ' ' THEN
+         L_VC8_SHORTCUT := NULL;
+         L_SHORTCUT(I) := NULL;
+      ELSE
+         L_VC8_SHORTCUT := A_ALT(I) || A_CTRL(I) || A_SHIFT(I) || SUBSTR(A_KEY_NAME(I),1,5);
+         L_SHORTCUT(I) := UTL_RAW.CAST_TO_RAW(L_VC8_SHORTCUT);
+      END IF;
+   END LOOP;
+   
+   IF NVL(A_NEXT_ROWS, 0) = 0 THEN
+      IF NVL(P_SAVELU_CALLS, 0) <> 0 THEN
+         L_SQLERRM := 'SaveLookUp termination call never called for previous lookup definition ! (a_next_rows=-1) a_next_rows='||
+                      TO_CHAR(A_NEXT_ROWS);
+         RAISE STPERROR;
+      END IF;
+      P_SAVELU_CALLS := 1;
+   ELSIF NVL(A_NEXT_ROWS, 0) = -1 THEN
+      P_SAVELU_CALLS := NVL(P_SAVELU_CALLS, 0) + 1;      
+   ELSIF NVL(A_NEXT_ROWS, 0) = 1 THEN
+      IF NVL(P_SAVELU_CALLS, 0) = 0 THEN   
+         L_SQLERRM := 'SaveLookUp startup call never called ! (a_next_rows=0)';
+         RAISE STPERROR;   
+      END IF;
+      IF NVL(UNAPIGEN.P_TXN_LEVEL, 0) <= 1 THEN   
+         L_SQLERRM := 'SaveLookUp called with a_next_rows=1 in a non MST transaction !';
+         RAISE STPERROR;   
+      END IF;
+      P_SAVELU_CALLS := NVL(P_SAVELU_CALLS, 0) + 1;      
+   ELSE
+      UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NEXTROWS;
+      RAISE STPERROR;
+   END IF;         
+   IF P_SAVELU_CALLS = 1 THEN
+      P_SAVELU_TR_SEQ := UNAPIGEN.P_TR_SEQ;
+   ELSE
+      IF UNAPIGEN.P_TR_SEQ <> P_SAVELU_TR_SEQ THEN
+         L_SQLERRM := 'Successive calls of SaveLookUp not in the same transaction !';
+         RAISE STPERROR;   
+      END IF;
+   END IF;
+   
+   
+   IF NVL(P_SAVELU_CALLS, 0) = 1 THEN
+
+      DELETE
+      FROM UTLU
+      WHERE LU = A_LU;
+
+      DELETE
+      FROM UTSHORTCUT
+      WHERE SERVICE = A_LU
+        AND KEY_TP  = 'lu';
+
+   END IF;
+
+   FOR L_SEQ_NO IN 1..A_NR_OF_ROWS LOOP
+      IF NVL(A_STRING_VAL(L_SEQ_NO), ' ') = ' ' THEN
+         UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_NOOBJID;
+         RAISE STPERROR;
+      END IF;
+
+      INSERT INTO UTLU (LU, SEQ, STRING_VAL, NUM_VAL, SHORTCUT)
+      SELECT A_LU,
+             NVL (MAX (SEQ), 0) + 1,
+             A_STRING_VAL (L_SEQ_NO),
+             A_NUM_VAL    (L_SEQ_NO),
+             L_SHORTCUT   (L_SEQ_NO)
+      FROM UTLU
+      WHERE LU = A_LU ;
+   
+      
+      IF (RAWTOHEX(L_SHORTCUT(L_SEQ_NO)) <>  '0000000000000000') THEN
+         BEGIN
+            INSERT INTO UTSHORTCUT (SHORTCUT, KEY_TP, VALUE_S, VALUE_F, SERVICE)
+            VALUES (L_SHORTCUT   (L_SEQ_NO),
+                    'lu',
+                    A_STRING_VAL (L_SEQ_NO),
+                    A_NUM_VAL    (L_SEQ_NO),
+                    A_LU);
+         EXCEPTION
+         WHEN DUP_VAL_ON_INDEX THEN
+            UNAPIGEN.P_TXN_ERROR := UNAPIGEN.DBERR_UQSHORTCUTKEY;
+            RAISE STPERROR;
+         END;
+      END IF;
+   END LOOP;
+
+   
+   IF NVL(A_NEXT_ROWS, 0) = -1 THEN
+      
+      P_SAVELU_CALLS := 0;
+   END IF;
+   
+   IF UNAPIGEN.ENDTXN <> UNAPIGEN.DBERR_SUCCESS THEN
+      RAISE STPERROR;
+   END IF;
+
+   RETURN(UNAPIGEN.DBERR_SUCCESS);
+EXCEPTION
+WHEN OTHERS THEN
+   IF SQLCODE <> 1 THEN
+      UNAPIGEN.LOGERROR('SaveLookUp',SQLERRM);
+   ELSIF L_SQLERRM IS NOT NULL THEN
+      UNAPIGEN.LOGERROR('SaveLookUp',L_SQLERRM);
+   END IF;
+   
+   P_SAVELU_CALLS := 0;
+   RETURN(UNAPIGEN.ABORTTXN(UNAPIGEN.P_TXN_ERROR,'SaveLookUp'));
+END SAVELOOKUP;
+
+END UNAPILU;
