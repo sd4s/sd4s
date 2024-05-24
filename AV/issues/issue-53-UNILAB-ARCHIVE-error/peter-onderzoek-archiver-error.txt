@@ -1,0 +1,19 @@
+-arch-log-space:
+db		name									space-limit-gb	space-used-gb	space-available-gb	space-reclaimable	number-of-files
+U611	E:\FlashRecovery\U611\ARCHIVELOG		122				36				86					0					3208
+IS61	E:\FlashRecovery\IS61\IS61\ARCHIVELOG	75				36				39					0					2253
+
+UTERROR
+UnExecDml	"SQL(1):SELECT part_no  FROM avao_trials WHERE part_no LIKE 'XEF%'  AND ( ped BETWEEN SYSDATE - TO_NUMBER('1000') AND  SYSDATE + 1 )  AND CREATED_BY LIKE 'DIT' ORDER BY part_no DESC"
+UnExecDml	"ORA-00257: archiver error. Connect internal only, until freed. ORA-02063: preceding line from INTERSPEC"
+
+
+
+HUNGPEIP07	scmgt	IBI	13-12-2021 09.24.07.000000000 AM	13-12-2021 09.24.07.000000000 AM CET	InitScParameter	ORA-20000: No corresponding version found by UNAPIGEN.ValidatePpVersion for pp=Indoor testing#version_in=0001.21#pp_key1= #pp_key2= #pp_key3= #pp_key4= #pp_key5=
+GREVE_01355	scmgt	RAG	05-01-2021 10.39.54.000000000 AM	05-01-2021 10.39.54.000000000 AM CET	GetFullTestPlan	"ORA-20000: No corresponding version found by UNAPIGEN.ValidateVersion for object_type=mt#object_id=PT410AA#version_in=~Current~ ORA-06512: at "UNILAB.UNAPIGEN", line 7238"
+
+ENSDTS01	scmgt	JUK	03-02-2021 10.19.34.000000000 AM	03-02-2021 10.19.34.000000000 AM CET	UnExecDml	"ORA-00257: archiver error. Connect internal only, until freed. ORA-02063: preceding line from INTERSPEC"
+ENSDTS01	scmgt	JUK	03-02-2021 10.19.54.000000000 AM	03-02-2021 10.19.54.000000000 AM CET	UnExecDml	"ORA-00257: archiver error. Connect internal only, until freed. ORA-02063: preceding line from INTERSPEC"
+
+
+archive log list;
