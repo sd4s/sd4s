@@ -1,4 +1,0 @@
---Duko Bergsma:
---Mijn advies is om een van de twee root certificaten in Oracle beschikbaar te maken; dan hoef je niet elk jaar het *.vredestein.com cert bij te werken.
---Het *.vredestein.com cert is uitgegeven voor RapidSSL, wat weer uitegegeven is door DigiCert.
---DigiCert is dus de 'Global root' ; dat is het hoogste certifier en is gelig tot 2031.

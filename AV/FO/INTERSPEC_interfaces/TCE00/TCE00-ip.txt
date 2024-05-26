@@ -1,3 +1,0 @@
-server:		TCE00
-ip-adres:	172.30.0.22
-

@@ -1,7 +1,0 @@
-[14:25] Patrick Goossens
-We hebben twee Watson servers:
-Watson (vredestein.com)		https://ensidoc.vredestein.com/docova/docovahome.nsf/HomeFrame?ReadForm
-Login (apollotyres.com) 	https://ensdidoc.apollotyres.com/docova/docovahome.nsf
-
-Helaas is Teams te slim en "vertaald" hij mijn URL's. Maar als je er met je muis boven gaat hangen dan zie je de verschillen wel
-Volgens mij heeft alleen de bovenste, banden met Oracle (Unilab)

@@ -1,5 +1,0 @@
-select disk 1
-list volume
-select volume=4
-remove letter=G
-

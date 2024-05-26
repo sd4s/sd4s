@@ -1,7 +1,0 @@
-directory=MST_DIR
-dumpfile=orclunilab.dmp 
-logfile=data_unilab_20210601_ddl.log
-schemas=unilab
-content=ALL
-
-

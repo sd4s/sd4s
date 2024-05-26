@@ -1,9 +1,0 @@
-lsnrctl 
-#
-show trc_level
-show trc_file
-show trc_directory
-#
-set trc_level 16
-set trc_level 0
-

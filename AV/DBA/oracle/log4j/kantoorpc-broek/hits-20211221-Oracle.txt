@@ -1,2 +1,0 @@
-C:\Oracle\product\11.2.0\client_1\oui\jlib\emocmutl.jar contains Log4J-1.x   <= 1.2.17 _OLD_
-C:\Oracle\product\11.2.0\client_1\sysman\jlib\log4j-core.jar contains Log4J-1.x   <= 1.2.17 _OLD_

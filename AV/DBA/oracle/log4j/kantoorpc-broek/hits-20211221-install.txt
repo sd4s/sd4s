@@ -1,1 +1,0 @@
-C:\Install\IBM Notes\updateSite.zip!/plugins/org.apache.log4j_1.2.13.v200806030600.jar contains Log4J-1.x   <= 1.2.17 _OLD_

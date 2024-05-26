@@ -1,9 +1,0 @@
-Syntax:	~object@property~
-
-examples:
-~pa@description~		description of the parameter
-~pa@pg~				parameter-group of the parameter
-~sc@sampling_date		sampling date of the sample (code)
-~sc@creation_date		creation date of the sample (code)
-~pa@exec_start_date		execution start-date of the parameter
-
